@@ -1,0 +1,64 @@
+
+#SHORTCUT
+data.$id.shortcut.jcmsplugin.squashtm.title: Squash TM
+data.$id.shortcut.jcmsplugin.squashtm.text: Ce Module Permettant l'import des données sur squash via un fichier Excel
+
+jcmsplugin.squashtm.app.title: Squash TM
+
+#App
+jcmsplugin.squashtm.app.importfiles.title: Import Excel
+jcmsplugin.squashtm.app.dashboard.title: Dashboard
+
+
+#APP SIDEBAR
+jcmsplugin.squashtm.app.sidebar.sidebar-section.views: Affichage
+jcmsplugin.squashtm.app.sidebar.dashboard.label: Dashboard
+jcmsplugin.squashtm.app.sidebar.importfiles.label: Import Excel
+jcmsplugin.squashtm.app.sidebar.account-infos: Compte Squash TM lié
+jcmsplugin.squashtm.app.sidebar.account-infos.phone.title: Numéro de téléphone du compte Squash TM
+jcmsplugin.squashtm.app.sidebar.account-infos.email.title: E-mail du compte Squash TM
+jcmsplugin.squashtm.app.sidebar.account-infos.created-at: Crée le
+
+#jcmsplugin.squashtm.properties.app.sidebar.icon: Icône de la sidebar de l'app Squash TM
+
+#BODY
+jcmsplugin.squashtm.signin-please: Vous n'êtes pas connecté(e) à SquashTm. Veuillez vous identifier avec votre compte Squash TM.
+jcmsplugin.squashtm.signin: S'authentifier à Squash...
+jcmsplugin.squashtm.authentication.auth.logout.prevent-user.label: Voulez-vous vraiment vous déconnecter de Squash TM ?
+jcmsplugin.squashtm.authentication.auth.logout.modal.title: Confirmer la déconnexion
+jcmsplugin.squashtm.app.sidebar.auth.logout: 	Se déconnecter de Squash TM
+jcmsplugin.squashtm.app.sidebar.auth.logout.title: Déconnexion de Squash TM
+jcmsplugin.squashtm.authentication.auth.logout.modal.btn.title: Déconnecter de façon temporaire
+jcmsplugin.squashtm.token-form.error.invalid: Le jeton d'API saisi est invalide. Vérifiez-le et réessayez.
+
+#PROPIETES
+jcmsplugin.squashtm.provider.app.auth.domain-name.url: Nom de domaine Squash TM
+jcmsplugin.squashtm.provider.app.auth.redirect.urlSite: URI de redirection
+jcmsplugin.squashtm.provider.authentication-mode: Mode d'authentification
+jcmsplugin.squashtm.provider.authentication-mode.basic: Login/Mot de passe
+jcmsplugin.squashtm.provider.authentication-mode.token: Token
+jcmsplugin.squashtm.provider.authentication-mode.help: <ul><li><span style="color:#c7254e;">Login/Mot de passe:</span>&nbsp;l'utilisateur devra s'authentifier en renseignant ses paramètres <strong>"Nom d'utilisateur"</strong> et <strong>"Mot de passe"</strong></li><li><span style="background-color:#f9f2f4;color:#c7254e;">Token:</span>&nbsp;l'utilisateur sera directement connecté via son <strong>"Token"</strong> d'authentification</li></ul>
+jcmsplugin.squashtm.provider.authentication-mode.description:  <ul><li><span style="color:#c7254e;">Login/Mot de passe:</span>&nbsp;l'utilisateur devra s'authentifier en renseignant ses paramètres <strong>"Nom d'utilisateur"</strong> et <strong>"Mot de passe"</strong></li><li><span style="background-color:#f9f2f4;color:#c7254e;">Token:</span>&nbsp;l'utilisateur sera directement connecté via une   <strong>"Clé"</strong> d'authentification.</li></ul>
+
+jcmsplugin.squashtm.msg.cannot-connect-to-squash: Impossible de se connecter à Squash TM. Veuillez vérifier la configuration.
+jcmsplugin.squashtm.error.configured: Le module Squash TM n'est pas correctement configuré. Veuillez contacter votre Administrateur.
+jcmsplugin.squashtm.signin-please: Vous n'êtes pas connecté(e) à Squash TM. Veuillez vous identifier.
+
+#TOKEN
+jcmsplugin.squashtm.token-form.error.empty: Veuillez renseigner un jeton d'API.
+jcmsplugin.squashtm.token-form.error.invalid: Le jeton saisi est invalide ou a expiré. Veuillez vérifier sa valeur.
+jcmsplugin.squashtm.token-form.title: Connexion à Squash TM
+jcmsplugin.squashtm.token-form.submit: Se connecter
+jcmsplugin.squashtm.token-form.label=Veuillez renseigner un jeton d'API.
+jcmsplugin.squashtm.token-form.label.help=(généré depuis votre compte Squash TM)
+
+
+# BASIC
+jcmsplugin.squashtm.basic-form.title: Connexion à Squash TM
+jcmsplugin.squashtm.basic-form.submit: Se connecter
+jcmsplugin.squashtm.basic-form.error.invalid: Nom d'utilisateur ou mot de passe incorrect
+jcmsplugin.squashtm.basic-form.error.member: Impossible de récupérer l'utilisateur JCMS connecté.
+jcmsplugin.squashtm.basic-form.error.password: Veuillez saisir votre mot de passe Squash TM.
+jcmsplugin.squashtm.basic-form.error.username: Veuillez saisir votre nom d'utilisateur Squash TM.
+jcmsplugin.squashtm.basic-form.password: Mot de passe
+jcmsplugin.squashtm.basic-form.username: Nom d'utilisateur

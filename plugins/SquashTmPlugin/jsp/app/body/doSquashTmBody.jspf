@@ -1,0 +1,38 @@
+
+<%@ page import="co.kozao.jcmsplugin.squashtm.handler.SquashTmAppHandler.*" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.util.SquashTmUtils" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.model.AuthentificationMode" %>
+
+<%
+	SquashTmManager squashTmManager = SquashTmManager.getInstance(); 
+	Boolean isConnectAttribute = (Boolean) request.getAttribute( "jcmsplugin.squashtm.token.is-connect" ); 
+	boolean isConnect = isConnectAttribute != null && isConnectAttribute.booleanValue();
+	
+if (!squashTmManager.isPluginActive(loggedMember)) {%>
+	<jalios:message dismissable="false" css="gedbox-unifiedInsert-message" level="<%= MessageLevel.WARN %>">
+        <p><%= glp("jcmsplugin.squashtm.error.configured") %> </p>
+	</jalios:message>
+<%} else if (!isConnect){%>
+	<% AuthentificationMode authMode = SquashTmUtils.getAuthentificationMode();%>
+	<jalios:message dismissable="false" css="gedbox-unifiedInsert-message" level="<%= MessageLevel.INFO %>">
+		<p><%= glp("jcmsplugin.squashtm.signin-please") %> </p>
+		<% if (authMode == AuthentificationMode.BASIC) { %>
+		<a href="#" class="btn btn-primary modal" data-jalios-modal-url="/plugins/SquashTmPlugin/jsp/auth/doSquashTmBasicForm.jsp"> 
+			<%= glp( "jcmsplugin.squashtm.signin" ) %> </a>
+			
+		<% } else { %>
+			
+		<a href="#" class="btn btn-primary modal" data-jalios-modal-url="/plugins/SquashTmPlugin/jsp/auth/doSquashTmTokenForm.jsp">
+			<%= glp("jcmsplugin.squashtm.signin") %>
+		</a>
+		<% } %>
+		
+	</jalios:message>
+<% } else {%>
+    <% if (appHandler.showDashboard()) { %>
+        <%@ include file="/plugins/SquashTmPlugin/jsp/app/body/doSquashTmDashboard.jspf" %>
+    <% } else if (appHandler.showImportFiles()) { %>
+        <%@ include file="/plugins/SquashTmPlugin/jsp/app/body/doSquashTmImportFiles.jspf" %>
+    <% } %>
+<%}%>

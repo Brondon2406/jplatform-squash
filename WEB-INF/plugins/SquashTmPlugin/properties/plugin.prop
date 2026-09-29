@@ -1,0 +1,22 @@
+
+# Shortcut
+shortcut.jcmsplugin.squashtm.icon: plugins/SquashTmPlugin/images/Squashtm64.png
+shortcut.jcmsplugin.squashtm.link: plugins/SquashTmPlugin/jsp/app/squashTm.jsp
+
+#Icon
+icon.jcmsplugin.squashtm.medium.logo: plugins/SquashTmPlugin/images/Squashtm80.png
+icon.jcmsplugin.squashtm.medium-logo: plugins/SquashTmPlugin/images/Squashtm64.png
+icon.jcmsplugin.squashtm.box-app-sidebar: plugins/SquashTmPlugin/images/Squashtm64.png
+
+
+# LESS
+channel.less.plugins/SquashTmPlugin/css/jbook.css: plugins/JBookPlugin/css/sqaushtm.less
+
+
+# Module Properties
+jcmsplugin.squashtm.provider.app.auth.domain-name.url: http://192.168.1.126:8098/squash/api/rest/latest
+jcmsplugin.squashtm.provider.app.auth.redirect.urlSite: [APP_DOMAIN]/plugins/SquashTmPlugin/jsp/auth/callBackAuthentication.jsp
+jcmsplugin.squashtm.provider.authentication-mode.jsp: plugins/SquashTmPlugin/jsp/pluginProperties/doEditPluginAuthenticationMode.jsp
+jcmsplugin.squashtm.provider.authentication-mode.default: BASIC
+jcmsplugin.squashtm.properties.app.sidebar.icon.chooser-image: plugins/SquashTmPlugin/images/Squashtm64.png
+
