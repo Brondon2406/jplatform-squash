@@ -11,6 +11,7 @@ icon.jcmsplugin.squashtm.box-app-sidebar: plugins/SquashTmPlugin/images/Squashtm
 
 # LESS
 channel.less.plugins/SquashTmPlugin/css/jbook.css: plugins/JBookPlugin/css/sqaushtm.less
+channel.less.plugins/SquashTmPlugin/css/importfiles.css: plugins/SquashTmPlugin/css/importfiles.less
 
 
 # Module Properties

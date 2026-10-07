@@ -17,7 +17,7 @@ jcmsplugin.squashtm.app.sidebar.importfiles.label: Import Excel
 jcmsplugin.squashtm.app.sidebar.account-infos: Compte Squash TM lié
 jcmsplugin.squashtm.app.sidebar.account-infos.phone.title: Numéro de téléphone du compte Squash TM
 jcmsplugin.squashtm.app.sidebar.account-infos.email.title: E-mail du compte Squash TM
-jcmsplugin.squashtm.app.sidebar.account-infos.created-at: Crée le
+jcmsplugin.squashtm.app.sidebar.account-infos.created-at: Créé le
 
 #jcmsplugin.squashtm.properties.app.sidebar.icon: Icône de la sidebar de l'app Squash TM
 
@@ -62,3 +62,33 @@ jcmsplugin.squashtm.basic-form.error.password: Veuillez saisir votre mot de pass
 jcmsplugin.squashtm.basic-form.error.username: Veuillez saisir votre nom d'utilisateur Squash TM.
 jcmsplugin.squashtm.basic-form.password: Mot de passe
 jcmsplugin.squashtm.basic-form.username: Nom d'utilisateur
+
+jcmsplugin.squashtm.auth.callback.title: Squash TM
+jcmsplugin.squashtm.auth.callback.error: L'authentification avec Squash TM a échoué !
+jcmsplugin.squashtm.auth.callback.back: Retour à l'application
+
+
+# IMPORT
+jcmsplugin.squashtm.app.import.title: Importer un fichier Excel
+jcmsplugin.squashtm.app.import.description: Importez un fichier Excel contenant les exigences et les cas de test du projet à créer dans Squash TM.
+
+jcmsplugin.squashtm.app.import.panel.title: Fichier Excel
+
+jcmsplugin.squashtm.app.import.dropzone.title: Déposer votre fichier Excel ici
+jcmsplugin.squashtm.app.import.file.invalid: Veuillez déposer uniquement un fichier Excel (.xlsx, .xls ou .csv).
+jcmsplugin.squashtm.app.import.dropzone.or: ou
+jcmsplugin.squashtm.app.import.select-file: Sélectionner un fichier
+jcmsplugin.squashtm.app.import.accepted-formats: Formats acceptés : .xlsx, .xls, .csv
+
+jcmsplugin.squashtm.app.import.file.selected: Fichier sélectionné
+jcmsplugin.squashtm.app.import.file.remove: Supprimer le fichier
+
+jcmsplugin.squashtm.app.import.project.label: Nom du projet Squash TM
+jcmsplugin.squashtm.app.import.project.placeholder: Ex. Gestion RH
+jcmsplugin.squashtm.app.import.project.help: Le fichier Excel correspond à un seul projet. Indiquez le nom du projet à créer dans Squash TM.
+
+jcmsplugin.squashtm.app.import.information.title: Information
+jcmsplugin.squashtm.app.import.information.description: Le fichier sélectionné sera utilisé pour créer le projet correspondant dans Squash TM.
+
+jcmsplugin.squashtm.app.import.cancel: Annuler
+jcmsplugin.squashtm.app.import.submit: Importer
