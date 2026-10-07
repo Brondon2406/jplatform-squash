@@ -1,0 +1,230 @@
+/* =========== CONTENEUR PRINCIPAL ================== */
+
+.squashtm-import-container {
+	width: 100%;
+	max-width: 1100px;
+	margin: 0 auto;
+}
+
+/* ============ EN-TETE ============= */
+
+.squashtm-import-header {
+	margin-bottom: 25px;
+}
+
+.squashtm-import-title {
+	margin-top: 0;
+	margin-bottom: 8px;
+	font-size: 24px;
+	font-weight: 600;
+
+	.jalios-icon {
+		margin-right: 8px;
+	}
+}
+
+.squashtm-import-description {
+	margin: 0;
+	color: #777;
+	font-size: 14px;
+}
+
+/* ========== PANEL D'IMPORT ============= */
+
+.squashtm-import-panel {
+	margin-bottom: 25px;
+}
+
+.squashtm-import-panel>.panel-heading {
+	background-color: #fff;
+	color: inherit;
+	border-color: #ddd;
+	font-weight: 600;
+}
+
+.squashtm-import-panel>.panel-heading .jalios-icon {
+	margin-right: 7px;
+}
+
+/* =========== ZONE DE DEPOT =============== */
+
+.squashtm-import-dropzone {
+	min-height: 250px;
+
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+
+	padding: 35px 25px;
+
+	border: 2px dashed #d5d5d5;
+	border-radius: 4px;
+
+	text-align: center;
+
+	background: #fafafa;
+
+	transition:
+		border-color 0.2s ease,
+		background-color 0.2s ease;
+}
+
+.squashtm-import-dropzone:hover {
+	border-color: #7b1fa2;
+	background-color: #fcf9fd;
+}
+
+/* ============= ICONE EXCEL ======================= */
+
+.squashtm-import-dropzone-icon {
+	margin-bottom: 15px;
+}
+
+.squashtm-import-dropzone-icon .jalios-icon {
+	font-size: 48px;
+	color: #7b1fa2;
+}
+
+/* ========= TEXTE DE LA ZONE DE DEPOT ============= */
+
+.squashtm-import-dropzone h3 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	font-size: 18px;
+	font-weight: 500;
+}
+
+.squashtm-import-dropzone p {
+	margin-bottom: 10px;
+}
+
+/* =========== BOUTON SELECTIONNER ================= */
+
+.squashtm-import-dropzone label.btn {
+	margin-bottom: 12px;
+	cursor: pointer;
+}
+
+.squashtm-import-dropzone label .jalios-icon {
+	margin-right: 5px;
+}
+
+/* ============== FICHIER SELECTIONNE ================ */
+
+.squashtm-selected-file {
+	margin-top: 20px;
+	padding: 15px;
+
+	border: 1px solid #ddd;
+	border-radius: 4px;
+
+	background: #f8f8f8;
+}
+
+.squashtm-selected-file .media {
+	display: flex;
+	align-items: center;
+}
+
+.squashtm-selected-file .media-left {
+	padding-right: 15px;
+}
+
+.squashtm-selected-file .media-left .jalios-icon {
+	color: #7b1fa2;
+}
+
+.squashtm-selected-file .media-body {
+	flex: 1;
+}
+
+.squashtm-selected-file .media-size {
+	margin-left: 20px;
+	white-space: nowrap;
+}
+
+.squashtm-selected-file .media-body strong {
+	display: block;
+
+	max-width: 100%;
+
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.squashtm-selected-file .media-right {
+	padding-left: 15px;
+}
+
+/* ========= CHAMP NOM DU PROJET ============= */
+
+.squashtm-project-field {
+	margin-top: 25px;
+	margin-bottom: 0;
+}
+
+.squashtm-project-field label {
+	font-weight: 600;
+}
+
+.squashtm-project-field .form-control {
+	height: 40px;
+}
+
+/* ========= MESSAGE D'INFORMATION ============= */
+
+#squashTmImportInformation {
+	margin-top: 20px;
+	margin-bottom: 0;
+}
+
+#squashTmImportInformation .jalios-icon {
+	margin-right: 6px;
+}
+
+#squashTmImportInformation p {
+	margin-top: 5px;
+	margin-bottom: 0;
+}
+
+/* ========== ACTIONS IMPORT =========================== */
+
+.squashtm-import-action {
+	margin-top: 25px;
+
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+
+	gap: 10px;
+}
+
+.squashtm-import-action .btn {
+	min-width: 110px;
+}
+
+.squashtm-import-action .jalios-icon {
+	margin-right: 10px;
+}
+
+/* ========== BOUTON IMPORTER DESACTIVE ================== */
+
+#squashTmImportButton:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+#squashTmImportButton:not(:disabled) {
+	cursor: pointer;
+	opacity: 1;
+}
+
+
+/* ========= BOUTON ANNULER ========== */
+
+#squashTmCancelButton {
+	cursor: pointer;
+	opacity: 1;
+}
