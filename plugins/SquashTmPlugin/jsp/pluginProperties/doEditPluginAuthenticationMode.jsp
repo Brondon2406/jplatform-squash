@@ -1,4 +1,4 @@
-<%@ page import="co.kozao.jcmsplugin.squashtm.SquashTmConstants" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.util.SquashTmConstants" %>
 <%@ page import="co.kozao.jcmsplugin.squashtm.util.SquashTmUtils" %>
 <%@ include file='/jcore/doInitPage.jspf' %>
 <%
