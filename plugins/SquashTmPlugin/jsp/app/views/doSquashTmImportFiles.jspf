@@ -1,0 +1,110 @@
+
+<div class="squashtm-import-container">
+
+<%-- =============== TITRE ============== --%>
+
+  <div class="squashtm-import-header">
+
+<h2 class="squashtm-import-title">
+    <span class="jalios-icon icomoon-upload"></span>
+    <%= glp("jcmsplugin.squashtm.app.import.title") %>
+</h2>
+
+<p class="squashtm-import-description">
+    <%= glp("jcmsplugin.squashtm.app.import.description") %>
+</p>
+  </div>
+
+<%-- ========== FORMULAIRE D'IMPORT ============= --%>
+
+  <div class="panel panel-default squashtm-import-panel">
+
+<div class="panel-heading">
+  	<h3 class="panel-title">
+	    <span class="jalios-icon icomoon-file-excel"></span>
+	    <%= glp("jcmsplugin.squashtm.app.import.panel.title") %>
+	</h3>
+</div>
+
+
+<div class="panel-body">
+
+
+  <%-- =========== ZONE DE DEPOT / SELECTION ====================== --%>
+  
+	 <div id="squashTmDropZone" class="squashtm-import-dropzone">
+	
+	    <div class="squashtm-import-dropzone-icon">
+	      <span class="jalios-icon icomoon-file-excel"></span>
+	    </div>
+	
+	    <h3> <%= glp("jcmsplugin.squashtm.app.import.dropzone.title") %> </h3>
+	    <p id="squashTmFileError" class="text-danger" style="display:none;"> <%= glp("jcmsplugin.squashtm.app.import.file.invalid") %> </p>
+	
+	<p class="text-muted"> <%= glp("jcmsplugin.squashtm.app.import.dropzone.or") %> </p>
+	
+	<label for="squashTmExcelFile" class="btn btn-default">  <span class="jalios-icon icomoon-folder-open"></span>
+	    <%= glp("jcmsplugin.squashtm.app.import.select-file") %>
+	</label>
+
+    <input type="file" id="squashTmExcelFile" name="excelFile" accept=".xlsx,.xls,.csv" style="display:none;" />
+
+    <p class="text-muted small"> <%= glp("jcmsplugin.squashtm.app.import.accepted-formats") %> </p>
+
+  </div>
+
+  <div id="squashTmSelectedFile" class="squashtm-selected-file" style="display:none;">
+
+    <div class="media">
+    
+      <div class="media-left">
+        <span class="jalios-icon icomoon-file-excel" style="font-size:32px;"> </span>
+      </div>
+      
+      <div class="media-body">
+        <strong id="squashTmFileName"></strong>
+		 <div class="text-muted small"><%= glp("jcmsplugin.squashtm.app.import.file.selected") %> </div>
+      </div>
+      
+      <div class="media-size">
+	    <span id="squashTmFileSize" class="text-muted small"> </span>
+	 </div>
+
+      <div class="media-right">
+        <button type="button" id="squashTmRemoveFile" class="btn btn-link" title="Supprimer le fichier">
+          <span class="jalios-icon icomoon-close"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="squashTmProjectContainer" class="form-group squashtm-project-field" style="display:none;">
+    <label for="squashTmProjectName"> <%= glp("jcmsplugin.squashtm.app.import.project.label") %> <span class="text-danger">
+        *
+      </span>
+    </label>
+    <input type="text" id="squashTmProjectName" name="projectName" class="form-control" placeholder="Ex. Gestion RH" maxlength="255" />
+    	<p class="help-block"> <%= glp("jcmsplugin.squashtm.app.import.project.help") %> </p>
+  </div>
+
+  <div id="squashTmImportInformation" class="alert alert-info" style="display:none;"> <span class="jalios-icon icomoon-info"></span>
+    <strong> <%= glp("jcmsplugin.squashtm.app.import.information.title") %> </strong>  
+	<p> <%= glp("jcmsplugin.squashtm.app.import.information.description") %> </p>
+
+  </div>
+
+	<div id="squashtmImportAction" class="squashtm-import-action" style="display:none;">
+			<button type="button" id="squashTmCancelButton" class="btn btn-default">
+				<span class="jalios-icon icomoon-close"></span>  <%= glp("jcmsplugin.squashtm.app.import.cancel") %>
+			</button>
+
+			<button type="button" id="squashTmImportButton" class="btn btn-primary" disabled>     
+				<span class="jalios-icon icomoon-upload"></span> <%= glp("jcmsplugin.squashtm.app.import.submit") %>
+  			</button>
+	</div>
+
+  </div>
+
+ </div>
+
+</div>
