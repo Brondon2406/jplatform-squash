@@ -12,11 +12,14 @@
 <%@ include file="/jcore/modal/modalRedirect.jspf" %>
 <% return ; } 
 %>
-<jalios:modal formHandler="<%=formHandler %>" url="plugins/SquashTmPlugin/jsp/auth/doSquashTmLogoutCurrentUser.jsp" title="jcmsplugin.squashtm.authentication.auth.logout.modal.title" css="customCss" picture="images/jalios/icons/merge.png">
-		<p><%= glp("jcmsplugin.squashtm.authentication.auth.logout.prevent-user.label") %></p>	
-		 	
-	 <jalios:buffer name='MODAL_BUTTONS'>
-	    <button type="button" class="btn btn-default" onclick="jQuery.jalios.ui.Modal.close(false);"><%= glp("ui.com.btn.close") %></button>
-	    <button style="background-color: #D9534F;" type="submit" class="btn btn-primary ajax-refresh" name = "submit" value="true"><%= glp("jcmsplugin.squashtm.authentication.auth.logout.modal.btn.title") %></button>
-  	 </jalios:buffer>
+
+<jalios:modal  formHandler="<%=formHandler %>" url="plugins/SquashTmPlugin/jsp/auth/doSquashTmLogoutCurrentUser.jsp" title="jcmsplugin.squashtm.authentication.auth.logout.modal.title"  css="squashtm-logout-modal"
+ picture="images/jalios/icons/merge.png">
+		<p><%= glp("jcmsplugin.squashtm.authentication.auth.logout.prevent-user.label") %></p>
+		
+	<jalios:buffer name='MODAL_BUTTONS'>
+	    <button type="button" class="btn btn-default" onclick="jQuery.jalios.ui.Modal.close(false);"> <%= glp("ui.com.btn.close") %> </button>
+	    <button type="submit" class="btn btn-primary ajax-refresh" name="submit" value="true" style="background-color: #D9534F;"> <%= glp("jcmsplugin.squashtm.authentication.auth.logout.modal.btn.title") %> </button>
+	</jalios:buffer>	
 </jalios:modal>
+

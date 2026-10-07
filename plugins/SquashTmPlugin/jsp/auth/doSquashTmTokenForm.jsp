@@ -5,10 +5,11 @@
 %><jsp:setProperty name="tokenHandler" property="request"  value="<%= request %>"/><%
 %><jsp:setProperty name="tokenHandler" property="response" value="<%= response %>"/><%
 %><jsp:setProperty name="tokenHandler" property="*" /><%
-%></jsp:useBean><%
+%></jsp:useBean>
 
-if (tokenHandler.validate()) {
-    return;
+<%if (tokenHandler.validate()) { %>
+<%@ include file="/jcore/modal/modalRedirect.jspf" %><%
+return;
 }
 %>
 

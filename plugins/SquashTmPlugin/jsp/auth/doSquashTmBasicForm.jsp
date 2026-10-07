@@ -8,8 +8,8 @@
     <jsp:setProperty name="basicHandler" property="*" />
 </jsp:useBean>
 
-<%
-if (basicHandler.validate()) {
+<% if (basicHandler.validate()) { %>
+<%@ include file="/jcore/modal/modalRedirect.jspf" %><%
     return;
 }
 %>
