@@ -22,7 +22,7 @@ jcmsContext.addJavaScript("plugins/SquashTmPlugin/js");
 
 <%@ include file='/jcore/doHeader.jspf'%>
 <div class="ajax-refresh-div" datajalios-refresh-url="plugins/SquashTmPlugin/jsp/app/squashTm.jsp">
-	<jalios:app name="squashTm" collapsedSidebar="false" collapsableSidebar="false">
+	<jalios:app name="squashtm" collapsedSidebar="false" collapsableSidebar="true">
 	
 	<% if (!sqTmManager.canConnectToSquashTm(loggedMember)) { %>
 	<jalios:message  dismissable="false" css="gedbox-unifiedInsert-message" level="<%= MessageLevel.WARN %>">

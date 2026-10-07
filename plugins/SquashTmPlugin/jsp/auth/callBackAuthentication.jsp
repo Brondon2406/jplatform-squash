@@ -1,12 +1,27 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
-</head>
-<body>
+<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ include file="/jcore/doInitPage.jspf" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.SquashTmManager" %>
+<%
+if (loggedMember == null) {
+    sendForbidden(request, response);
+    return;
+}
 
-</body>
-</html>
+if (SquashTmManager.getInstance().isConnect()) {
+    sendRedirect(jcmsContext.getBaseUrl() + "plugins/SquashTmPlugin/jsp/app/squashTm.jsp");
+    return;
+}
+%>
+<%@ include file="/jcore/doHeader.jspf" %>
+
+<div class="container-fluid">
+    <div class="jumbotron">
+        <h1><%= glp("jcmsplugin.squashtm.auth.callback.title") %></h1>
+    </div>
+    <jalios:message level="ERROR" msg="jcmsplugin.squashtm.auth.callback.error"/>
+    <a class="btn btn-primary" href="plugins/SquashTmPlugin/jsp/app/squashTm.jsp">
+        <%= glp("jcmsplugin.squashtm.auth.callback.back") %>
+    </a>
+</div>
+
+<%@ include file="/jcore/doFooter.jspf" %>
