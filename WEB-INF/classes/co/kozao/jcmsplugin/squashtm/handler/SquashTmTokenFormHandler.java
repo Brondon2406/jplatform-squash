@@ -9,7 +9,7 @@ import com.jalios.jcms.Member;
 import com.jalios.jcms.handler.JcmsFormHandler;
 import com.jalios.util.Util;
 
-import co.kozao.jcmsplugin.squashtm.util.SquashTmManager;
+import co.kozao.jcmsplugin.squashtm.SquashTmManager;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**

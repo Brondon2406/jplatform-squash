@@ -1,25 +1,25 @@
 
 <%@page import="java.util.Date"%>
 <%@page import="co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo"%>
-<%@page import="co.kozao.jcmsplugin.squashtm.util.SquashTmManager" %>
+<%@page import="co.kozao.jcmsplugin.squashtm.SquashTmManager" %>
 <%@page import="co.kozao.jcmsplugin.squashtm.util.SquashTmUtils" %>
 <% 
 String iconApp = SquashTmUtils.getAppSidebarIcon();
 %>
 <jalios:appSidebar css="no-focus" icon="<%=iconApp %>" appUrl="<%= appUrl %>" formAction="<%= appUrl %>" iconTitleProp="jcmsplugin.squashtm.app.title">
-
+	
     <%-- VIEWS --%>
     <jalios:appSidebarSection name="views" title="jcmsplugin.squashtm.app.sidebar.sidebar-section.views">
         <ul class="app-sidebar-menu">
 
             <%-- DASHBOARD --%>
-            <li class="sidebar-item<%= appHandler.showDashboard() ? " active is-checked" : "" %>">              
+            <li class="sidebar-item <%= appHandler.showDashboard() ? " active is-checked" : "" %>">              
              <% String dashboardTitleView = glp("jcmsplugin.squashtm.app.sidebar.dashboard.label"); %>
                 <a href="<%= appHandler.getDashboardUrl() %>"> <%= dashboardTitleView %> </a>
             </li>
 
             <%-- IMPORT FILES --%>
-            <li class="sidebar-item<%= appHandler.showImportFiles() ? " active is-checked" : "" %>">
+            <li class="sidebar-item <%= appHandler.showImportFiles() ? " active is-checked" : "" %>">
                 <% String importfilesTitleView = glp("jcmsplugin.squashtm.app.sidebar.importfiles.label"); %>
                		 <a href="<%= appHandler.getImportFilesUrl() %>">
                    		 <%= importfilesTitleView %>
@@ -27,69 +27,48 @@ String iconApp = SquashTmUtils.getAppSidebarIcon();
             </li>
         </ul>
     </jalios:appSidebarSection>
-    
-<%   
-	boolean isConnectToSquashTm = sqTmManager.canConnectToSquashTm(loggedMember);
-    boolean isConnect = sqTmManager.isConnect();
-    if ( isConnectToSquashTm && isConnect ) {  %>
-    <div>
-    	<div class="box-account-infos">
-		<p class="section-title">
-			<span><%=glp("jcmsplugin.squashtm.app.sidebar.account-infos") %></span>
-			<img src="images/jalios/icons/bullet/online.png" class="jalios-icon photo-icon-bottom-right mbr-status mbr-status-0" alt="" title="Connect ">		
-		</p>
-		<% 
-		if(loggedUserInfo != null) { 
-	 
-	    String fullName = loggedUserInfo.getFullName(); 
-	    String emailAddr = loggedUserInfo.getEmailAddr();
-	    Date createdAt = loggedUserInfo.getCreatedDate();
-	    %>   
-	  	<div class="sidebar-account-picture">
-		  	<div class="account-picture wrapper-photo small-photo">
-		  		<a href="#" class="ctxTooltipCard">
-		  			<img src="/plugins/SquashTmPlugin/img/default-avatar.png" class="photo" alt="Avatar utilisateur"/>
-		  		</a>
-		  	</div>  	
-	  	</div>
-	  	<%if(Util.notEmpty(fullName)){ %><div class="account-fullname"><%=fullName %></div><%} %>
+<% if (loggedUserInfo != null && sqTmManager.canConnectToSquashTm(loggedMember)) {
+     String fullName  = loggedUserInfo.getFullName();
+     String emailAddr = loggedUserInfo.getEmailAddr();
+     Date createdAt   = loggedUserInfo.getCreatedDate();
+%>
+<div class="squashtm-account-infos">
+  <p class="section-title">
+    <span><%= glp("jcmsplugin.squashtm.app.sidebar.account-infos") %></span>
+    <img src="images/jalios/icons/bullet/online.png" class="jalios-icon" alt=""/>
+  </p>
 
-		<div class="account-coordonnees">
-		    <%if(Util.notEmpty(emailAddr)){ %>
-		    <div title="E-mail" class="profil-mail sidebar-account-item">
-		      <jalios:icon src="mail" />
-		      <a href="mailto:<%=emailAddr %>" title="<%=glp("jcmsplugin.squashtm.app.sidebar.account-infos.email.title")%>"><%=emailAddr %></a>
-		    </div>
-		    <%} %>
-		   
-	      	<%if(Util.notEmpty(createdAt)){ %>
-		    <div class="account-cdate sidebar-account-item">
-		        <jalios:icon src="date" />
-		        <span class="cdate-item address-street"><%=glp("jcmsplugin.squashtm.app.sidebar.account-infos.created-at") %> <jalios:date date="<%= createdAt %>" format="timeDateOrTime" /></span>
-		    </div>
-		    <%} %>
-	  	</div>
-	  	<% } %>
-	
-	  	<div class="account-actions">
-
-    <a
-        class="squashtm-quick-action btn modal"
-        href="<%= request.getContextPath() %>/plugins/SquashTmPlugin/jsp/auth/doSquashTmLogoutCurrentUser.jsp"
-        title="<%=glp("jcmsplugin.squashtm.app.sidebar.auth.logout.title")%>">
-
-        <span class="jalios-icon sidebar-logout icomoon-switch"></span>
-
-        <%=glp("jcmsplugin.squashtm.app.sidebar.auth.logout") %>
-
-    </a>
-
-</div>
-		    	
-    	</div>    
+  <div class="account">
+    <div class="account-picture">
+      <img src="plugins/SquashTmPlugin/images/default-avatar.png" class="photo" alt=""/>
     </div>
-  
-   	
-    <%} %>
+    <div class="account-coordonnees">
+      <% if (Util.notEmpty(fullName)) { %>
+        <div class="account-fullname"><%= fullName %></div>
+      <% } %>
+      <% if (Util.notEmpty(emailAddr)) { %>
+        <div class="account-email">
+          <a href="mailto:<%= emailAddr %>" title="<%= glp("jcmsplugin.squashtm.app.sidebar.account-infos.email.title") %>"><%= emailAddr %></a>
+        </div>
+      <% } %>
+      <% if (Util.notEmpty(createdAt)) { %>
+        <div class="account-cdate">
+          <%= glp("jcmsplugin.squashtm.app.sidebar.account-infos.created-at") %>
+          <jalios:date date="<%= createdAt %>" format="timeDateOrTime" />
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="account-actions">
+    <a class="btn modal"
+       href="plugins/SquashTmPlugin/jsp/auth/doSquashTmLogoutCurrentUser.jsp"
+       title="<%= glp("jcmsplugin.squashtm.app.sidebar.auth.logout.title") %>">
+      <span class="jalios-icon sidebar-logout icomoon-switch"></span>
+      <%= glp("jcmsplugin.squashtm.app.sidebar.auth.logout") %>
+    </a>
+  </div>
+</div>
+<% } %>
     
 </jalios:appSidebar>

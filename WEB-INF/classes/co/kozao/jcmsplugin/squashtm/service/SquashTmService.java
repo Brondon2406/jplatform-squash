@@ -76,6 +76,11 @@ public class SquashTmService {
 
 		try {
 
+			/*
+			 * ============================================================ 1. VALIDATION DU
+			 * TOKEN ============================================================
+			 */
+
 			String tokenUrl = baseUrl + "/tokens";
 
 			LOGGER.error("========== AUTH TOKEN ==========");
@@ -88,81 +93,159 @@ public class SquashTmService {
 			LOGGER.error(tokensJson);
 
 			if (Util.isEmpty(tokensJson)) {
+
 				LOGGER.warn("Réponse vide lors de la validation du token.");
+
 				return null;
 			}
 
 			JsonObject root = JsonParser.parseString(tokensJson).getAsJsonObject();
 
 			if (!root.has("_embedded")) {
+
 				LOGGER.warn("La réponse /tokens ne contient pas _embedded.");
+
 				return null;
 			}
 
 			JsonObject embedded = root.getAsJsonObject("_embedded");
 
 			if (!embedded.has("api-tokens")) {
+
 				LOGGER.warn("La réponse /tokens ne contient pas api-tokens.");
+
 				return null;
 			}
 
 			JsonArray tokens = embedded.getAsJsonArray("api-tokens");
 
 			if (tokens == null || tokens.size() == 0) {
+
 				LOGGER.warn("Aucun token Squash TM trouvé.");
+
 				return null;
 			}
+
+			/*
+			 * ============================================================ 2. RECUPERATION
+			 * DE L'UTILISATEUR ASSOCIE AU TOKEN
+			 * ============================================================
+			 */
 
 			JsonObject tokenObject = tokens.get(0).getAsJsonObject();
 
 			if (!tokenObject.has("user")) {
+
 				LOGGER.warn("Le token ne contient aucune référence utilisateur.");
+
 				return null;
 			}
 
 			JsonObject userReference = tokenObject.getAsJsonObject("user");
 
 			if (!userReference.has("id")) {
+
 				LOGGER.warn("La référence utilisateur ne contient pas d'id.");
+
 				return null;
 			}
 
 			String userId = userReference.get("id").getAsString();
 
 			LOGGER.error("========== USER ID DU TOKEN ==========");
+
 			LOGGER.error("userId = " + userId);
 
 			/*
-			 * Construction des informations utilisateur.
+			 * ============================================================ 3. RECUPERATION
+			 * DU PROFIL SQUASH TM
+			 * ============================================================
 			 */
-			LoggedUserInfo info = new LoggedUserInfo();
 
-			info.setId(userId);
+			LOGGER.error("========== TEST CODE VERSION ==========");
+
+			LOGGER.error("!!! NOUVELLE VERSION SquashTmService !!!");
+
+			String userUrl = baseUrl + "/users/" + userId;
+
+			LOGGER.error("========== RECUPERATION PROFIL SQUASH ==========");
+
+			LOGGER.error("userUrl = " + userUrl);
 
 			/*
-			 * /tokens ne fournit pas les informations personnelles de l'utilisateur.
-			 *
-			 * On utilise donc les informations du membre JCMS.
+			 * UNE SEULE requête vers /users/{id}.
 			 */
-			String fullName = member.getFullName();
+			String userJson = executeGet(userUrl, "Bearer " + token);
 
-			if (Util.isEmpty(fullName)) {
-				fullName = member.getName();
+			LOGGER.error("========== REPONSE /users/{id} ==========");
+
+			LOGGER.error(userJson);
+
+			/*
+			 * ============================================================ 4. CONSTRUCTION
+			 * DE LoggedUserInfo
+			 * ============================================================
+			 */
+
+			LoggedUserInfo info = null;
+
+			if (Util.notEmpty(userJson)) {
+
+				info = buildLoggedUserInfo(userJson);
 			}
 
-			String email = member.getEmail();
+			/*
+			 * Sécurité : si le profil n'a pas pu être construit, on crée quand même un
+			 * objet afin de conserver l'id du compte.
+			 */
+			if (info == null) {
 
-			info.setFullName(fullName);
-			info.setEmailAddr(email);
+				LOGGER.warn("Impossible de construire LoggedUserInfo depuis /users/" + userId);
+
+				info = new LoggedUserInfo();
+			}
 
 			/*
-			 * Ne pas utiliser createdOn comme date de création de l'utilisateur : il s'agit
-			 * de la date du token.
+			 * L'id provient directement de Squash TM.
+			 */
+			if (Util.isEmpty(info.getId())) {
+
+				info.setId(userId);
+			}
+
+			/*
+			 * ============================================================ 5. LOGS FINAUX
+			 * ============================================================
 			 */
 
-			LOGGER.info("Utilisateur Squash TM authentifié par Token. ID = " + info.getId() + " | Nom = "
-					+ info.getFullName() + " | Email = " + info.getEmailAddr());
+			LOGGER.error("========== LOGGED USER INFO FINAL ==========");
 
+			LOGGER.error("ID       = " + info.getId());
+
+			LOGGER.error("FullName = " + info.getFullName());
+
+			LOGGER.error("Email    = " + info.getEmailAddr());
+
+			LOGGER.error("Created  = " + info.getCreatedAt());
+
+			LOGGER.info("===== UTILISATEUR SQUASH TM AUTHENTIFIE =====");
+
+			LOGGER.info("ID Squash TM    : " + info.getId());
+
+			LOGGER.info("Nom Squash TM   : " + info.getFullName());
+
+			LOGGER.info("Email Squash TM : " + info.getEmailAddr());
+
+			LOGGER.info("Date création   : " + info.getCreatedAt());
+
+			/*
+			 * IMPORTANT :
+			 *
+			 * On retourne uniquement les informations provenant de Squash TM.
+			 *
+			 * Le Member JCMS n'est PAS utilisé pour compléter le nom, l'email ou la date de
+			 * création.
+			 */
 			return info;
 
 		} catch (Exception e) {
@@ -175,12 +258,28 @@ public class SquashTmService {
 
 	/**
 	 * Authentification Basic.
+	 *
+	 * Le Member JCMS sert uniquement à récupérer les identifiants Squash TM de
+	 * l'utilisateur courant.
+	 *
+	 * Les informations finales de l'utilisateur proviennent exclusivement de Squash
+	 * TM.
 	 */
 	private LoggedUserInfo authenticateWithBasic(Member member) {
 
-		String username = SquashTmUtils.getSquashTmUsername(member);
+		LOGGER.error("========== AUTHENTIFICATION BASIC ==========");
 
+		/*
+		 * ============================================================ 1. RECUPERATION
+		 * DES IDENTIFIANTS SQUASH TM
+		 * ============================================================
+		 */
+
+		String username = SquashTmUtils.getSquashTmUsername(member);
 		String password = SquashTmUtils.getSquashTmPassword(member);
+
+		LOGGER.error("Username Squash TM = [" + username + "]");
+		LOGGER.error("Password présente ? " + Util.notEmpty(password));
 
 		if (Util.isEmpty(username) || Util.isEmpty(password)) {
 
@@ -189,7 +288,14 @@ public class SquashTmService {
 			return null;
 		}
 
+		/*
+		 * ============================================================ 2. URL SQUASH TM
+		 * ============================================================
+		 */
+
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		LOGGER.error("Base URL Squash TM = [" + baseUrl + "]");
 
 		if (Util.isEmpty(baseUrl)) {
 
@@ -200,53 +306,204 @@ public class SquashTmService {
 
 		try {
 
+			/*
+			 * ======================================================== 3. CREATION
+			 * AUTHENTIFICATION BASIC
+			 * ========================================================
+			 */
+
 			String credentials = username + ":" + password;
 
-			String encoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+			String encodedCredentials = Base64.getEncoder()
+					.encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
 
-			String usersJson = executeGet(baseUrl + "/users?size=1000", "Basic " + encoded);
+			String authorization = "Basic " + encodedCredentials;
+
+			/*
+			 * ======================================================== 4. RECUPERATION DE
+			 * LA LISTE DES UTILISATEURS
+			 * ========================================================
+			 */
+
+			String usersUrl = baseUrl + "/users?size=1000";
+
+			LOGGER.error("========== RECHERCHE UTILISATEUR SQUASH ==========");
+			LOGGER.error("usersUrl = [" + usersUrl + "]");
+
+			String usersJson = executeGet(usersUrl, authorization);
+
+			LOGGER.error("========== REPONSE /users ==========");
 
 			if (Util.isEmpty(usersJson)) {
+
+				LOGGER.warn("Squash TM n'a retourné aucune donnée.");
+
 				return null;
 			}
 
+			LOGGER.error("Réponse reçue : " + usersJson);
+
+			/*
+			 * ======================================================== 5. PARSING DE LA
+			 * COLLECTION ========================================================
+			 */
+
 			JsonObject root = JsonParser.parseString(usersJson).getAsJsonObject();
 
-			if (!root.has("_embedded")) {
+			if (!root.has("_embedded") || root.get("_embedded").isJsonNull()) {
+
+				LOGGER.warn("La réponse Squash TM ne contient pas _embedded.");
+
 				return null;
 			}
 
 			JsonObject embedded = root.getAsJsonObject("_embedded");
 
-			if (!embedded.has("users")) {
+			if (!embedded.has("users") || embedded.get("users").isJsonNull()) {
+
+				LOGGER.warn("La réponse Squash TM ne contient pas users.");
+
 				return null;
 			}
 
 			JsonArray users = embedded.getAsJsonArray("users");
 
+			LOGGER.error("Nombre d'utilisateurs reçus = " + users.size());
+
+			/*
+			 * ======================================================== 6. RECHERCHE DU
+			 * LOGIN ========================================================
+			 */
+
+			String userId = null;
+
 			for (JsonElement element : users) {
 
-				JsonObject user = element.getAsJsonObject();
-
-				if (!user.has("login")) {
+				if (element == null || !element.isJsonObject()) {
 					continue;
 				}
 
-				String login = user.get("login").getAsString();
+				JsonObject user = element.getAsJsonObject();
+
+				String login = getString(user, "login");
+
+				LOGGER.error("Utilisateur Squash trouvé : login = [" + login + "]");
+
+				if (Util.isEmpty(login)) {
+					continue;
+				}
 
 				if (username.equalsIgnoreCase(login)) {
 
-					return buildLoggedUserInfo(user);
+					userId = getString(user, "id");
+
+					LOGGER.error("========== UTILISATEUR BASIC TROUVE ==========");
+
+					LOGGER.error("Login = " + login);
+					LOGGER.error("ID    = " + userId);
+
+					break;
 				}
 			}
 
-			LOGGER.warn("Utilisateur Squash TM introuvable : " + username);
+			/*
+			 * ======================================================== 7. UTILISATEUR
+			 * INTROUVABLE ========================================================
+			 */
 
-			return null;
+			if (Util.isEmpty(userId)) {
+
+				LOGGER.warn("Utilisateur Squash TM introuvable : " + username);
+
+				return null;
+			}
+
+			/*
+			 * ======================================================== 8. RECUPERATION DU
+			 * PROFIL COMPLET ========================================================
+			 *
+			 * /users retourne seulement les informations résumées.
+			 *
+			 * On appelle donc :
+			 *
+			 * GET /users/{id}
+			 *
+			 * pour récupérer :
+			 *
+			 * - first_name - last_name - email - created_on - etc.
+			 */
+
+			String userUrl = baseUrl + "/users/" + userId;
+
+			LOGGER.error("========== RECUPERATION PROFIL SQUASH ==========");
+
+			LOGGER.error("userUrl = [" + userUrl + "]");
+
+			String userJson = executeGet(userUrl, authorization);
+
+			LOGGER.error("========== REPONSE /users/{id} ==========");
+
+			LOGGER.error(userJson);
+
+			/*
+			 * ======================================================== 9. VERIFICATION DU
+			 * PROFIL ========================================================
+			 */
+
+			if (Util.isEmpty(userJson)) {
+
+				LOGGER.warn("Impossible de récupérer le profil complet " + "de l'utilisateur Squash TM : " + userId);
+
+				return null;
+			}
+
+			/*
+			 * ======================================================== 10. CONSTRUCTION
+			 * LoggedUserInfo ========================================================
+			 */
+
+			LoggedUserInfo info = buildLoggedUserInfo(userJson);
+
+			if (info == null) {
+
+				LOGGER.warn("Impossible de construire LoggedUserInfo " + "pour l'utilisateur : " + userId);
+
+				return null;
+			}
+
+			/*
+			 * ======================================================== 11. LOGS FINAUX
+			 * ========================================================
+			 */
+
+			LOGGER.error("========== LOGGED USER INFO BASIC ==========");
+
+			LOGGER.error("ID       = " + info.getId());
+			LOGGER.error("FullName = " + info.getFullName());
+			LOGGER.error("Email    = " + info.getEmailAddr());
+			LOGGER.error("Created  = " + info.getCreatedAt());
+
+			LOGGER.info("===== UTILISATEUR SQUASH TM AUTHENTIFIE EN BASIC =====");
+
+			LOGGER.info("ID Squash TM    : " + info.getId());
+
+			LOGGER.info("Nom Squash TM   : " + info.getFullName());
+
+			LOGGER.info("Email Squash TM : " + info.getEmailAddr());
+
+			LOGGER.info("Date création   : " + info.getCreatedAt());
+
+			/*
+			 * IMPORTANT :
+			 *
+			 * Le Member JCMS n'est jamais utilisé pour compléter les informations de
+			 * l'utilisateur Squash TM.
+			 */
+			return info;
 
 		} catch (Exception e) {
 
-			LOGGER.error("Erreur pendant l'authentification BASIC.", e);
+			LOGGER.error("Erreur pendant l'authentification BASIC Squash TM.", e);
 
 			return null;
 		}
@@ -353,6 +610,7 @@ public class SquashTmService {
 	 * Construit LoggedUserInfo depuis un JsonObject.
 	 */
 	private LoggedUserInfo buildLoggedUserInfo(JsonObject user) {
+		LOGGER.info("JSON utilisateur Squash TM : " + user);
 
 		if (user == null) {
 			return null;

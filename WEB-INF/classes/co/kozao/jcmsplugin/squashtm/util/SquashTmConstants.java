@@ -1,5 +1,5 @@
 
-package co.kozao.jcmsplugin.squashtm;
+package co.kozao.jcmsplugin.squashtm.util;
 
 /**
  * Constantes utilisées par le plugin Squash TM.

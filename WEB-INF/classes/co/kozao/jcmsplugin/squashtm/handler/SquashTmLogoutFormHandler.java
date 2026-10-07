@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.jalios.jcms.handler.JcmsFormHandler;
 
-import co.kozao.jcmsplugin.squashtm.util.SquashTmManager;
+import co.kozao.jcmsplugin.squashtm.SquashTmManager;
 
 /**
  * @author Severin kengne

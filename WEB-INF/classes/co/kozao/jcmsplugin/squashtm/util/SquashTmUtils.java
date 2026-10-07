@@ -10,7 +10,6 @@ import com.jalios.jcms.Channel;
 import com.jalios.jcms.Member;
 import com.jalios.util.Util;
 
-import co.kozao.jcmsplugin.squashtm.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.model.AuthentificationMode;
 import co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo;
 
@@ -182,10 +181,7 @@ public final class SquashTmUtils {
 	 * SQUASH TM ============================================================
 	 */
 
-	public static LoggedUserInfo getSquashTmRemoteUserInfos() {
-
-		Member member = channel.getCurrentLoggedMember();
-
+	public static LoggedUserInfo getSquashTmRemoteUserInfos(Member member) {
 		if (member == null) {
 			return null;
 		}
