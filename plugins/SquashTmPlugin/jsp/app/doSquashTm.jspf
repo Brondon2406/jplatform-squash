@@ -1,4 +1,4 @@
-<%@ page import="co.kozao.jcmsplugin.squashtm.util.SquashTmManager" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.SquashTmManager" %>
 <%@ page import="co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo" %>
 <%@ page import="com.jalios.jcms.uicomponent.app.*" %><%
 %><%@ include file="/front/app/doAppCommon.jspf" %><%
@@ -15,11 +15,13 @@ String appUrl = appHandler.getAppUrl();
 SquashTmManager sqTmManager = SquashTmManager.getInstance();
 LoggedUserInfo loggedUserInfo = sqTmManager.getLoggedUserInfo();
 
-jcmsContext.setPageTitle(glp("jcmsplugin.squashtm.app.label.title"));
-jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css");
-jcmsContext.addJavaScript("plugins/SquashTmPlugin/js");
-%>
+jcmsContext.addCSSHeader("css/jalios/core/components/sidebar/jalios-sidebar.css");
+jcmsContext.addJavaScript("js/jalios/core/components/jalios-sidebar.js");
+jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm.css");
+jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/importfiles.css");
+jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-import.js");
 
+%>
 <%@ include file='/jcore/doHeader.jspf'%>
 <div class="ajax-refresh-div" datajalios-refresh-url="plugins/SquashTmPlugin/jsp/app/squashTm.jsp">
 	<jalios:app name="squashtm" collapsedSidebar="false" collapsableSidebar="true">
