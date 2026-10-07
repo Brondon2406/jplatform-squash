@@ -31,8 +31,8 @@ if (!squashTmManager.isPluginActive(loggedMember)) {%>
 	</jalios:message>
 <% } else {%>
     <% if (appHandler.showDashboard()) { %>
-        <%@ include file="/plugins/SquashTmPlugin/jsp/app/body/doSquashTmDashboard.jspf" %>
+        <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmDashboard.jspf" %>
     <% } else if (appHandler.showImportFiles()) { %>
-        <%@ include file="/plugins/SquashTmPlugin/jsp/app/body/doSquashTmImportFiles.jspf" %>
+        <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportFiles.jspf" %>
     <% } %>
 <%}%>
