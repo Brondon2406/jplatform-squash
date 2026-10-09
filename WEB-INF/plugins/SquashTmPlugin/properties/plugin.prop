@@ -10,7 +10,7 @@ icon.jcmsplugin.squashtm.box-app-sidebar: plugins/SquashTmPlugin/images/Squashtm
 
 
 # LESS
-channel.less.plugins/SquashTmPlugin/css/sqaushtm.css: plugins/JBookPlugin/css/sqaushtm.less
+channel.less.plugins/SquashTmPlugin/css/sqaushtm.css: plugins/SquashTmPlugin/css/sqaushtm.less
 channel.less.plugins/SquashTmPlugin/css/importfiles.css: plugins/SquashTmPlugin/css/importfiles.less
 
 
