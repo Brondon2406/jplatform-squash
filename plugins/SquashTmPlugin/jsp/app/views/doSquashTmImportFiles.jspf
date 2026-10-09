@@ -1,4 +1,19 @@
+<%@ page contentType="text/html; charset=UTF-8" %><%
+%><jsp:useBean id="squashTmImportHandler" scope="request" class="co.kozao.jcmsplugin.squashtm.handler.SquashTmImportHandler"><%
+%><jsp:setProperty name="squashTmImportHandler" property="request"       value="<%= request %>"/><%
+%><jsp:setProperty name="squashTmImportHandler" property="response"      value="<%= response %>"/><%
+%><jsp:setProperty name="squashTmImportHandler" property="*" /><%
+%></jsp:useBean>
 
+<%
+if(squashTmImportHandler.validate()){
+	return;
+}
+%>
+
+<form action="" method="post" enctype="multipart/form-data" name="squashTmImportForm">
+ <input type="hidden" name="opImport" value="true" />
+      
 <div class="squashtm-import-container">
 
 <%-- =============== TITRE ============== --%>
@@ -28,7 +43,6 @@
 
 
 <div class="panel-body">
-
 
   <%-- =========== ZONE DE DEPOT / SELECTION ====================== --%>
   
@@ -98,7 +112,7 @@
 				<span class="jalios-icon icomoon-close"></span>  <%= glp("jcmsplugin.squashtm.app.import.cancel") %>
 			</button>
 
-			<button type="button" id="squashTmImportButton" class="btn btn-primary" disabled>     
+			<button type="submit" id="squashTmImportButton" class="btn btn-primary" disabled>     
 				<span class="jalios-icon icomoon-upload"></span> <%= glp("jcmsplugin.squashtm.app.import.submit") %>
   			</button>
 	</div>
@@ -108,3 +122,5 @@
  </div>
 
 </div>
+
+</form>
