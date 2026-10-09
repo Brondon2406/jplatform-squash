@@ -172,7 +172,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     /*============  BOUTON IMPORTER ==================
-     */
 
     importButton.addEventListener("click", function() {
         if (importButton.disabled) {
@@ -181,6 +180,6 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log("Fichier sélectionné :", fileInput.files[0].name);
         console.log("Projet :", projectName.value);
 
-    });
+    }); */
 
 });
