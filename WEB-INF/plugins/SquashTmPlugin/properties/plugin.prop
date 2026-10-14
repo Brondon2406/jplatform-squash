@@ -15,7 +15,7 @@ channel.less.plugins/SquashTmPlugin/css/importfiles.css: plugins/SquashTmPlugin/
 
 
 # Module Properties
-jcmsplugin.squashtm.provider.app.auth.domain-name.url: http://192.168.1.126:8098/squash/api/rest/latest
+jcmsplugin.squashtm.provider.app.auth.domain-name.url: http://192.168.1.126:8098/squash
 jcmsplugin.squashtm.provider.app.auth.redirect.urlSite: [APP_DOMAIN]/plugins/SquashTmPlugin/jsp/auth/callBackAuthentication.jsp
 jcmsplugin.squashtm.provider.authentication-mode.jsp: plugins/SquashTmPlugin/jsp/pluginProperties/doEditPluginAuthenticationMode.jsp
 jcmsplugin.squashtm.provider.authentication-mode.default: BASIC
