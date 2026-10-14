@@ -16,8 +16,8 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmData;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmFeature;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmModule;
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmSubModule;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmRequirement;
-import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestCase;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestStep;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmView;
@@ -36,23 +36,17 @@ public class ExcelSquashTmImportService {
 
 	/**
 	 * Index des colonnes du template Excel.
+	 *
+	 * A : Sous-module (géré par la logique existante) B : Vue C : Fonctionnalité D
+	 * : Libellé de l'exigence et du cas de test E : Action de l'étape F : Résultat
+	 * attendu
 	 */
-	private static final int COLUMN_VIEW = 0;
-	private static final int COLUMN_FEATURE = 1;
-	private static final int COLUMN_ELEMENT = 2;
-	private static final int COLUMN_ACTION = 3;
-	private static final int COLUMN_RESERVED = 4;
+	private static final int COLUMN_SUBMODULE = 0;
+	private static final int COLUMN_VIEW = 1;
+	private static final int COLUMN_FEATURE = 2;
+	private static final int COLUMN_ELEMENT = 3;
+	private static final int COLUMN_ACTION = 4;
 	private static final int COLUMN_EXPECTED_RESULT = 5;
-
-	/**
-	 * Préfixe permettant d'identifier une exigence.
-	 */
-	private static final String REQUIREMENT_PREFIX = "[REQ]";
-
-	/**
-	 * Préfixe permettant d'identifier un cas de test.
-	 */
-	private static final String TEST_CASE_PREFIX = "[TC]";
 
 	/**
 	 * Compteur des références d'exigences.
@@ -171,6 +165,7 @@ public class ExcelSquashTmImportService {
 		 * Une cellule vide dans les colonnes hiérarchiques signifie que l'on reste dans
 		 * le contexte précédent.
 		 */
+		ImportSquashTmSubModule currentSubModule = null;
 		ImportSquashTmView currentView = null;
 		ImportSquashTmFeature currentFeature = null;
 		ImportSquashTmTestCase currentTestCase = null;
@@ -188,6 +183,8 @@ public class ExcelSquashTmImportService {
 				continue;
 			}
 
+			String subModuleName = getCellValue(row, COLUMN_SUBMODULE);
+
 			String viewName = getCellValue(row, COLUMN_VIEW);
 
 			String featureName = getCellValue(row, COLUMN_FEATURE);
@@ -201,24 +198,47 @@ public class ExcelSquashTmImportService {
 			/*
 			 * Une ligne totalement vide est ignorée.
 			 */
-			if (isEmpty(viewName) && isEmpty(featureName) && isEmpty(elementValue) && isEmpty(action)
-					&& isEmpty(expectedResult)) {
+			if (isEmpty(subModuleName) && isEmpty(viewName) && isEmpty(featureName) && isEmpty(elementValue)
+					&& isEmpty(action) && isEmpty(expectedResult)) {
 
 				continue;
+			}
+
+			/*
+			 * -------------------------------------------------- SOUS-MODULE
+			 * --------------------------------------------------
+			 */
+			if (!isEmpty(subModuleName)) {
+
+				currentSubModule = findOrCreateSubModule(module, subModuleName);
+
+				// Une nouvelle branche de la hiérarchie commence.
+				currentView = null;
+				currentFeature = null;
+				currentTestCase = null;
 			}
 
 			/*
 			 * -------------------------------------------------- VUE
 			 * --------------------------------------------------
 			 */
+
 			if (!isEmpty(viewName)) {
 
-				currentView = findOrCreateView(module, viewName);
+				if (currentSubModule == null) {
 
-				/*
-				 * Une nouvelle vue signifie que le contexte de fonctionnalité et de cas de test
-				 * change.
-				 */
+					addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
+							+ " : vue sans sous-module valide.");
+
+					currentView = null;
+					currentFeature = null;
+					currentTestCase = null;
+
+					continue;
+				}
+
+				currentView = findOrCreateView(currentSubModule, viewName);
+
 				currentFeature = null;
 				currentTestCase = null;
 			}
@@ -243,65 +263,36 @@ public class ExcelSquashTmImportService {
 			}
 
 			/*
-			 * -------------------------------------------------- EXIGENCE / CAS DE TEST
+			 * -------------------------------------------------- EXIGENCE ET CAS DE TEST
 			 * --------------------------------------------------
 			 */
 			if (!isEmpty(elementValue)) {
 
 				if (currentFeature == null) {
-					continue;
-				}
 
-				String element = elementValue.trim();
+					addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
+							+ " : élément sans fonctionnalité valide.");
 
-				if (element.startsWith(REQUIREMENT_PREFIX)) {
-
-					String requirementName = removePrefix(element, REQUIREMENT_PREFIX);
-
-					if (isEmpty(requirementName)) {
-
-						addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
-								+ " : requirement sans nom.");
-
-						currentTestCase = null;
-
-					} else {
-
-						ImportSquashTmRequirement requirement = new ImportSquashTmRequirement(
-								generateRequirementReference(), requirementName);
-
-						currentFeature.addRequirement(requirement);
-
-						currentTestCase = null;
-					}
-
-				} else if (element.startsWith(TEST_CASE_PREFIX)) {
-
-					String testCaseName = removePrefix(element, TEST_CASE_PREFIX);
-
-					if (isEmpty(testCaseName)) {
-
-						addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
-								+ " : cas de test sans nom.");
-
-						currentTestCase = null;
-
-					} else {
-
-						ImportSquashTmTestCase testCase = new ImportSquashTmTestCase(generateTestCaseReference(),
-								testCaseName);
-
-						currentFeature.addTestCase(testCase);
-
-						currentTestCase = testCase;
-					}
+					currentTestCase = null;
 
 				} else {
 
-					addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
-							+ " : élément invalide. " + "Le préfixe [REQ] ou [TC] est obligatoire.");
+					String elementName = elementValue.trim();
 
-					currentTestCase = null;
+					// Création de l'exigence.
+					ImportSquashTmRequirement requirement = new ImportSquashTmRequirement(
+							generateRequirementReference(), elementName);
+
+					currentFeature.addRequirement(requirement);
+
+					// Création du cas de test portant le même nom.
+					ImportSquashTmTestCase testCase = new ImportSquashTmTestCase(generateTestCaseReference(),
+							elementName);
+
+					currentFeature.addTestCase(testCase);
+
+					// Les actions suivantes seront rattachées à ce cas de test.
+					currentTestCase = testCase;
 				}
 			}
 
@@ -336,23 +327,43 @@ public class ExcelSquashTmImportService {
 				}
 			}
 		}
-
 		/*
-		 * Le module n'est ajouté au résultat que s'il contient réellement des données.
+		 * Le module est ajouté s'il contient au moins un sous-module.
 		 */
-		if (!module.getViews().isEmpty()) {
-			importData.addModule(module);
+		if (!module.getSubModules().isEmpty()) {
+		    importData.addModule(module);
 		}
 	}
 
 	/**
-	 * Recherche une vue existante dans le module.
+	 * Recherche un sous-module existant dans le module.
+	 *
+	 * Si aucun sous-module ne porte ce nom, il est créé.
+	 */
+	private ImportSquashTmSubModule findOrCreateSubModule(ImportSquashTmModule module, String subModuleName) {
+
+		for (ImportSquashTmSubModule subModule : module.getSubModules()) {
+
+			if (subModule.getName().equals(subModuleName.trim())) {
+				return subModule;
+			}
+		}
+
+		ImportSquashTmSubModule subModule = new ImportSquashTmSubModule(subModuleName.trim());
+
+		module.addSubModule(subModule);
+
+		return subModule;
+	}
+
+	/**
+	 * Recherche une vue existante dans le sous-module.
 	 *
 	 * Si elle n'existe pas, elle est créée.
 	 */
-	private ImportSquashTmView findOrCreateView(ImportSquashTmModule module, String viewName) {
+	private ImportSquashTmView findOrCreateView(ImportSquashTmSubModule subModule, String viewName) {
 
-		for (ImportSquashTmView view : module.getViews()) {
+		for (ImportSquashTmView view : subModule.getViews()) {
 
 			if (view.getName().equals(viewName.trim())) {
 				return view;
@@ -361,7 +372,7 @@ public class ExcelSquashTmImportService {
 
 		ImportSquashTmView view = new ImportSquashTmView(viewName.trim());
 
-		module.addView(view);
+		subModule.addView(view);
 
 		return view;
 	}
@@ -423,20 +434,6 @@ public class ExcelSquashTmImportService {
 		}
 
 		return dataFormatter.formatCellValue(cell).trim();
-	}
-
-	/**
-	 * Supprime un préfixe du libellé.
-	 */
-	private String removePrefix(String value, String prefix) {
-
-		if (value == null) {
-			return "";
-		}
-
-		String result = value.substring(prefix.length()).trim();
-
-		return result;
 	}
 
 	/**
