@@ -12,6 +12,7 @@ import com.google.gson.JsonObject;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmData;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmFeature;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmModule;
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmSubModule;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmRequirement;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestCase;
@@ -103,6 +104,13 @@ public class SquashTmImportManager {
 			LOGGER.info("Lecture du fichier Excel...");
 
 			ImportSquashTmData importData = excelImportService.parse(excelFile, projectName);
+			LOGGER.error("[DIAGNOSTIC] Lecture Excel terminée.");
+
+			if (importData == null) {
+				LOGGER.error("[DIAGNOSTIC] importData est null.");
+			} else {
+				LOGGER.error("[DIAGNOSTIC] Nombre de modules : " + importData.getModules().size());
+			}
 
 			/*
 			 * Récupération des incohérences détectées pendant la lecture du fichier Excel.
@@ -258,7 +266,8 @@ public class SquashTmImportManager {
 
 		/*
 		 * ============================================================ 5. CRÉATION DE
-		 * LA HIÉRARCHIE ============================================================
+		 * LA HIÉRARCHIE Projet -> Module -> Sous-module -> Vue -> Fonctionnalité
+		 * ============================================================
 		 */
 
 		LOGGER.info("Création de la hiérarchie des dossiers Squash TM...");
@@ -273,139 +282,140 @@ public class SquashTmImportManager {
 
 			LOGGER.info("Création du module : " + moduleName);
 
-			/*
-			 * -------------------------------------------------------- MODULE -
-			 * REQUIREMENTS --------------------------------------------------------
-			 */
-
+			// Dossier racine des exigences pour le module.
 			JsonObject requirementModule = squashTmService.createRequirementFolder(moduleName, "project", projectId);
 
-			if (requirementModule == null || !requirementModule.has("id")) {
-
-				throw new IOException("Impossible de créer le dossier Requirement " + "du module : " + moduleName);
+			if (requirementModule == null || !requirementModule.has("id") || requirementModule.get("id").isJsonNull()) {
+				throw new IOException("Impossible de créer le dossier Requirement du module : " + moduleName);
 			}
 
 			long requirementModuleId = requirementModule.get("id").getAsLong();
+			result.setFolderCount(result.getFolderCount() + 1);
 
-			/*
-			 * -------------------------------------------------------- MODULE - TEST CASES
-			 * --------------------------------------------------------
-			 */
-
+			// Dossier racine des cas de test pour le module.
 			JsonObject testCaseModule = squashTmService.createTestCaseFolder(moduleName, "project", projectId);
 
-			if (testCaseModule == null || !testCaseModule.has("id")) {
-
-				throw new IOException("Impossible de créer le dossier Test Case " + "du module : " + moduleName);
+			if (testCaseModule == null || !testCaseModule.has("id") || testCaseModule.get("id").isJsonNull()) {
+				throw new IOException("Impossible de créer le dossier Test Case du module : " + moduleName);
 			}
 
 			long testCaseModuleId = testCaseModule.get("id").getAsLong();
+			result.setFolderCount(result.getFolderCount() + 1);
 
-			/*
-			 * -------------------------------------------------------- VUES
-			 * --------------------------------------------------------
-			 */
+			// Parcours des sous-modules du module.
+			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
 
-			for (ImportSquashTmView view : module.getViews()) {
-
-				if (view == null || isEmpty(view.getName())) {
+				if (subModule == null || isEmpty(subModule.getName())) {
 					continue;
 				}
 
-				String viewName = view.getName().trim();
+				String subModuleName = subModule.getName().trim();
 
-				String requirementViewPath = buildFolderPath(moduleName, viewName, null);
+				LOGGER.info("Création du sous-module : " + moduleName + " / " + subModuleName);
 
-				String testCaseViewPath = buildFolderPath(moduleName, viewName, null);
+				// Dossier du sous-module pour les exigences.
+				JsonObject requirementSubModule = squashTmService.createRequirementFolder(subModuleName,
+						"requirement-folder", requirementModuleId);
 
-				/*
-				 * Vue Requirements
-				 */
-
-				JsonObject requirementView = squashTmService.createRequirementFolder(viewName, "requirement-folder",
-						requirementModuleId);
-
-				if (requirementView == null || !requirementView.has("id")) {
-
-					throw new IOException("Impossible de créer le dossier Requirement " + "de la vue : " + viewName);
+				if (requirementSubModule == null || !requirementSubModule.has("id")
+						|| requirementSubModule.get("id").isJsonNull()) {
+					throw new IOException("Impossible de créer le sous-module Requirement : " + subModuleName);
 				}
 
-				long requirementViewId = requirementView.get("id").getAsLong();
+				long requirementSubModuleId = requirementSubModule.get("id").getAsLong();
+				result.setFolderCount(result.getFolderCount() + 1);
 
-				requirementFolderIds.put(requirementViewPath, requirementViewId);
-
-				/*
-				 * Vue Test Cases
-				 */
-
-				JsonObject testCaseView = squashTmService.createTestCaseFolder(viewName, "test-case-folder",
+				// Dossier du sous-module pour les cas de test.
+				JsonObject testCaseSubModule = squashTmService.createTestCaseFolder(subModuleName, "test-case-folder",
 						testCaseModuleId);
 
-				if (testCaseView == null || !testCaseView.has("id")) {
-
-					throw new IOException("Impossible de créer le dossier Test Case " + "de la vue : " + viewName);
+				if (testCaseSubModule == null || !testCaseSubModule.has("id")
+						|| testCaseSubModule.get("id").isJsonNull()) {
+					throw new IOException("Impossible de créer le sous-module Test Case : " + subModuleName);
 				}
 
-				long testCaseViewId = testCaseView.get("id").getAsLong();
+				long testCaseSubModuleId = testCaseSubModule.get("id").getAsLong();
+				result.setFolderCount(result.getFolderCount() + 1);
 
-				testCaseFolderIds.put(testCaseViewPath, testCaseViewId);
+				// Parcours des vues du sous-module.
+				for (ImportSquashTmView view : subModule.getViews()) {
 
-				/*
-				 * ---------------------------------------------------- FONCTIONNALITÉS
-				 * ----------------------------------------------------
-				 */
-
-				for (ImportSquashTmFeature feature : view.getFeatures()) {
-
-					if (feature == null || isEmpty(feature.getName())) {
-
+					if (view == null || isEmpty(view.getName())) {
 						continue;
 					}
 
-					String featureName = feature.getName().trim();
+					String viewName = view.getName().trim();
 
-					String requirementFeaturePath = buildFolderPath(moduleName, viewName, featureName);
+					// Création du dossier de vue pour les exigences.
+					JsonObject requirementView = squashTmService.createRequirementFolder(viewName, "requirement-folder",
+							requirementSubModuleId);
 
-					String testCaseFeaturePath = buildFolderPath(moduleName, viewName, featureName);
-
-					/*
-					 * Feature Requirements
-					 */
-
-					JsonObject requirementFeature = squashTmService.createRequirementFolder(featureName,
-							"requirement-folder", requirementViewId);
-
-					if (requirementFeature == null || !requirementFeature.has("id")) {
-
-						throw new IOException("Impossible de créer le dossier Requirement " + "de la fonctionnalité : "
-								+ featureName);
+					if (requirementView == null || !requirementView.has("id")
+							|| requirementView.get("id").isJsonNull()) {
+						throw new IOException("Impossible de créer la vue Requirement : " + viewName);
 					}
 
-					long requirementFeatureId = requirementFeature.get("id").getAsLong();
+					long requirementViewId = requirementView.get("id").getAsLong();
+					result.setFolderCount(result.getFolderCount() + 1);
 
-					requirementFolderIds.put(requirementFeaturePath, requirementFeatureId);
+					// Création du dossier de vue pour les cas de test.
+					JsonObject testCaseView = squashTmService.createTestCaseFolder(viewName, "test-case-folder",
+							testCaseSubModuleId);
 
-					/*
-					 * Feature Test Cases
-					 */
-
-					JsonObject testCaseFeature = squashTmService.createTestCaseFolder(featureName, "test-case-folder",
-							testCaseViewId);
-
-					if (testCaseFeature == null || !testCaseFeature.has("id")) {
-
-						throw new IOException(
-								"Impossible de créer le dossier Test Case " + "de la fonctionnalité : " + featureName);
+					if (testCaseView == null || !testCaseView.has("id") || testCaseView.get("id").isJsonNull()) {
+						throw new IOException("Impossible de créer la vue Test Case : " + viewName);
 					}
 
-					long testCaseFeatureId = testCaseFeature.get("id").getAsLong();
+					long testCaseViewId = testCaseView.get("id").getAsLong();
+					result.setFolderCount(result.getFolderCount() + 1);
 
-					testCaseFolderIds.put(testCaseFeaturePath, testCaseFeatureId);
+					// Parcours des fonctionnalités de la vue.
+					for (ImportSquashTmFeature feature : view.getFeatures()) {
+
+						if (feature == null || isEmpty(feature.getName())) {
+							continue;
+						}
+
+						String featureName = feature.getName().trim();
+
+						LOGGER.info("Création de la fonctionnalité : " + featureName + " | Module : " + moduleName
+								+ " | Sous-module : " + subModuleName + " | Vue : " + viewName);
+
+						// Dossier de fonctionnalité pour les exigences.
+						JsonObject requirementFeature = squashTmService.createRequirementFolder(featureName,
+								"requirement-folder", requirementViewId);
+
+						if (requirementFeature == null || !requirementFeature.has("id")
+								|| requirementFeature.get("id").isJsonNull()) {
+							throw new IOException("Impossible de créer la fonctionnalité Requirement : " + featureName);
+						}
+
+						long requirementFeatureId = requirementFeature.get("id").getAsLong();
+						result.setFolderCount(result.getFolderCount() + 1);
+
+						// Dossier de fonctionnalité pour les cas de test.
+						JsonObject testCaseFeature = squashTmService.createTestCaseFolder(featureName,
+								"test-case-folder", testCaseViewId);
+
+						if (testCaseFeature == null || !testCaseFeature.has("id")
+								|| testCaseFeature.get("id").isJsonNull()) {
+							throw new IOException("Impossible de créer la fonctionnalité Test Case : " + featureName);
+						}
+
+						long testCaseFeatureId = testCaseFeature.get("id").getAsLong();
+						result.setFolderCount(result.getFolderCount() + 1);
+
+						// Le chemin complet distingue les sous-modules.
+						String folderPath = buildFolderPath(moduleName, subModuleName, viewName, featureName);
+
+						requirementFolderIds.put(folderPath, requirementFeatureId);
+
+						testCaseFolderIds.put(folderPath, testCaseFeatureId);
+					}
 				}
 			}
 		}
 
-		LOGGER.info("Hiérarchie Squash TM créée avec succès.");
 		/*
 		 * ============================================================ 6. CRÉATION DES
 		 * REQUIREMENTS ET DES TEST CASES
@@ -422,172 +432,152 @@ public class SquashTmImportManager {
 
 			String moduleName = module.getName().trim();
 
-			for (ImportSquashTmView view : module.getViews()) {
+			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
 
-				if (view == null || isEmpty(view.getName())) {
+				if (subModule == null || isEmpty(subModule.getName())) {
 					continue;
 				}
 
-				String viewName = view.getName().trim();
+				String subModuleName = subModule.getName().trim();
 
-				for (ImportSquashTmFeature feature : view.getFeatures()) {
+				for (ImportSquashTmView view : subModule.getViews()) {
 
-					if (feature == null || isEmpty(feature.getName())) {
-
+					if (view == null || isEmpty(view.getName())) {
 						continue;
 					}
 
-					String featureName = feature.getName().trim();
+					String viewName = view.getName().trim();
 
-					/*
-					 * Chemins permettant de retrouver les IDs des deux dossiers Squash TM.
-					 */
-					String folderPath = buildFolderPath(moduleName, viewName, featureName);
+					for (ImportSquashTmFeature feature : view.getFeatures()) {
 
-					Long requirementFolderId = requirementFolderIds.get(folderPath);
-
-					Long testCaseFolderId = testCaseFolderIds.get(folderPath);
-
-					if (requirementFolderId == null) {
-
-						result.addTechnicalError("Dossier Requirement introuvable : " + folderPath);
-
-						continue;
-					}
-
-					if (testCaseFolderId == null) {
-
-						result.addTechnicalError("Dossier Test Case introuvable : " + folderPath);
-
-						continue;
-					}
-
-					/*
-					 * ================================================= REQUIREMENTS
-					 * =================================================
-					 */
-
-					for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
-
-						if (requirement == null) {
+						if (feature == null || isEmpty(feature.getName())) {
 							continue;
 						}
 
-						if (isEmpty(requirement.getName())) {
+						String featureName = feature.getName().trim();
 
-							result.addInconsistency("Requirement sans nom dans : " + folderPath);
+						String folderPath = buildFolderPath(moduleName, subModuleName, viewName, featureName);
 
+						Long requirementFolderId = requirementFolderIds.get(folderPath);
+
+						Long testCaseFolderId = testCaseFolderIds.get(folderPath);
+
+						if (requirementFolderId == null) {
+							result.addTechnicalError("Dossier Requirement introuvable : " + folderPath);
 							continue;
 						}
 
-						String requirementName = requirement.getName().trim();
-
-						String reference = requirement.getReference();
-
-						try {
-
-							LOGGER.info("Création du requirement : " + reference + " - " + requirementName);
-
-							squashTmService.createRequirement(requirementName, reference, requirementFolderId);
-
-							result.setRequirementCount(result.getRequirementCount() + 1);
-
-						} catch (Exception e) {
-
-							LOGGER.error("Erreur lors de la création du requirement : " + requirementName, e);
-
-							result.addTechnicalError(
-									"Impossible de créer le requirement '" + requirementName + "' : " + e.getMessage());
-						}
-					}
-
-					/*
-					 * ================================================= TEST CASES
-					 * =================================================
-					 */
-
-					for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
-
-						if (testCase == null) {
+						if (testCaseFolderId == null) {
+							result.addTechnicalError("Dossier Test Case introuvable : " + folderPath);
 							continue;
 						}
 
-						if (isEmpty(testCase.getName())) {
+						// Création des exigences.
+						for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
 
-							result.addInconsistency("Cas de test sans nom dans : " + folderPath);
-
-							continue;
-						}
-
-						String testCaseName = testCase.getName().trim();
-
-						String reference = testCase.getReference();
-
-						try {
-
-							LOGGER.info("Création du cas de test : " + reference + " - " + testCaseName);
-
-							JsonObject createdTestCase = squashTmService.createTestCase(testCaseName, reference,
-									testCaseFolderId);
-
-							if (createdTestCase == null || !createdTestCase.has("id")
-									|| createdTestCase.get("id").isJsonNull()) {
-
-								throw new IOException("L'ID du cas de test n'a pas été retourné.");
+							if (requirement == null) {
+								continue;
 							}
 
-							long testCaseId = createdTestCase.get("id").getAsLong();
-
-							result.setTestCaseCount(result.getTestCaseCount() + 1);
-
-							/*
-							 * ========================================= STEPS DU TEST CASE
-							 * =========================================
-							 */
-
-							for (ImportSquashTmTestStep step : testCase.getSteps()) {
-
-								if (step == null) {
-									continue;
-								}
-
-								String action = step.getAction();
-
-								String expectedResult = step.getExpectedResult();
-
-								/*
-								 * Une étape doit obligatoirement posséder une action ET un résultat attendu.
-								 */
-								if (isEmpty(action) || isEmpty(expectedResult)) {
-
-									result.addInconsistency("Étape invalide pour le cas de test '" + testCaseName
-											+ "' dans " + folderPath + " : action ou résultat attendu manquant.");
-
-									continue;
-								}
-
-								try {
-
-									squashTmService.createTestStep(testCaseId, action.trim(), expectedResult.trim());
-
-									result.setTestStepCount(result.getTestStepCount() + 1);
-
-								} catch (Exception e) {
-
-									LOGGER.error("Erreur lors de la création " + "d'une étape du cas de test : "
-											+ testCaseName, e);
-
-									result.addTechnicalError("Impossible de créer une étape " + "du cas de test '"
-											+ testCaseName + "' : " + e.getMessage());
-								}
+							if (isEmpty(requirement.getName())) {
+								result.addInconsistency("Requirement sans nom dans : " + folderPath);
+								continue;
 							}
 
-						} catch (Exception e) {
+							String requirementName = requirement.getName().trim();
 
-							LOGGER.error("Erreur lors de la création du cas de test : " + testCaseName, e);
+							String reference = requirement.getReference();
 
-							result.addTechnicalError(
-									"Impossible de créer le cas de test '" + testCaseName + "' : " + e.getMessage());
+							try {
+
+								LOGGER.info("Création du requirement : " + reference + " - " + requirementName);
+
+								squashTmService.createRequirement(requirementName, reference, requirementFolderId);
+
+								result.setRequirementCount(result.getRequirementCount() + 1);
+
+							} catch (Exception e) {
+
+								LOGGER.error("Erreur lors de la création du requirement : " + requirementName, e);
+
+								result.addTechnicalError("Impossible de créer le requirement '" + requirementName
+										+ "' : " + e.getMessage());
+							}
+						}
+
+						// Création des cas de test et de leurs étapes.
+						for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
+
+							if (testCase == null) {
+								continue;
+							}
+
+							if (isEmpty(testCase.getName())) {
+								result.addInconsistency("Cas de test sans nom dans : " + folderPath);
+								continue;
+							}
+
+							String testCaseName = testCase.getName().trim();
+							String reference = testCase.getReference();
+
+							try {
+
+								LOGGER.info("Création du cas de test : " + reference + " - " + testCaseName);
+
+								JsonObject createdTestCase = squashTmService.createTestCase(testCaseName, reference,
+										testCaseFolderId);
+
+								if (createdTestCase == null || !createdTestCase.has("id")
+										|| createdTestCase.get("id").isJsonNull()) {
+
+									throw new IOException("L'ID du cas de test n'a pas été retourné.");
+								}
+
+								long testCaseId = createdTestCase.get("id").getAsLong();
+
+								result.setTestCaseCount(result.getTestCaseCount() + 1);
+
+								for (ImportSquashTmTestStep step : testCase.getSteps()) {
+
+									if (step == null) {
+										continue;
+									}
+
+									String action = step.getAction();
+									String expectedResult = step.getExpectedResult();
+
+									if (isEmpty(action) || isEmpty(expectedResult)) {
+
+										result.addInconsistency("Étape invalide pour le cas de test '" + testCaseName
+												+ "' dans " + folderPath + " : action ou résultat attendu manquant.");
+
+										continue;
+									}
+
+									try {
+
+										squashTmService.createTestStep(testCaseId, action.trim(),
+												expectedResult.trim());
+
+										result.setTestStepCount(result.getTestStepCount() + 1);
+
+									} catch (Exception e) {
+
+										LOGGER.error("Erreur lors de la création d'une étape " + "du cas de test : "
+												+ testCaseName, e);
+
+										result.addTechnicalError("Impossible de créer une étape du cas de test '"
+												+ testCaseName + "' : " + e.getMessage());
+									}
+								}
+
+							} catch (Exception e) {
+
+								LOGGER.error("Erreur lors de la création du cas de test : " + testCaseName, e);
+
+								result.addTechnicalError("Impossible de créer le cas de test '" + testCaseName + "' : "
+										+ e.getMessage());
+							}
 						}
 					}
 				}
@@ -595,20 +585,15 @@ public class SquashTmImportManager {
 		}
 
 		LOGGER.info("Requirements, cas de test et étapes créés.");
+
 	}
 
 	/**
-	 * Construit une clé unique représentant le chemin hiérarchique d'un dossier.
+	 * Construit le chemin complet d'une fonctionnalité.
 	 *
-	 * Exemple :
-	 *
-	 * Module / Vue / Fonctionnalité
-	 *
-	 * devient :
-	 *
-	 * Module/Vue/Fonctionnalité
+	 * Exemple : Module / Sous-module / Vue / Fonctionnalité
 	 */
-	private String buildFolderPath(String moduleName, String viewName, String featureName) {
+	private String buildFolderPath(String moduleName, String subModuleName, String viewName, String featureName) {
 
 		StringBuilder path = new StringBuilder();
 
@@ -616,12 +601,25 @@ public class SquashTmImportManager {
 			path.append(moduleName.trim());
 		}
 
+		if (!isEmpty(subModuleName)) {
+			if (path.length() > 0) {
+				path.append("/");
+			}
+			path.append(subModuleName.trim());
+		}
+
 		if (!isEmpty(viewName)) {
-			path.append("/").append(viewName.trim());
+			if (path.length() > 0) {
+				path.append("/");
+			}
+			path.append(viewName.trim());
 		}
 
 		if (!isEmpty(featureName)) {
-			path.append("/").append(featureName.trim());
+			if (path.length() > 0) {
+				path.append("/");
+			}
+			path.append(featureName.trim());
 		}
 
 		return path.toString();

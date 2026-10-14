@@ -19,6 +19,8 @@ public class ImportSquashTmResult {
 	private int requirementCount;
 	private int testCaseCount;
 	private int testStepCount;
+	private int folderCount;
+	private boolean existingProjectReused;
 
 	private List<String> inconsistencies;
 	private List<String> technicalErrors;
@@ -74,6 +76,22 @@ public class ImportSquashTmResult {
 
 	public void setTestStepCount(int testStepCount) {
 		this.testStepCount = testStepCount;
+	}
+	
+	public int getFolderCount() {
+	    return folderCount;
+	}
+
+	public void setFolderCount(int folderCount) {
+	    this.folderCount = folderCount;
+	}
+
+	public boolean isExistingProjectReused() {
+	    return existingProjectReused;
+	}
+
+	public void setExistingProjectReused(boolean existingProjectReused) {
+	    this.existingProjectReused = existingProjectReused;
 	}
 
 	public List<String> getInconsistencies() {

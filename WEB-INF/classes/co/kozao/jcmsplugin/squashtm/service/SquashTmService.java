@@ -82,7 +82,7 @@ public class SquashTmService {
 			 * TOKEN ============================================================
 			 */
 
-			String tokenUrl = baseUrl + "/tokens";
+			String tokenUrl = baseUrl + "/api/rest/latest/tokens";
 
 			LOGGER.error("========== AUTH TOKEN ==========");
 			LOGGER.error("baseUrl = [" + baseUrl + "]");
@@ -90,7 +90,7 @@ public class SquashTmService {
 
 			String tokensJson = executeGet(tokenUrl, "Bearer " + token);
 
-			LOGGER.error("========== REPONSE /tokens ==========");
+			LOGGER.error("========== REPONSE /api/rest/latest/tokens ==========");
 			LOGGER.error(tokensJson);
 
 			if (Util.isEmpty(tokensJson)) {
@@ -104,7 +104,7 @@ public class SquashTmService {
 
 			if (!root.has("_embedded")) {
 
-				LOGGER.warn("La réponse /tokens ne contient pas _embedded.");
+				LOGGER.warn("La réponse /api/rest/latest/tokens ne contient pas _embedded.");
 
 				return null;
 			}
@@ -113,7 +113,7 @@ public class SquashTmService {
 
 			if (!embedded.has("api-tokens")) {
 
-				LOGGER.warn("La réponse /tokens ne contient pas api-tokens.");
+				LOGGER.warn("La réponse /api/rest/latest/tokens ne contient pas api-tokens.");
 
 				return null;
 			}
@@ -167,7 +167,7 @@ public class SquashTmService {
 
 			LOGGER.error("!!! NOUVELLE VERSION SquashTmService !!!");
 
-			String userUrl = baseUrl + "/users/" + userId;
+			String userUrl = baseUrl + "/api/rest/latest/users/" + userId;
 
 			LOGGER.error("========== RECUPERATION PROFIL SQUASH ==========");
 
@@ -178,7 +178,7 @@ public class SquashTmService {
 			 */
 			String userJson = executeGet(userUrl, "Bearer " + token);
 
-			LOGGER.error("========== REPONSE /users/{id} ==========");
+			LOGGER.error("========== REPONSE /api/rest/latest/users/{id} ==========");
 
 			LOGGER.error(userJson);
 
@@ -201,7 +201,7 @@ public class SquashTmService {
 			 */
 			if (info == null) {
 
-				LOGGER.warn("Impossible de construire LoggedUserInfo depuis /users/" + userId);
+				LOGGER.warn("Impossible de construire LoggedUserInfo depuis /api/rest/latest/users/" + userId);
 
 				info = new LoggedUserInfo();
 			}
@@ -326,7 +326,7 @@ public class SquashTmService {
 			 * ========================================================
 			 */
 
-			String usersUrl = baseUrl + "/users?size=1000";
+			String usersUrl = baseUrl + "/api/rest/latest/users?size=1000";
 
 			LOGGER.error("========== RECHERCHE UTILISATEUR SQUASH ==========");
 			LOGGER.error("usersUrl = [" + usersUrl + "]");
@@ -427,14 +427,14 @@ public class SquashTmService {
 			 *
 			 * On appelle donc :
 			 *
-			 * GET /users/{id}
+			 * GET /api/rest/latest/users/{id}
 			 *
 			 * pour récupérer :
 			 *
 			 * - first_name - last_name - email - created_on - etc.
 			 */
 
-			String userUrl = baseUrl + "/users/" + userId;
+			String userUrl = baseUrl + "/api/rest/latest/users/" + userId;
 
 			LOGGER.error("========== RECUPERATION PROFIL SQUASH ==========");
 

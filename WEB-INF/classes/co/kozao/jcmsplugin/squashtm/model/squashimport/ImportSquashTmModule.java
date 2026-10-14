@@ -13,22 +13,34 @@ import java.util.List;
 public class ImportSquashTmModule {
 
 	private String name;
-	private List<ImportSquashTmView> views;
+	private List<ImportSquashTmSubModule> subModules;
 
 	public ImportSquashTmModule() {
-		this.views = new ArrayList<>();
+		this.subModules = new ArrayList<>();
 	}
 
 	public ImportSquashTmModule(String name) {
 		this.name = name;
-		this.views = new ArrayList<>();
+		this.subModules = new ArrayList<>();
 	}
 
-	public void addView(ImportSquashTmView view) {
-		if (view != null) {
-			views.add(view);
+	public void addSubModule(ImportSquashTmSubModule subModule) {
+		if (subModule != null) {
+			subModules.add(subModule);
 		}
 	}
+	
+
+	public List<ImportSquashTmSubModule> getSubModules() {
+		return subModules;
+	}
+
+	public void setSubModules(List<ImportSquashTmSubModule> subModules) {
+		this.subModules = subModules != null
+				? subModules
+				: new ArrayList<>();
+	}
+
 
 	public String getName() {
 		return name;
@@ -38,11 +50,4 @@ public class ImportSquashTmModule {
 		this.name = name;
 	}
 
-	public List<ImportSquashTmView> getViews() {
-		return views;
-	}
-
-	public void setViews(List<ImportSquashTmView> views) {
-		this.views = views;
-	}
 }
