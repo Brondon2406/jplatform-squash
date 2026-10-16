@@ -18,6 +18,7 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestCase;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestStep;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmView;
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmProgress;
 
 /**
  * Manager chargé d'orchestrer l'import d'un fichier Excel vers Squash TM.
@@ -35,7 +36,18 @@ public class SquashTmImportManager {
 	private final SquashTmService squashTmService;
 
 	/**
-	 * Constructeur.
+	 * Constructeur utilisé lorsque l'importation est exécutée en arrière-plan.
+	 *
+	 * @param authorizationHeader en-tête d'authentification Squash TM
+	 */
+	public SquashTmImportManager(String authorizationHeader) {
+		this.excelImportService = new ExcelSquashTmImportService();
+		this.squashTmService = new SquashTmService(authorizationHeader);
+	}
+
+	/**
+	 * Constructeur par défaut conservé pour assurer la compatibilité avec les
+	 * autres utilisations du manager.
 	 */
 	public SquashTmImportManager() {
 		this.excelImportService = new ExcelSquashTmImportService();
@@ -49,9 +61,15 @@ public class SquashTmImportManager {
 	 * @param projectName nom du projet Squash TM
 	 * @return résultat final de l'import
 	 */
-	public ImportSquashTmResult importExcel(java.io.File excelFile, String projectName) {
+	public ImportSquashTmResult importExcel(File excelFile, String projectName, ImportSquashTmProgress progress) {
 
 		ImportSquashTmResult result = new ImportSquashTmResult();
+
+		if (progress == null) {
+			throw new IllegalArgumentException("L'objet de progression ne doit pas être null.");
+		}
+
+		progress.update(2, "INITIALISATION", "Préparation de l'importation...");
 
 		/*
 		 * Informations générales du résultat.
@@ -102,8 +120,11 @@ public class SquashTmImportManager {
 			 */
 
 			LOGGER.info("Lecture du fichier Excel...");
+			progress.update(5, "LECTURE_EXCEL", "Lecture et analyse du fichier Excel...");
 
 			ImportSquashTmData importData = excelImportService.parse(excelFile, projectName);
+			progress.update(15, "LECTURE_TERMINEE", "Fichier Excel analysé. Préparation des données...");
+
 			LOGGER.error("[DIAGNOSTIC] Lecture Excel terminée.");
 
 			if (importData == null) {
@@ -127,12 +148,24 @@ public class SquashTmImportManager {
 				return result;
 			}
 
+			int[] totals = countImportItems(importData);
+
+			LOGGER.info("Total des exigences : " + totals[0]);
+			LOGGER.info("Total des cas de test : " + totals[1]);
+			LOGGER.info("Total des étapes : " + totals[2]);
+
+			int totalFolders = countFolderItems(importData);
+
+			LOGGER.info("Total des dossiers à créer : " + totalFolders);
+
 			/*
 			 * ============================================================ 3. IMPORT VERS
 			 * SQUASH TM ============================================================
 			 */
 
-			importToSquashTm(importData, result);
+			progress.update(18, "IMPORT_SQUASH_TM", "Préparation du projet Squash TM...");
+
+			importToSquashTm(importData, result, progress, totals, totalFolders);
 
 		} catch (Exception e) {
 
@@ -147,6 +180,11 @@ public class SquashTmImportManager {
 		 */
 
 		result.setSuccess(result.getTechnicalErrors().isEmpty());
+		if (result.isSuccess()) {
+			progress.finish(true, "Importation terminée avec succès.");
+		} else {
+			progress.finish(false, "Importation terminée avec des erreurs.");
+		}
 
 		LOGGER.info("========== FIN IMPORT SQUASH TM ==========");
 
@@ -168,7 +206,8 @@ public class SquashTmImportManager {
 	 * @param result     résultat de l'import
 	 * @throws Exception si une erreur technique survient
 	 */
-	private void importToSquashTm(ImportSquashTmData importData, ImportSquashTmResult result) throws Exception {
+	private void importToSquashTm(ImportSquashTmData importData, ImportSquashTmResult result,
+			ImportSquashTmProgress progress, int[] totals, int totalFolders) throws Exception {
 
 		LOGGER.info("========== IMPORT VERS SQUASH TM ==========");
 
@@ -185,6 +224,8 @@ public class SquashTmImportManager {
 		String projectName = importData.getProjectName();
 
 		LOGGER.info("Recherche du projet Squash TM : " + projectName);
+
+		progress.update(20, "PROJET", "Recherche du projet dans Squash TM...");
 
 		JsonObject existingProject = squashTmService.findProjectByName(projectName);
 
@@ -272,6 +313,8 @@ public class SquashTmImportManager {
 
 		LOGGER.info("Création de la hiérarchie des dossiers Squash TM...");
 
+		progress.update(25, "DOSSIERS", "Création des dossiers du projet...");
+
 		for (ImportSquashTmModule module : importData.getModules()) {
 
 			if (module == null || isEmpty(module.getName())) {
@@ -279,28 +322,62 @@ public class SquashTmImportManager {
 			}
 
 			String moduleName = module.getName().trim();
+			if (!isValidFolderName(moduleName, "module", moduleName, result)) {
+				continue;
+			}
 
 			LOGGER.info("Création du module : " + moduleName);
 
-			// Dossier racine des exigences pour le module.
-			JsonObject requirementModule = squashTmService.createRequirementFolder(moduleName, "project", projectId);
+			Long requirementModuleId = null;
 
-			if (requirementModule == null || !requirementModule.has("id") || requirementModule.get("id").isJsonNull()) {
-				throw new IOException("Impossible de créer le dossier Requirement du module : " + moduleName);
+			try {
+				JsonObject requirementModule = squashTmService.createRequirementFolder(moduleName, "project",
+						projectId);
+
+				if (requirementModule == null || !requirementModule.has("id")
+						|| requirementModule.get("id").isJsonNull()) {
+					throw new IOException("L'identifiant du dossier n'a pas été retourné.");
+				}
+
+				requirementModuleId = requirementModule.get("id").getAsLong();
+
+				result.setFolderCount(result.getFolderCount() + 1);
+
+			} catch (Exception e) {
+				String message = "Impossible de créer le dossier Requirement du module '" + moduleName + "' : "
+						+ e.getMessage();
+
+				LOGGER.error(message, e);
+				result.addTechnicalError(message);
 			}
-
-			long requirementModuleId = requirementModule.get("id").getAsLong();
 			result.setFolderCount(result.getFolderCount() + 1);
+			progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
+					"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
 			// Dossier racine des cas de test pour le module.
-			JsonObject testCaseModule = squashTmService.createTestCaseFolder(moduleName, "project", projectId);
+			Long testCaseModuleId = null;
 
-			if (testCaseModule == null || !testCaseModule.has("id") || testCaseModule.get("id").isJsonNull()) {
-				throw new IOException("Impossible de créer le dossier Test Case du module : " + moduleName);
+			try {
+				JsonObject testCaseModule = squashTmService.createTestCaseFolder(moduleName, "project", projectId);
+
+				if (testCaseModule == null || !testCaseModule.has("id") || testCaseModule.get("id").isJsonNull()) {
+					throw new IOException("L'identifiant du dossier n'a pas été retourné.");
+				}
+
+				testCaseModuleId = testCaseModule.get("id").getAsLong();
+
+				result.setFolderCount(result.getFolderCount() + 1);
+
+			} catch (Exception e) {
+				String message = "Impossible de créer le dossier Test Case du module '" + moduleName + "' : "
+						+ e.getMessage();
+
+				LOGGER.error(message, e);
+				result.addTechnicalError(message);
 			}
-
-			long testCaseModuleId = testCaseModule.get("id").getAsLong();
 			result.setFolderCount(result.getFolderCount() + 1);
+			progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
+					"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
 			// Parcours des sous-modules du module.
 			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
@@ -310,6 +387,9 @@ public class SquashTmImportManager {
 				}
 
 				String subModuleName = subModule.getName().trim();
+				if (!isValidFolderName(subModuleName, "sous-module", moduleName + " / " + subModuleName, result)) {
+					continue;
+				}
 
 				LOGGER.info("Création du sous-module : " + moduleName + " / " + subModuleName);
 
@@ -324,6 +404,8 @@ public class SquashTmImportManager {
 
 				long requirementSubModuleId = requirementSubModule.get("id").getAsLong();
 				result.setFolderCount(result.getFolderCount() + 1);
+				progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
+						"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
 				// Dossier du sous-module pour les cas de test.
 				JsonObject testCaseSubModule = squashTmService.createTestCaseFolder(subModuleName, "test-case-folder",
@@ -336,6 +418,8 @@ public class SquashTmImportManager {
 
 				long testCaseSubModuleId = testCaseSubModule.get("id").getAsLong();
 				result.setFolderCount(result.getFolderCount() + 1);
+				progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
+						"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
 				// Parcours des vues du sous-module.
 				for (ImportSquashTmView view : subModule.getViews()) {
@@ -345,6 +429,10 @@ public class SquashTmImportManager {
 					}
 
 					String viewName = view.getName().trim();
+					if (!isValidFolderName(viewName, "vue", moduleName + " / " + subModuleName + " / " + viewName,
+							result)) {
+						continue;
+					}
 
 					// Création du dossier de vue pour les exigences.
 					JsonObject requirementView = squashTmService.createRequirementFolder(viewName, "requirement-folder",
@@ -357,6 +445,8 @@ public class SquashTmImportManager {
 
 					long requirementViewId = requirementView.get("id").getAsLong();
 					result.setFolderCount(result.getFolderCount() + 1);
+					progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
+							"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
 					// Création du dossier de vue pour les cas de test.
 					JsonObject testCaseView = squashTmService.createTestCaseFolder(viewName, "test-case-folder",
@@ -368,6 +458,8 @@ public class SquashTmImportManager {
 
 					long testCaseViewId = testCaseView.get("id").getAsLong();
 					result.setFolderCount(result.getFolderCount() + 1);
+					progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
+							"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
 					// Parcours des fonctionnalités de la vue.
 					for (ImportSquashTmFeature feature : view.getFeatures()) {
@@ -377,6 +469,10 @@ public class SquashTmImportManager {
 						}
 
 						String featureName = feature.getName().trim();
+						if (!isValidFolderName(featureName, "fonctionnalité",
+								moduleName + " / " + subModuleName + " / " + viewName + " / " + featureName, result)) {
+							continue;
+						}
 
 						LOGGER.info("Création de la fonctionnalité : " + featureName + " | Module : " + moduleName
 								+ " | Sous-module : " + subModuleName + " | Vue : " + viewName);
@@ -392,6 +488,8 @@ public class SquashTmImportManager {
 
 						long requirementFeatureId = requirementFeature.get("id").getAsLong();
 						result.setFolderCount(result.getFolderCount() + 1);
+						progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
+								"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
 						// Dossier de fonctionnalité pour les cas de test.
 						JsonObject testCaseFeature = squashTmService.createTestCaseFolder(featureName,
@@ -404,6 +502,8 @@ public class SquashTmImportManager {
 
 						long testCaseFeatureId = testCaseFeature.get("id").getAsLong();
 						result.setFolderCount(result.getFolderCount() + 1);
+						progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
+								"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
 						// Le chemin complet distingue les sous-modules.
 						String folderPath = buildFolderPath(moduleName, subModuleName, viewName, featureName);
@@ -423,6 +523,9 @@ public class SquashTmImportManager {
 		 */
 
 		LOGGER.info("Création des requirements et des cas de test...");
+		progress.update(60, "DONNEES", "Importation des exigences et des cas de test...");
+		int completedDataItems = 0;
+		int totalDataItems = totals[0] + totals[1] + totals[2];
 
 		for (ImportSquashTmModule module : importData.getModules()) {
 
@@ -495,6 +598,10 @@ public class SquashTmImportManager {
 								squashTmService.createRequirement(requirementName, reference, requirementFolderId);
 
 								result.setRequirementCount(result.getRequirementCount() + 1);
+								completedDataItems++;
+
+								progress.update(calculateDataProgress(completedDataItems, totalDataItems), "DONNEES",
+										"Exigences importées : " + result.getRequirementCount() + " / " + totals[0]);
 
 							} catch (Exception e) {
 
@@ -536,6 +643,10 @@ public class SquashTmImportManager {
 								long testCaseId = createdTestCase.get("id").getAsLong();
 
 								result.setTestCaseCount(result.getTestCaseCount() + 1);
+								completedDataItems++;
+
+								progress.update(calculateDataProgress(completedDataItems, totalDataItems), "DONNEES",
+										"Cas de test importés : " + result.getTestCaseCount() + " / " + totals[1]);
 
 								for (ImportSquashTmTestStep step : testCase.getSteps()) {
 
@@ -560,6 +671,9 @@ public class SquashTmImportManager {
 												expectedResult.trim());
 
 										result.setTestStepCount(result.getTestStepCount() + 1);
+										completedDataItems++;
+										progress.update(Math.min(98, 60 + result.getTestStepCount()), "DONNEES",
+												"Étapes importées : " + result.getTestStepCount());
 
 									} catch (Exception e) {
 
@@ -632,4 +746,217 @@ public class SquashTmImportManager {
 
 		return value == null || value.trim().isEmpty();
 	}
+
+	/**
+	 * Vérifie que le nom d'un dossier respecte la limite de Squash TM.
+	 *
+	 * @param name   nom du dossier à vérifier
+	 * @param type   type de dossier (Requirement ou Test Case)
+	 * @param path   emplacement du dossier dans la hiérarchie
+	 * @param result résultat de l'import pour enregistrer les erreurs
+	 * @return true si le nom est valide, false sinon
+	 */
+	private boolean isValidFolderName(String name, String type, String path, ImportSquashTmResult result) {
+
+		if (name != null && !name.trim().isEmpty() && name.trim().length() <= 255) {
+			return true;
+		}
+
+		int length = name == null ? 0 : name.trim().length();
+
+		String message = "Création impossible pour le dossier " + type + " : nom vide ou trop long (" + length
+				+ " caractères, maximum 255). Emplacement : " + path;
+
+		result.addTechnicalError(message);
+		LOGGER.warn(message);
+
+		return false;
+	}
+
+	/**
+	 * Compte les exigences, les cas de test et les étapes présents dans les données
+	 * à importer.
+	 *
+	 * @param importData données extraites du fichier Excel
+	 * @return tableau contenant : [0] le nombre d'exigences, [1] le nombre de cas
+	 *         de test, [2] le nombre d'étapes
+	 */
+	private int[] countImportItems(ImportSquashTmData importData) {
+
+		int requirementCount = 0;
+		int testCaseCount = 0;
+		int testStepCount = 0;
+
+		if (importData == null || importData.getModules() == null) {
+			return new int[] { 0, 0, 0 };
+		}
+
+		for (ImportSquashTmModule module : importData.getModules()) {
+
+			if (module == null || module.getSubModules() == null) {
+				continue;
+			}
+
+			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
+
+				if (subModule == null || subModule.getViews() == null) {
+					continue;
+				}
+
+				for (ImportSquashTmView view : subModule.getViews()) {
+
+					if (view == null || view.getFeatures() == null) {
+						continue;
+					}
+
+					for (ImportSquashTmFeature feature : view.getFeatures()) {
+
+						if (feature == null) {
+							continue;
+						}
+
+						if (feature.getRequirements() != null) {
+							for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
+
+								if (requirement != null && requirement.getName() != null
+										&& !requirement.getName().trim().isEmpty()) {
+									requirementCount++;
+								}
+							}
+						}
+
+						if (feature.getTestCases() != null) {
+							for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
+
+								if (testCase == null || testCase.getName() == null
+										|| testCase.getName().trim().isEmpty()) {
+									continue;
+								}
+
+								testCaseCount++;
+
+								if (testCase.getSteps() != null) {
+									for (ImportSquashTmTestStep step : testCase.getSteps()) {
+
+										if (step != null && step.getAction() != null
+												&& !step.getAction().trim().isEmpty()
+												&& step.getExpectedResult() != null
+												&& !step.getExpectedResult().trim().isEmpty()) {
+											testStepCount++;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return new int[] { requirementCount, testCaseCount, testStepCount };
+	}
+
+	/**
+	 * Calcule la progression de l'import des données.
+	 *
+	 * La progression est comprise entre 60 et 98 %.
+	 *
+	 * @param completed nombre d'éléments importés avec succès
+	 * @param total     nombre total d'éléments prévus
+	 * @return pourcentage de progression
+	 */
+	private int calculateDataProgress(int completed, int total) {
+
+		if (total <= 0) {
+			return 60;
+		}
+
+		int percentage = 60 + (int) (38.0 * completed / total);
+
+		return Math.max(60, Math.min(98, percentage));
+	}
+
+	/**
+	 * Calcule la progression de la création des dossiers.
+	 *
+	 * La progression des dossiers est comprise entre 25 et 59 %.
+	 *
+	 * @param completed nombre de dossiers créés
+	 * @param total     nombre total de dossiers prévus
+	 * @return pourcentage de progression
+	 */
+	private int calculateFolderProgress(int completed, int total) {
+
+		if (total <= 0) {
+			return 59;
+		}
+
+		int percentage = 25 + (int) (34.0 * completed / total);
+
+		return Math.max(25, Math.min(59, percentage));
+	}
+
+	/**
+	 * Compte le nombre total de dossiers à créer dans Squash TM. Chaque élément
+	 * valide génère deux dossiers : Requirements et Test Cases.
+	 */
+	private int countFolderItems(ImportSquashTmData importData) {
+
+		int folderCount = 0;
+
+		if (importData == null || importData.getModules() == null) {
+			return 0;
+		}
+
+		for (ImportSquashTmModule module : importData.getModules()) {
+
+			if (module == null || isEmpty(module.getName())) {
+				continue;
+			}
+
+			folderCount += 2;
+
+			if (module.getSubModules() == null) {
+				continue;
+			}
+
+			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
+
+				if (subModule == null || isEmpty(subModule.getName())) {
+					continue;
+				}
+
+				folderCount += 2;
+
+				if (subModule.getViews() == null) {
+					continue;
+				}
+
+				for (ImportSquashTmView view : subModule.getViews()) {
+
+					if (view == null || isEmpty(view.getName())) {
+						continue;
+					}
+
+					folderCount += 2;
+
+					if (view.getFeatures() == null) {
+						continue;
+					}
+
+					for (ImportSquashTmFeature feature : view.getFeatures()) {
+
+						if (feature == null || isEmpty(feature.getName())) {
+							continue;
+						}
+
+						folderCount += 2;
+					}
+				}
+			}
+		}
+
+		return folderCount;
+	}
+
 }

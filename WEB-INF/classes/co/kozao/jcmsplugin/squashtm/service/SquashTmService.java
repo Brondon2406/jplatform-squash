@@ -30,7 +30,25 @@ public class SquashTmService {
 	private static final Logger LOGGER = Logger.getLogger(SquashTmService.class);
 
 	private static final int CONNECT_TIMEOUT = 5000;
-	private static final int READ_TIMEOUT = 5000;
+	private static final int READ_TIMEOUT = 30000;
+	private final String authorizationHeader;
+
+	/**
+	 * Constructeur utilisé par les traitements en arrière-plan.
+	 *
+	 * @param authorizationHeader en-tête Authorization préparé avant le lancement
+	 *                            du thread
+	 */
+	public SquashTmService(String authorizationHeader) {
+		this.authorizationHeader = authorizationHeader;
+	}
+
+	/**
+	 * Constructeur par défaut conservé pour les autres utilisations du service.
+	 */
+	public SquashTmService() {
+		this.authorizationHeader = null;
+	}
 
 	/**
 	 * Authentifie un utilisateur JCMS auprès de Squash TM.
@@ -799,6 +817,10 @@ public class SquashTmService {
 	 * @throws IOException si les credentials Squash TM sont absents
 	 */
 	private String getAuthorization() throws IOException {
+		// En arrière-plan, utiliser l'en-tête capturé pendant la requête JCMS.
+		if (Util.notEmpty(authorizationHeader)) {
+			return authorizationHeader;
+		}
 
 		AuthentificationMode mode = SquashTmUtils.getAuthentificationMode();
 		if (mode == null) {
@@ -929,9 +951,11 @@ public class SquashTmService {
 	 * @return réponse JSON de Squash TM
 	 * @throws IOException en cas d'erreur HTTP ou réseau
 	 */
+
 	private String executePost(String urlString, String authorization, String jsonBody) throws IOException {
 
 		HttpURLConnection connection = null;
+		long startTime = System.currentTimeMillis();
 
 		try {
 			URL url = URI.create(urlString).toURL();
@@ -942,7 +966,6 @@ public class SquashTmService {
 			connection.setReadTimeout(READ_TIMEOUT);
 
 			connection.setRequestProperty("Accept", "application/json");
-
 			connection.setRequestProperty("Content-Type", "application/json");
 
 			if (Util.notEmpty(authorization)) {
@@ -952,18 +975,45 @@ public class SquashTmService {
 			connection.setDoOutput(true);
 
 			byte[] body = jsonBody.getBytes(StandardCharsets.UTF_8);
-
 			connection.setFixedLengthStreamingMode(body.length);
 
-			connection.getOutputStream().write(body);
+			// Envoyer le corps JSON et fermer le flux de sortie.
+			try (java.io.OutputStream output = connection.getOutputStream()) {
+				output.write(body);
+			}
+
+			LOGGER.info("POST Squash TM : " + urlString);
 
 			int responseCode = connection.getResponseCode();
 
-			LOGGER.info("Réponse Squash TM HTTP POST = " + responseCode);
+			long elapsedTime = System.currentTimeMillis() - startTime;
+
+			LOGGER.info("Réponse Squash TM HTTP POST = " + responseCode + " | durée = " + elapsedTime + " ms"
+					+ " | URL = " + urlString);
 
 			if (responseCode < 200 || responseCode >= 300) {
-				throw new IOException(
-						"Squash TM a refusé la requête POST. HTTP = " + responseCode + " | URL = " + urlString);
+
+				StringBuilder errorResponse = new StringBuilder();
+
+				java.io.InputStream errorStream = connection.getErrorStream();
+
+				if (errorStream != null) {
+					try (BufferedReader reader = new BufferedReader(
+							new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
+
+						String line;
+
+						while ((line = reader.readLine()) != null) {
+							errorResponse.append(line);
+						}
+					}
+				}
+
+				LOGGER.error("Erreur POST Squash TM" + " | HTTP = " + responseCode + " | URL = " + urlString
+						+ " | Réponse = " + errorResponse);
+
+				throw new IOException("Squash TM a refusé la requête POST." + " HTTP = " + responseCode
+						+ " | Réponse = " + errorResponse);
 			}
 
 			StringBuilder response = new StringBuilder();
@@ -979,6 +1029,15 @@ public class SquashTmService {
 			}
 
 			return response.toString();
+
+		} catch (java.net.SocketTimeoutException e) {
+
+			long elapsedTime = System.currentTimeMillis() - startTime;
+
+			LOGGER.error("Délai d'attente dépassé pendant le POST Squash TM" + " | durée = " + elapsedTime + " ms"
+					+ " | URL = " + urlString, e);
+
+			throw e;
 
 		} finally {
 

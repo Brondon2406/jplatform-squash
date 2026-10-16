@@ -6,12 +6,15 @@
 %></jsp:useBean>
 
 <%
-if(squashTmImportHandler.validate()){
-	return;
-}
+    if (squashTmImportHandler.validate()) {
+        return;
+    }
+
+System.out.println( "[DEBUG JSP] importJobId = " + squashTmImportHandler.getImportJobId() );
 %>
 
-<form action="" method="post" enctype="multipart/form-data" name="squashTmImportForm">
+<form action="" method="post" enctype="multipart/form-data" name="squashTmImportForm" id="squashTmImportForm" data-import-completed="<%= squashTmImportHandler.getImportResult() != null %>" 
+      data-import-job-id="<%= squashTmImportHandler.getImportJobId() != null ? squashTmImportHandler.getImportJobId() : "" %>">
  <input type="hidden" name="opImport" value="true" />
       
 <div class="squashtm-import-container">
@@ -120,6 +123,60 @@ if(squashTmImportHandler.validate()){
   </div>
 
  </div>
+<%-- ============== PROGRESSION DE L'IMPORTATION ============== --%>
+
+<div id="squashTmProgressContainer"
+     class="squashtm-import-progress"
+     style="display: none;">
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                <span class="jalios-icon icomoon-upload"></span>
+                Importation vers Squash TM
+            </h3>
+        </div>
+
+        <div class="panel-body">
+
+            <p id="squashTmProgressMessage">
+                Préparation de l'importation...
+            </p>
+
+            <div class="progress">
+                <div id="squashTmProgressBar"
+                     class="progress-bar progress-bar-striped active"
+                     role="progressbar"
+                     style="width: 0%;"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="0">
+                </div>
+            </div>
+
+            <p>
+                Progression :
+                <strong id="squashTmProgressPercentage">0%</strong>
+            </p>
+
+            <p>
+                Étape :
+                <strong id="squashTmProgressStage">Initialisation</strong>
+            </p>
+
+            <p>
+                Temps écoulé :
+                <strong id="squashTmProgressElapsed">0 s</strong>
+            </p>
+
+            <div id="squashTmProgressResult"
+                 class="alert"
+                 style="display: none;">
+            </div>
+
+        </div>
+    </div>
+</div>
 
 </div>
 
