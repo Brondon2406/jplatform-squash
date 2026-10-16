@@ -7,6 +7,10 @@ document.addEventListener("DOMContentLoaded", function() {
     var fileSize = document.getElementById("squashTmFileSize");
     var projectContainer = document.getElementById("squashTmProjectContainer");
     var projectName = document.getElementById("squashTmProjectName");
+	var importHeader = document.querySelector(".squashtm-import-header");
+	var importPanel = document.querySelector(".squashtm-import-panel");
+	var progressContainer = document.getElementById("squashTmProgressContainer");
+    var importForm = document.getElementById("squashTmImportForm");
     var information = document.getElementById("squashTmImportInformation");
     var action = document.getElementById("squashtmImportAction");
     var importButton = document.getElementById("squashTmImportButton");
@@ -36,48 +40,46 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 
-    /*
-     * ==========================================================
-     * GLISSER-DEPOSER
-     * ==========================================================
-     */
+	/*
+	 * ==========================================================
+	 * GLISSER-DEPOSER
+	 * ==========================================================
+	 */
 
-    dropZone.addEventListener("dragover", function(event) {
-        event.preventDefault();
-        dropZone.classList.add("dragover");
+	dropZone.addEventListener("dragover", function(event) {
+	    event.preventDefault();
+	    dropZone.classList.add("dragover");
+	});
 
-    });
+	dropZone.addEventListener("dragleave", function(event) {
+	    event.preventDefault();
+	    dropZone.classList.remove("dragover");
+	});
 
+	dropZone.addEventListener("drop", function(event) {
+	    event.preventDefault();
+	    dropZone.classList.remove("dragover");
 
-    dropZone.addEventListener("dragleave", function(event) {
-        event.preventDefault();
-        dropZone.classList.remove("dragover");
+	    var files = event.dataTransfer.files;
 
-    });
+	    if (files.length === 0) {
+	        return;
+	    }
 
+	    var file = files[0];
 
-    dropZone.addEventListener("drop", function(event) {
+	    if (!isExcelFile(file)) {
+	        fileError.style.display = "block";
+	        return;
+	    }
 
-        event.preventDefault();
-        dropZone.classList.remove("dragover");
+	    fileError.style.display = "none";
+	    selectedFileObject = file;
+	    fileInput.files = files;
 
-        var files = event.dataTransfer.files;
-        if (files.length === 0) {
-            return;
-        }
+	    displaySelectedFile(selectedFileObject);
+	});
 
-        var file = files[0];
-        if (!isExcelFile(file)) {
-            fileError.style.display = "block";
-            return;
-        }
-
-        fileError.style.display = "none";
-        selectedFileObject = file;
-        fileInput.files = files;
-
-        displaySelectedFile(selectedFileObject);
-    });
 
     /*
      * ===========  AFFICHAGE DU FICHIER SELECTIONNE ============
@@ -168,18 +170,31 @@ document.addEventListener("DOMContentLoaded", function() {
         information.style.display = "none";
         action.style.display = "none";
         dropZone.style.display = "flex";
+        fileError.style.display = "none";
+        dropZone.classList.remove("dragover");
         importButton.disabled = true;
     }
 
-    /*============  BOUTON IMPORTER ==================
+	/*
+	 * ============== INITIALISATION DE L'AFFICHAGE ==============
+	 */
 
-    importButton.addEventListener("click", function() {
-        if (importButton.disabled) {
-            return;
-        }
-        console.log("Fichier sélectionné :", fileInput.files[0].name);
-        console.log("Projet :", projectName.value);
+	// Si le serveur a créé une tâche d'importation,
+	// afficher uniquement le bloc de progression.
+	if (importForm.dataset.importJobId) {
+	    showImportProgressOnly();
+	}
+	
+	/*
+	 * ============== AFFICHAGE DU SUIVI DE L'IMPORTATION ==============
+	 */
+	function showImportProgressOnly() {
 
-    }); */
+	    // Masquer le titre et le formulaire de sélection
+	    importHeader.style.display = "none";
+	    importPanel.style.display = "none";
 
+	    // Afficher uniquement le suivi de l'importation
+	    progressContainer.style.display = "block";
+	}
 });

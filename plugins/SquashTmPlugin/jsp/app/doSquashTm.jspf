@@ -20,6 +20,7 @@ jcmsContext.addJavaScript("js/jalios/core/components/jalios-sidebar.js");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm.css");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/importfiles.css");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-import.js");
+jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/import-progress.js");
 
 %>
 <%@ include file='/jcore/doHeader.jspf'%>
