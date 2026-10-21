@@ -3,8 +3,30 @@
 @import "../../../css/plugin.less";
 
 @app-color-squashtm: #33446B;
-
 .app-theme-from-color(squashtm, @app-color-squashtm);
+
+.app-nuxeo {
+	.app-sidebar {
+		.widget.field-enumerate .radio {
+			&.active {
+				LABEL {
+				    background-color: @app-color-squashtm;
+				}				
+			}
+		}
+	}
+}
+
+.app-sidebar-section{
+	.app-sidebar-menu{
+		li.active{
+			background-color: @app-color-squashtm !important;
+			&.is-checked:after{
+				top: 20px!important;
+			}
+		}
+	}
+}
 
 .squashtm-account-infos {
 	border-top: none;
