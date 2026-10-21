@@ -16,10 +16,16 @@ public class ImportSquashTmResult {
 	private String projectName;
 	private String fileName;
 
+	private int moduleCount;
+	private int subModuleCount;
+	private int viewCount;
+	private int featureCount;
+
 	private int requirementCount;
 	private int testCaseCount;
 	private int testStepCount;
 	private int folderCount;
+
 	private boolean existingProjectReused;
 
 	private List<String> inconsistencies;
@@ -44,6 +50,38 @@ public class ImportSquashTmResult {
 
 	public void setProjectName(String projectName) {
 		this.projectName = projectName;
+	}
+	
+	public int getModuleCount() {
+	    return moduleCount;
+	}
+
+	public void setModuleCount(int moduleCount) {
+	    this.moduleCount = moduleCount;
+	}
+
+	public int getSubModuleCount() {
+	    return subModuleCount;
+	}
+
+	public void setSubModuleCount(int subModuleCount) {
+	    this.subModuleCount = subModuleCount;
+	}
+
+	public int getViewCount() {
+	    return viewCount;
+	}
+
+	public void setViewCount(int viewCount) {
+	    this.viewCount = viewCount;
+	}
+
+	public int getFeatureCount() {
+	    return featureCount;
+	}
+
+	public void setFeatureCount(int featureCount) {
+	    this.featureCount = featureCount;
 	}
 
 	public String getFileName() {

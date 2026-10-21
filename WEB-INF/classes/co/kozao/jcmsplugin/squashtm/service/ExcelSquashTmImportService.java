@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -13,6 +15,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmData;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmFeature;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmModule;
@@ -57,6 +60,38 @@ public class ExcelSquashTmImportService {
 	 * Compteur des références de cas de test.
 	 */
 	private int testCaseCounter;
+	/**
+	 * Compteurs des éléments construits pendant l'analyse.
+	 */
+	private int moduleCount;
+	private int subModuleCount;
+	private int viewCount;
+	private int featureCount;
+	private int testStepCount;
+	/**
+	 * Statistiques de l'analyse du fichier Excel.
+	 */
+	private int detectedLineCount;
+	private int validLineCount;
+	private int anomalousLineCount;
+	/**
+	 * Nombre de lignes dupliquées détectées.
+	 */
+	private int duplicateLineCount;
+
+	/**
+	 * Identifiants des éléments déjà rencontrés pendant l'analyse.
+	 *
+	 * La détection tient compte du contexte hiérarchique et du contenu fonctionnel
+	 * de la ligne.
+	 */
+	private final Set<String> seenRows = new HashSet<>();
+
+	/**
+	 * Numéros des lignes Excel comportant au moins une anomalie. Permet de ne
+	 * compter chaque ligne qu'une seule fois.
+	 */
+	private final java.util.Set<String> anomalousLines = new java.util.HashSet<>();
 
 	/**
 	 * Incohérences détectées pendant la lecture du fichier Excel.
@@ -88,8 +123,114 @@ public class ExcelSquashTmImportService {
 		}
 	}
 
+	/**
+	 * Enregistre une anomalie pour une ligne Excel.
+	 *
+	 * Plusieurs anomalies peuvent être associées à la même ligne, mais cette ligne
+	 * ne sera comptée qu'une seule fois.
+	 */
+	private void addLineInconsistency(Sheet sheet, Row row, String message) {
+
+		addInconsistency(message);
+
+		String lineKey = sheet.getSheetName() + ":" + (row.getRowNum() + 1);
+
+		if (anomalousLines.add(lineKey)) {
+			anomalousLineCount++;
+		}
+	}
+
 	public List<String> getInconsistencies() {
 		return new ArrayList<>(inconsistencies);
+	}
+
+	/**
+	 * Retourne le nombre de modules retenus.
+	 */
+	public int getModuleCount() {
+		return moduleCount;
+	}
+
+	/**
+	 * Retourne le nombre de sous-modules créés.
+	 */
+	public int getSubModuleCount() {
+		return subModuleCount;
+	}
+
+	/**
+	 * Retourne le nombre de vues créées.
+	 */
+	public int getViewCount() {
+		return viewCount;
+	}
+
+	/**
+	 * Retourne le nombre de fonctionnalités créées.
+	 */
+	public int getFeatureCount() {
+		return featureCount;
+	}
+
+	/**
+	 * Retourne le nombre d'exigences construites.
+	 */
+	public int getRequirementCount() {
+		return requirementCounter;
+	}
+
+	/**
+	 * Retourne le nombre de cas de test construits.
+	 */
+	public int getTestCaseCount() {
+		return testCaseCounter;
+	}
+
+	/**
+	 * Retourne le nombre d'étapes de test construites.
+	 */
+	public int getTestStepCount() {
+		return testStepCount;
+	}
+
+	/**
+	 * Retourne le nombre de lignes de données détectées.
+	 */
+	public int getDetectedLineCount() {
+		return detectedLineCount;
+	}
+
+	/**
+	 * Retourne le nombre de lignes valides.
+	 */
+	public int getValidLineCount() {
+		return validLineCount;
+	}
+
+	/**
+	 * Retourne le nombre de lignes comportant au moins une anomalie.
+	 */
+	public int getAnomalousLineCount() {
+		return anomalousLineCount;
+	}
+
+	/**
+	 * Retourne le nombre de lignes dupliquées détectées.
+	 */
+	public int getDuplicateLineCount() {
+		return duplicateLineCount;
+	}
+
+	/**
+	 * Construit l'objet de synthèse après l'analyse du fichier.
+	 *
+	 * @param projectName nom du projet demandé
+	 * @return les statistiques et les anomalies détectées
+	 */
+	public ImportSquashTmAnalysis buildAnalysis(String projectName) {
+
+		return new ImportSquashTmAnalysis(projectName, detectedLineCount, validLineCount, anomalousLineCount,
+				duplicateLineCount, getInconsistencies());
 	}
 
 	/**
@@ -122,6 +263,20 @@ public class ExcelSquashTmImportService {
 		 */
 		requirementCounter = 0;
 		testCaseCounter = 0;
+
+		moduleCount = 0;
+		subModuleCount = 0;
+		viewCount = 0;
+		featureCount = 0;
+		testStepCount = 0;
+
+		detectedLineCount = 0;
+		validLineCount = 0;
+		anomalousLineCount = 0;
+		duplicateLineCount = 0;
+
+		anomalousLines.clear();
+		seenRows.clear();
 		inconsistencies.clear();
 
 		ImportSquashTmData importData = new ImportSquashTmData(excelFile.getName(), projectName.trim());
@@ -136,8 +291,35 @@ public class ExcelSquashTmImportService {
 				parseSheet(sheet, importData);
 			}
 		}
+		// Une ligne valide est une ligne détectée sans anomalie.
+		validLineCount = detectedLineCount - anomalousLineCount;
 
 		return importData;
+	}
+
+	/**
+	 * Construit une clé de comparaison tenant compte du contexte hiérarchique.
+	 *
+	 * @param subModuleName    sous-module présent sur la ligne
+	 * @param viewName         vue présente sur la ligne
+	 * @param featureName      fonctionnalité présente sur la ligne
+	 * @param elementValue     exigence ou cas de test
+	 * @param action           action de test
+	 * @param expectedResult   résultat attendu
+	 * @param currentSubModule sous-module courant
+	 * @param currentView      vue courante
+	 * @param currentFeature   fonctionnalité courante
+	 * @return clé de comparaison de la ligne
+	 */
+	private String buildDuplicateKey(String subModuleName, String viewName, String featureName, String elementValue, String action, String expectedResult, ImportSquashTmSubModule currentSubModule,
+			ImportSquashTmView currentView, ImportSquashTmFeature currentFeature) {
+		String subModule = !isEmpty(subModuleName) ? subModuleName.trim()
+				: currentSubModule == null ? "" : currentSubModule.getName();
+		String view = !isEmpty(viewName) ? viewName.trim() : currentView == null ? "" : currentView.getName();
+		String feature = !isEmpty(featureName) ? featureName.trim()
+				: currentFeature == null ? "" : currentFeature.getName();
+		return String.join("|", subModule, view, feature, elementValue == null ? "" : elementValue.trim(),
+				action == null ? "" : action.trim(), expectedResult == null ? "" : expectedResult.trim());
 	}
 
 	/**
@@ -171,9 +353,9 @@ public class ExcelSquashTmImportService {
 		ImportSquashTmTestCase currentTestCase = null;
 
 		/*
-		 * La première ligne est la ligne d'en-tête.
+		 * La troisième ligne est la ligne d'en-tête.
 		 */
-		int firstDataRow = 1;
+		int firstDataRow = 3;
 
 		for (int rowIndex = firstDataRow; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
 
@@ -182,6 +364,8 @@ public class ExcelSquashTmImportService {
 			if (row == null) {
 				continue;
 			}
+
+			// Les lignes vides et la ligne d'en-tête ne sont pas comptées.
 
 			String subModuleName = getCellValue(row, COLUMN_SUBMODULE);
 
@@ -202,6 +386,22 @@ public class ExcelSquashTmImportService {
 					&& isEmpty(action) && isEmpty(expectedResult)) {
 
 				continue;
+			}
+
+			detectedLineCount++;
+
+			// Construction d'une clé tenant compte de la hiérarchie.
+			String duplicateKey = buildDuplicateKey(subModuleName, viewName, featureName, elementValue, action,
+					expectedResult, currentSubModule, currentView, currentFeature);
+
+			// Une ligne est signalée si son contenu et son contexte
+			// correspondent à une ligne déjà rencontrée.
+			if (!seenRows.add(duplicateKey)) {
+
+				duplicateLineCount++;
+
+				addLineInconsistency(sheet, row, "Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
+						+ " : ligne dupliquée détectée.");
 			}
 
 			/*
@@ -227,9 +427,8 @@ public class ExcelSquashTmImportService {
 
 				if (currentSubModule == null) {
 
-					addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
-							+ " : vue sans sous-module valide.");
-
+					addLineInconsistency(sheet, row, "Onglet '" + sheet.getSheetName() + "', ligne "
+							+ (row.getRowNum() + 1) + " : vue sans sous-module valide.");
 					currentView = null;
 					currentFeature = null;
 					currentTestCase = null;
@@ -270,9 +469,8 @@ public class ExcelSquashTmImportService {
 
 				if (currentFeature == null) {
 
-					addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
-							+ " : élément sans fonctionnalité valide.");
-
+					addLineInconsistency(sheet, row, "Onglet '" + sheet.getSheetName() + "', ligne "
+							+ (row.getRowNum() + 1) + " : élément sans fonctionnalité valide.");
 					currentTestCase = null;
 
 				} else {
@@ -306,24 +504,28 @@ public class ExcelSquashTmImportService {
 
 				if (currentTestCase == null) {
 
-					addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
-							+ " : action ou résultat attendu présent " + "sans cas de test valide.");
+					addLineInconsistency(sheet, row, "Onglet '" + sheet.getSheetName() + "', ligne "
+							+ (row.getRowNum() + 1) + " : action ou résultat attendu présent sans cas de test valide.");
 
 				} else if (isEmpty(action)) {
 
-					addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
-							+ " : action manquante pour le cas de test '" + currentTestCase.getName() + "'.");
+					addLineInconsistency(sheet, row,
+							"Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
+									+ " : action manquante pour le cas de test '" + currentTestCase.getName() + "'.");
 
 				} else if (isEmpty(expectedResult)) {
 
-					addInconsistency("Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
-							+ " : résultat attendu manquant pour le cas de test '" + currentTestCase.getName() + "'.");
+					addLineInconsistency(sheet, row,
+							"Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
+									+ " : résultat attendu manquant pour le cas de test '" + currentTestCase.getName()
+									+ "'.");
 
 				} else {
 
 					ImportSquashTmTestStep step = new ImportSquashTmTestStep(action.trim(), expectedResult.trim());
 
 					currentTestCase.addStep(step);
+					testStepCount++;
 				}
 			}
 		}
@@ -331,7 +533,8 @@ public class ExcelSquashTmImportService {
 		 * Le module est ajouté s'il contient au moins un sous-module.
 		 */
 		if (!module.getSubModules().isEmpty()) {
-		    importData.addModule(module);
+			importData.addModule(module);
+			moduleCount++;
 		}
 	}
 
@@ -352,6 +555,7 @@ public class ExcelSquashTmImportService {
 		ImportSquashTmSubModule subModule = new ImportSquashTmSubModule(subModuleName.trim());
 
 		module.addSubModule(subModule);
+		subModuleCount++;
 
 		return subModule;
 	}
@@ -373,6 +577,7 @@ public class ExcelSquashTmImportService {
 		ImportSquashTmView view = new ImportSquashTmView(viewName.trim());
 
 		subModule.addView(view);
+		viewCount++;
 
 		return view;
 	}
@@ -394,6 +599,7 @@ public class ExcelSquashTmImportService {
 		ImportSquashTmFeature feature = new ImportSquashTmFeature(featureName.trim());
 
 		view.addFeature(feature);
+		featureCount++;
 
 		return feature;
 	}

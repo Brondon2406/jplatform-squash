@@ -13,6 +13,7 @@ import com.jalios.jcms.upload.DocUploadInfo;
 
 import co.kozao.jcmsplugin.squashtm.model.AuthentificationMode;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmImportJobManager;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmImportManager;
@@ -35,7 +36,21 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 	 */
 	// private File excelFile;
 	private String projectName;
+
+	/** Action de préanalyse du fichier Excel. */
+	private boolean opAnalyze;
+
+	/** Action de confirmation de l'importation. */
 	private boolean opImport;
+
+	/** Action d'annulation de l'analyse. */
+	private boolean opCancelAnalysis;
+
+	/** Identifiant de l'analyse conservée côté serveur. */
+	private String analysisId;
+
+	/** Synthèse de l'analyse du fichier Excel. */
+	private ImportSquashTmAnalysis importAnalysis;
 
 	private final SquashTmImportJobManager importJobManager = SquashTmImportJobManager.getInstance();
 
@@ -86,6 +101,41 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 	public void setOpImport(boolean opImport) {
 		this.opImport = opImport;
+	}
+
+	public boolean isOpAnalyze() {
+		return opAnalyze;
+	}
+
+	public void setOpAnalyze(boolean opAnalyze) {
+		this.opAnalyze = opAnalyze;
+	}
+
+	public boolean isOpCancelAnalysis() {
+		return opCancelAnalysis;
+	}
+
+	public void setOpCancelAnalysis(boolean opCancelAnalysis) {
+		this.opCancelAnalysis = opCancelAnalysis;
+	}
+
+	public String getAnalysisId() {
+		return analysisId;
+	}
+
+	public void setAnalysisId(String analysisId) {
+		this.analysisId = analysisId;
+	}
+
+	public ImportSquashTmAnalysis getImportAnalysis() {
+		return importAnalysis;
+	}
+
+	private void setImportError(String message) {
+
+		importResult = new ImportSquashTmResult();
+		importResult.setProjectName(projectName);
+		importResult.addTechnicalError(message);
 	}
 
 	/**
@@ -186,84 +236,177 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 		LOGGER.info("[HANDLER][DEBUT] processAction() appelée.");
 
-		LOGGER.error("[HANDLER 1] processAction() appelée.");
-		LOGGER.error("[HANDLER 2] opImport = " + opImport);
-		LOGGER.error("[HANDLER 3] projectName = " + projectName);
+		LOGGER.info("[HANDLER 1] processAction() appelée.");
+		LOGGER.info("[HANDLER 2] opAnalyze = " + opAnalyze);
+		LOGGER.info("[HANDLER 3] opImport = " + opImport);
+		LOGGER.info("[HANDLER 4] opCancelAnalysis = " + opCancelAnalysis);
+		LOGGER.info("[HANDLER 5] projectName = " + projectName);
+		LOGGER.info("[HANDLER 6] analysisId = " + analysisId);
 
 		try {
 
-			if (!opImport) {
-				LOGGER.error("[HANDLER 4] Arrêt : opImport vaut false.");
+			// =====================================================
+			// ÉTAPE 1 : ANALYSE DU FICHIER EXCEL
+			// =====================================================
+			if (opAnalyze) {
+
+				LOGGER.info("[HANDLER 7] Action détectée : ANALYSE.");
+
+				if (projectName == null || projectName.trim().isEmpty()) {
+
+					LOGGER.warn("[HANDLER 8] Arrêt : nom du projet vide.");
+
+					setImportError("Le nom du projet Squash TM est obligatoire.");
+
+					return false;
+				}
+
+				LOGGER.info("[HANDLER 9] Récupération du fichier uploadé.");
+
+				List<DocUploadInfo> uploadedFiles = getUploadedFiles("excelFile");
+
+				LOGGER.info("[HANDLER 10] Nombre de fichiers reçus : "
+						+ (uploadedFiles == null ? "null" : uploadedFiles.size()));
+
+				if (uploadedFiles == null || uploadedFiles.isEmpty()) {
+
+					LOGGER.warn("[HANDLER 11] Arrêt : aucun fichier reçu.");
+
+					setImportError("Aucun fichier Excel n'a été reçu.");
+
+					return false;
+				}
+
+				File uploadedFile = uploadedFiles.get(0).getFile();
+
+				LOGGER.info("[HANDLER 12] Fichier reçu : "
+						+ (uploadedFile != null ? uploadedFile.getAbsolutePath() : "null"));
+
+				if (uploadedFile == null || !uploadedFile.isFile()) {
+
+					LOGGER.warn("[HANDLER 13] Arrêt : fichier introuvable.");
+
+					setImportError("Le fichier Excel uploadé est introuvable.");
+
+					return false;
+				}
+
+				LOGGER.info("[HANDLER 14] Appel de analyzeImport().");
+
+				analysisId = importJobManager.analyzeImport(uploadedFile, projectName.trim());
+
+				LOGGER.info("[HANDLER 15] Analyse terminée. ID : " + analysisId);
+
+				importAnalysis = importJobManager.getAnalysis(analysisId);
+
+				LOGGER.info("[HANDLER 16] Récupération de la synthèse terminée.");
+				LOGGER.info("[HANDLER 17] importAnalysis = " + (importAnalysis != null ? "disponible" : "null"));
+
+				if (importAnalysis == null) {
+
+					LOGGER.error("[HANDLER 18] Arrêt : synthèse introuvable.");
+
+					importJobManager.cancelAnalysis(analysisId);
+					analysisId = null;
+
+					setImportError("Impossible de récupérer la synthèse de l'analyse.");
+
+					return false;
+				}
+
+				LOGGER.info("[HANDLER 19] Analyse prête à être affichée.");
+
 				return false;
 			}
 
-			if (projectName == null || projectName.trim().isEmpty()) {
+			// =====================================================
+			// ÉTAPE 2 : ANNULATION DE L'ANALYSE
+			// =====================================================
+			if (opCancelAnalysis) {
 
-				LOGGER.warn("Le nom du projet est vide.");
+				LOGGER.info("[HANDLER 20] Action détectée : ANNULATION.");
+				LOGGER.info("[HANDLER 21] Analyse à annuler : " + analysisId);
 
-				importResult = new ImportSquashTmResult();
-				importResult.setProjectName(projectName);
-				importResult.addTechnicalError("Le nom du projet Squash TM est obligatoire.");
+				boolean cancelled = importJobManager.cancelAnalysis(analysisId);
 
-				return false;
+				LOGGER.info("[HANDLER 22] Résultat de l'annulation : " + cancelled);
 
-			}
+				analysisId = null;
+				importAnalysis = null;
+				importJobId = null;
+				importResult = null;
 
-			LOGGER.info("Action d'import demandée.");
-
-			List<DocUploadInfo> uploadedFiles = getUploadedFiles("excelFile");
-
-			LOGGER.error("[HANDLER 5] getUploadedFiles() exécutée.");
-			LOGGER.error("[HANDLER 6] Nombre de fichiers reçus : "
-					+ (uploadedFiles == null ? "null" : uploadedFiles.size()));
-
-			if (uploadedFiles == null || uploadedFiles.isEmpty()) {
-
-				LOGGER.warn("Aucun fichier Excel reçu.");
-				importResult = new ImportSquashTmResult();
-				importResult.setProjectName(projectName);
-				importResult.addTechnicalError("Aucun fichier Excel n'a été reçu.");
+				LOGGER.info("[HANDLER 23] Données de l'analyse réinitialisées.");
 
 				return false;
 			}
 
-			DocUploadInfo uploadInfo = uploadedFiles.get(0);
+			// =====================================================
+			// ÉTAPE 3 : CONFIRMATION DE L'IMPORTATION
+			// =====================================================
+			if (opImport) {
 
-			File uploadedFile = uploadInfo.getFile();
+				LOGGER.info("[HANDLER 24] Action détectée : CONFIRMATION.");
+				LOGGER.info("[HANDLER 25] Vérification de l'identifiant d'analyse.");
 
-			if (uploadedFile == null || !uploadedFile.exists()) {
+				if (analysisId == null || analysisId.trim().isEmpty()) {
 
-				LOGGER.warn("Le fichier uploadé est introuvable.");
+					LOGGER.error("[HANDLER 26] Arrêt : identifiant d'analyse absent.");
 
-				importResult = new ImportSquashTmResult();
+					setImportError("Aucune analyse à confirmer.");
 
-				importResult.setProjectName(projectName);
-				importResult.addTechnicalError("Le fichier Excel uploadé est introuvable.");
+					return false;
+				}
+
+				LOGGER.info("[HANDLER 27] Préparation de l'authentification.");
+
+				String authorizationHeader = prepareAuthorizationHeader();
+
+				LOGGER.info("[HANDLER 28] Authentification préparée.");
+				LOGGER.info("[HANDLER 29] Appel de confirmImport().");
+
+				importJobId = importJobManager.confirmImport(analysisId, authorizationHeader);
+
+				LOGGER.info("[HANDLER 30] Importation démarrée. ID : " + importJobId);
+
+				analysisId = null;
+				importAnalysis = null;
+				importResult = null;
+
+				LOGGER.info("[HANDLER 31] Données de l'analyse réinitialisées.");
 
 				return false;
 			}
-			LOGGER.info("Fichier Excel reçu : " + uploadedFile.getName());
 
-			LOGGER.error("[HANDLER 7] Fichier : " + uploadedFile.getAbsolutePath());
+			LOGGER.warn("[HANDLER 32] Arrêt : aucune action reconnue.");
 
-			boolean importExecuted = performImport(uploadedFile);
-			LOGGER.info("[DEBUG IMPORT] importExecuted = " + importExecuted);
-			LOGGER.info("[DEBUG IMPORT] importJobId = " + importJobId);
+			return false;
 
-			LOGGER.error("[HANDLER 8] Retour de performImport().");
-			LOGGER.error("[HANDLER 9] importExecuted = " + importExecuted);
-			LOGGER.error("[HANDLER 10] importResult = " + importResult);
+		} catch (IOException e) {
 
-			if (!importExecuted) {
-				return false;
+			LOGGER.error("[HANDLER 33] Erreur pendant le traitement.", e);
+
+			/*
+			 * Récupérer la synthèse si l'analyse existe encore. Si elle a déjà été
+			 * consommée ou expirée, elle sera absente.
+			 */
+			if (analysisId != null && !analysisId.trim().isEmpty()) {
+
+				importAnalysis = importJobManager.getAnalysis(analysisId);
+
+				if (importAnalysis == null) {
+					analysisId = null;
+				}
 			}
+
+			setImportError(e.getMessage());
 
 			return false;
 
 		} finally {
 
+			LOGGER.info("[HANDLER 34] Fin de processAction().");
 			LOGGER.info("[HANDLER][FIN] Fin de processAction().");
 		}
-
 	}
 }

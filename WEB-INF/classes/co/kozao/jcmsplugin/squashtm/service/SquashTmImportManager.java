@@ -238,6 +238,8 @@ public class SquashTmImportManager {
 
 		if (existingProject != null) {
 
+			result.setExistingProjectReused(true);
+
 			if (!existingProject.has("id") || existingProject.get("id").isJsonNull()) {
 
 				throw new IOException("Le projet Squash TM existe mais son identifiant " + "n'a pas été retourné.");
@@ -341,8 +343,6 @@ public class SquashTmImportManager {
 
 				requirementModuleId = requirementModule.get("id").getAsLong();
 
-				result.setFolderCount(result.getFolderCount() + 1);
-
 			} catch (Exception e) {
 				String message = "Impossible de créer le dossier Requirement du module '" + moduleName + "' : "
 						+ e.getMessage();
@@ -350,7 +350,7 @@ public class SquashTmImportManager {
 				LOGGER.error(message, e);
 				result.addTechnicalError(message);
 			}
-			result.setFolderCount(result.getFolderCount() + 1);
+
 			progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
 					"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
 
@@ -366,8 +366,6 @@ public class SquashTmImportManager {
 
 				testCaseModuleId = testCaseModule.get("id").getAsLong();
 
-				result.setFolderCount(result.getFolderCount() + 1);
-
 			} catch (Exception e) {
 				String message = "Impossible de créer le dossier Test Case du module '" + moduleName + "' : "
 						+ e.getMessage();
@@ -375,6 +373,15 @@ public class SquashTmImportManager {
 				LOGGER.error(message, e);
 				result.addTechnicalError(message);
 			}
+
+			// Vérifier que les deux dossiers du module ont été créés.
+			if (requirementModuleId == null || testCaseModuleId == null) {
+				LOGGER.warn("Module ignoré car ses deux dossiers n'ont pas été créés : " + moduleName);
+				continue;
+			}
+
+			// Le module est comptabilisé uniquement si les deux dossiers existent.
+			result.setModuleCount(result.getModuleCount() + 1);
 			result.setFolderCount(result.getFolderCount() + 1);
 			progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
 					"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
@@ -420,6 +427,7 @@ public class SquashTmImportManager {
 				result.setFolderCount(result.getFolderCount() + 1);
 				progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
 						"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
+				result.setSubModuleCount(result.getSubModuleCount() + 1);
 
 				// Parcours des vues du sous-module.
 				for (ImportSquashTmView view : subModule.getViews()) {
@@ -460,6 +468,7 @@ public class SquashTmImportManager {
 					result.setFolderCount(result.getFolderCount() + 1);
 					progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
 							"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
+					result.setViewCount(result.getViewCount() + 1);
 
 					// Parcours des fonctionnalités de la vue.
 					for (ImportSquashTmFeature feature : view.getFeatures()) {
@@ -504,6 +513,7 @@ public class SquashTmImportManager {
 						result.setFolderCount(result.getFolderCount() + 1);
 						progress.update(calculateFolderProgress(result.getFolderCount(), totalFolders), "DOSSIERS",
 								"Création des dossiers : " + result.getFolderCount() + "/" + totalFolders);
+						result.setFeatureCount(result.getFeatureCount() + 1);
 
 						// Le chemin complet distingue les sous-modules.
 						String folderPath = buildFolderPath(moduleName, subModuleName, viewName, featureName);
