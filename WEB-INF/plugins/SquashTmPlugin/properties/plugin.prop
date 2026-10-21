@@ -1,4 +1,3 @@
-
 # Shortcut
 shortcut.jcmsplugin.squashtm.icon: plugins/SquashTmPlugin/images/Squashtm64.png
 shortcut.jcmsplugin.squashtm.link: plugins/SquashTmPlugin/jsp/app/squashTm.jsp
@@ -12,12 +11,13 @@ icon.jcmsplugin.squashtm.box-app-sidebar: plugins/SquashTmPlugin/images/Squashtm
 # LESS
 channel.less.plugins/SquashTmPlugin/css/squashtm.css: plugins/SquashTmPlugin/css/squashtm.less
 channel.less.plugins/SquashTmPlugin/css/importfiles.css: plugins/SquashTmPlugin/css/importfiles.less
+channel.less.plugins/SquashTmPlugin/css/squashtm-analysis.css: plugins/SquashTmPlugin/css/squashtm-analysis.less
+channel.less.plugins/SquashTmPlugin/css/squashtm-report.css: plugins/SquashTmPlugin/css/squashtm-report.less
 
 
 # Module Properties
-jcmsplugin.squashtm.provider.app.auth.domain-name.url: http://192.168.1.126:8098/squash
+jcmsplugin.squashtm.provider.app.auth.domain-name.url: http://192.168.1.129:8098/squash
 jcmsplugin.squashtm.provider.app.auth.redirect.urlSite: [APP_DOMAIN]/plugins/SquashTmPlugin/jsp/auth/callBackAuthentication.jsp
 jcmsplugin.squashtm.provider.authentication-mode.jsp: plugins/SquashTmPlugin/jsp/pluginProperties/doEditPluginAuthenticationMode.jsp
 jcmsplugin.squashtm.provider.authentication-mode.default: BASIC
 jcmsplugin.squashtm.properties.app.sidebar.icon.chooser-image: plugins/SquashTmPlugin/images/Squashtm64.png
-
