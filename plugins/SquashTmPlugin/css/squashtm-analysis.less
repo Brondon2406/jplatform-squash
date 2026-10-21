@@ -1,0 +1,260 @@
+
+// Include variables and mixins
+@import "../../../css/jalios/core/init-mixins.less"; // Use init-mixins.less if more mixins are required
+
+// -------------------------------------------------------------------
+// PLUGINS LESS VARIABLES
+// -------------------------------------------------------------------
+
+
+// Hook for JCMS
+@import "../../../css/plugin.less";
+
+
+
+/* ==========================================================
+   CONTENEUR PRINCIPAL DE LA SYNTHESE
+   ========================================================== */
+
+.squashtm-analysis-container {
+	width: 100%;
+	max-width: 1100px;
+	margin: 0 auto;
+	padding-bottom: 25px;
+
+	/* Animation d'apparition de la synthèse */
+	&.analysis-animated {
+		animation: squashTmAnalysisAppear 0.35s ease-out both;
+	}
+}
+
+/* ==========================================================
+   EN-TETE DE LA SYNTHESE
+   ========================================================== */
+
+.squashtm-analysis-header {
+	display: block;
+	width: 100%;
+	margin-bottom: 28px;
+	padding-bottom: 20px;
+	box-sizing: border-box;
+}
+
+
+.squashtm-analysis-title {
+	margin-top: 0;
+	margin-bottom: 20px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid #e1e5eb;
+
+	font-size: 24px;
+	font-weight: 600;
+
+	.jalios-icon {
+		margin-right: 8px;
+	}
+}
+
+
+.squashtm-analysis-header p {
+	margin-bottom: 10px;
+	color: #777;
+	font-size: 14px;
+}
+
+.squashtm-analysis-header p:last-child {
+	margin-bottom: 0;
+	color: #333;
+}
+
+/* ==========================================================
+   CARTES DES STATISTIQUES
+   ========================================================== */
+
+.squashtm-analysis-statistics {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 15px;
+	margin-bottom: 25px;
+}
+
+.squashtm-analysis-stat-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+
+	min-height: 110px;
+	padding: 20px;
+
+	background-color: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+
+	transition:
+		border-color 0.2s ease,
+		box-shadow 0.2s ease,
+		transform 0.2s ease;
+}
+
+.squashtm-analysis-stat-card:hover {
+	border-color: #7b1fa2;
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+	transform: translateY(-2px);
+}
+
+.squashtm-analysis-stat-card>span {
+	margin-bottom: 10px;
+	color: #777;
+	font-size: 13px;
+}
+
+.squashtm-analysis-stat-card>strong {
+	color: #333;
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+/* ==========================================================
+   TAUX DE VALIDITE
+   ========================================================== */
+
+.squashtm-analysis-validity {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 15px;
+
+	margin-bottom: 25px;
+	padding: 18px 20px;
+
+	background-color: #fafafa;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+.squashtm-analysis-validity strong {
+	font-weight: 600;
+}
+
+.squashtm-analysis-validity span {
+	color: #7b1fa2;
+	font-size: 20px;
+	font-weight: 600;
+}
+
+/* ==========================================================
+      INCOHERENCES DETECTEES
+      ========================================================== */
+
+.squashtm-analysis-inconsistencies {
+	margin-bottom: 20px;
+}
+
+.squashtm-analysis-inconsistencies h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+/* Zone de consultation des incohérences */
+.squashtm-analysis-inconsistencies .list-group {
+	max-height: 350px;
+	overflow-y: scroll;
+	overflow-x: hidden;
+
+	margin-bottom: 0;
+
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background-color: #fff;
+}
+
+/* Chaque incohérence */
+.squashtm-analysis-inconsistencies .list-group-item {
+	padding: 12px 15px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+/* Icônes des incohérences */
+.squashtm-analysis-inconsistencies .jalios-icon {
+	margin-right: 8px;
+	color: #d58512;
+}
+
+/* Message lorsqu'aucune incohérence n'est détectée */
+.squashtm-analysis-inconsistencies .alert {
+	margin-bottom: 0;
+}
+
+/* ==========================================================
+   BOUTONS D'ACTION
+   ========================================================== */
+
+.squashtm-analysis-actions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 10px;
+
+	margin-top: 20px;
+}
+
+.squashtm-analysis-actions .btn {
+	min-width: 150px;
+}
+
+.squashtm-analysis-actions .jalios-icon {
+	margin-right: 8px;
+}
+
+/* ==========================================================
+   ANIMATION D'APPARITION
+   ========================================================== */
+
+@keyframes squashTmAnalysisAppear {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ==========================================================
+   ADAPTATION AUX PETITS ECRANS
+   ========================================================== */
+
+@media (max-width: 900px) {
+	.squashtm-analysis-statistics {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 480px) {
+	.squashtm-analysis-statistics {
+		grid-template-columns: 1fr;
+	}
+
+	.squashtm-analysis-validity {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.squashtm-analysis-actions {
+		align-items: stretch;
+		flex-direction: column-reverse;
+	}
+
+	.squashtm-analysis-actions .btn {
+		width: 100%;
+	}
+
+
+
+}
