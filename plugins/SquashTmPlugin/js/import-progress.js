@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function() {
 
     // =============== ÉLÉMENTS DE LA BARRE DE PROGRESSION ==============
 
@@ -12,6 +12,24 @@ document.addEventListener("DOMContentLoaded", function () {
     var progressStage = document.getElementById("squashTmProgressStage");
     var progressElapsed = document.getElementById("squashTmProgressElapsed");
     var progressResult = document.getElementById("squashTmProgressResult");
+    // Éléments du rapport final.
+    var reportSubModules = document.getElementById("squashTmReportSubModules");
+    var reportTestSteps = document.getElementById("squashTmReportTestSteps");
+    var importReport = document.getElementById("squashTmImportReport");
+    var reportProjectName = document.getElementById("squashTmReportProjectName");
+    var reportStatus = document.getElementById("squashTmReportStatus");
+
+    var reportProjects = document.getElementById("squashTmReportProjects");
+    var reportModules = document.getElementById("squashTmReportModules");
+    var reportViews = document.getElementById("squashTmReportViews");
+    var reportFeatures = document.getElementById("squashTmReportFeatures");
+    var reportRequirements = document.getElementById("squashTmReportRequirements");
+    var reportTestCases = document.getElementById("squashTmReportTestCases");
+
+    var reportDuration = document.getElementById("squashTmReportDuration");
+    var reportErrors = document.getElementById("squashTmReportErrors");
+    var reportErrorSection = document.getElementById("squashTmReportErrorSection");
+    var reportErrorList = document.getElementById("squashTmReportErrorList");
 
     // Éviter plusieurs interrogations simultanées.
     var polling = false;
@@ -66,37 +84,141 @@ document.addEventListener("DOMContentLoaded", function () {
             progressElapsed.textContent = seconds + " s";
         }
 
+
         if (data.completed) {
 
             if (progressResult) {
                 progressResult.style.display = "block";
 
-				progressResult.textContent = data.success
-				    ? "Importation terminée avec succès."
-				    : "Importation terminée avec des erreurs. Consultez le détail ci-dessus.";
+                progressResult.textContent = data.success
+                    ? "Importation terminée avec succès."
+                    : "Importation terminée avec des erreurs. Consultez le détail ci-dessus.";
 
                 progressResult.className = data.success
-                    ? "squashtm-progress-result success"
-                    : "squashtm-progress-result error";
+                    ? "alert alert-success"
+                    : "alert alert-danger";
             }
 
-			/**
-			 * L'importation est terminée, avec ou sans erreurs.
-			 * La progression doit donc atteindre 100 % dans les deux cas.
-			 */
-			if (progressBar) {
-			    progressBar.style.width = "100%";
-			}
 
-			if (progressPercentage) {
-			    progressPercentage.textContent = "100 %";
-			}
+            /**
+             * L'importation est terminée, avec ou sans erreurs.
+             * La progression doit donc atteindre 100 % dans les deux cas.
+             */
+            if (progressBar) {
+                progressBar.style.width = "100%";
+            }
 
-			if (progressBarContainer) {
-			    progressBarContainer.setAttribute("aria-valuenow", "100");
-			}
+            if (progressPercentage) {
+                progressPercentage.textContent = "100 %";
+            }
+
+            if (progressBarContainer) {
+                progressBarContainer.setAttribute("aria-valuenow", "100");
+            }
 
         }
+    }
+
+    /**
+     * Affiche le rapport final de l'importation.
+     *
+     * @param {Object} data données reçues du serveur
+     */
+    function showImportReport(data) {
+        if (!importReport) {
+            return;
+        }
+
+        var success = data.success === true;
+
+        if (reportProjectName) {
+            reportProjectName.textContent = data.projectName || "Non renseigné";
+        }
+
+		if (reportStatus) {
+		    reportStatus.textContent = success
+		        ? "Importation terminée avec succès."
+		        : "Importation terminée avec des erreurs.";
+
+		    reportStatus.className = success
+		        ? "squashtm-import-status alert alert-success"
+		        : "squashtm-import-status alert alert-danger";
+		}
+
+        // Un seul projet est concerné par le fichier importé.
+        if (reportProjects) {
+            reportProjects.textContent = data.projectName ? "1" : "0";
+        }
+
+        if (reportModules) {
+            reportModules.textContent = data.moduleCount ?? 0;
+        }
+
+        if (reportSubModules) {
+            reportSubModules.textContent = data.subModuleCount ?? 0;
+        }
+
+        if (reportViews) {
+            reportViews.textContent = data.viewCount ?? 0;
+        }
+
+        if (reportFeatures) {
+            reportFeatures.textContent = data.featureCount ?? 0;
+        }
+
+        if (reportRequirements) {
+            reportRequirements.textContent = data.requirementCount ?? 0;
+        }
+
+        if (reportTestCases) {
+            reportTestCases.textContent = data.testCaseCount ?? 0;
+        }
+
+        if (reportTestSteps) {
+            reportTestSteps.textContent = data.testStepCount ?? 0;
+        }
+
+        if (reportDuration) {
+            var seconds = Math.floor((Number(data.elapsedTime) || 0) / 1000);
+            reportDuration.textContent = seconds + " s";
+        }
+
+        // Rassembler les incohérences et les erreurs techniques.
+        var errors = [];
+
+        if (Array.isArray(data.inconsistencies)) {
+            errors = errors.concat(data.inconsistencies);
+        }
+
+        if (Array.isArray(data.technicalErrors)) {
+            errors = errors.concat(data.technicalErrors);
+        }
+
+        if (reportErrors) {
+            reportErrors.textContent = String(errors.length);
+        }
+
+        if (reportErrorList) {
+            reportErrorList.replaceChildren();
+
+            errors.forEach(function(error) {
+                var item = document.createElement("li");
+                item.textContent = error;
+                reportErrorList.appendChild(item);
+            });
+        }
+
+        if (reportErrorSection) {
+            reportErrorSection.style.display =
+                errors.length > 0 ? "block" : "none";
+        }
+
+        // Masquer la progression et afficher le rapport.
+        if (progressContainer) {
+            progressContainer.style.display = "none";
+        }
+
+        importReport.style.display = "block";
     }
 
     // =============== RÉCUPÉRATION DE LA PROGRESSION ==============
@@ -124,55 +246,69 @@ document.addEventListener("DOMContentLoaded", function () {
 
         fetch(
             "plugins/SquashTmPlugin/jsp/importProgress/importProgress.jsp?jobId="
-                + encodeURIComponent(jobId),
+            + encodeURIComponent(jobId),
             {
                 method: "GET",
                 cache: "no-store",
                 credentials: "same-origin"
             }
         )
-        .then(function (response) {
+            .then(function(response) {
 
-            if (!response.ok) {
-                throw new Error(
-                    "Impossible de récupérer la progression (HTTP "
-                    + response.status + ")."
-                );
-            }
+                if (!response.ok) {
+                    var error = new Error(
+                        "Impossible de récupérer la progression (HTTP "
+                        + response.status + ")."
+                    );
 
-            return response.json();
-        })
-        .then(function (data) {
+                    error.status = response.status;
+                    throw error;
+                }
 
-            updateImportProgress(data);
+                return response.json();
+            })
+            .then(function(data) {
 
-            if (data.completed) {
-                // L'importation est terminée : arrêter le suivi.
+                updateImportProgress(data);
+
+                if (data.completed) {
+                    showImportReport(data);
+                    // L'importation est terminée : arrêter le suivi.
+                    polling = false;
+                    return;
+                }
+
+                // Recommencer après une seconde.
                 polling = false;
-                return;
-            }
 
-            // Recommencer après une seconde.
-            polling = false;
+                pollingTimer = window.setTimeout(function() {
+                    pollImportProgress(jobId);
+                }, 1000);
 
-            pollingTimer = window.setTimeout(function () {
-                pollImportProgress(jobId);
-            }, 1000);
+            })
+            .catch(function(error) {
+                if (error.status === 400
+                    || error.status === 403
+                    || error.status === 404) {
 
-        })
-        .catch(function (error) {
+                    if (progressMessage) {
+                        progressMessage.textContent = error.message;
+                    }
 
-            polling = false;
+                    return;
+                }
 
-            if (progressMessage) {
-                progressMessage.textContent = error.message;
-            }
+                polling = false;
 
-            // Réessayer après 3 secondes en cas d'erreur réseau.
-            pollingTimer = window.setTimeout(function () {
-                pollImportProgress(jobId);
-            }, 3000);
-        });
+                if (progressMessage) {
+                    progressMessage.textContent = error.message;
+                }
+
+                // Réessayer après 3 secondes en cas d'erreur réseau.
+                pollingTimer = window.setTimeout(function() {
+                    pollImportProgress(jobId);
+                }, 3000);
+            });
     }
 
     // =============== INITIALISATION AUTOMATIQUE ==============
