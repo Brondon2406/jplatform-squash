@@ -1,0 +1,190 @@
+// Include variables and mixins
+@import "../../../css/jalios/core/init-mixins.less"; // Use init-mixins.less if more mixins are required
+
+// -------------------------------------------------------------------
+// PLUGINS LESS VARIABLES
+// -------------------------------------------------------------------
+
+
+// Hook for JCMS
+@import "../../../css/plugin.less";
+
+
+/* Conteneur principal */
+.squashtm-import-report {
+	width: 100%;
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 20px 0;
+	box-sizing: border-box;
+}
+
+/* En-tête */
+/* Séparation entre l'en-tête du rapport et son contenu */
+.squashtm-report-header {
+	margin-bottom: 28px;
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+.squashtm-report-title {
+	display: block;
+	width: 100%;
+	margin: 0 0 20px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid #e1e5eb;
+	box-sizing: border-box;
+	font-size: 24px;
+	font-weight: 600;
+
+	.jalios-icon {
+		margin-right: 8px;
+	}
+}
+
+.squashtm-report-project {
+	margin-bottom: 12px;
+	color: #555;
+
+	strong {
+		color: #222;
+		overflow-wrap: anywhere;
+	}
+}
+
+/* Sections */
+.squashtm-report-section {
+	margin-bottom: 28px;
+
+	>h3 {
+		margin: 0 0 16px;
+		font-size: 18px;
+		font-weight: 600;
+	}
+}
+
+.squashtm-import-status {
+    font-size: 16px;
+}
+
+/* Grille des huit statistiques */
+.squashtm-report-statistics {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.squashtm-report-stat-card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	min-width: 0;
+	padding: 18px;
+	border: 1px solid #e1e5eb;
+	border-radius: 8px;
+	background: #fff;
+	box-sizing: border-box;
+
+	>.jalios-icon {
+		font-size: 20px;
+		color: #33446B;
+	}
+
+	>strong {
+		font-size: 28px;
+		line-height: 1.2;
+		color: #33446B;
+	}
+}
+
+.squashtm-report-stat-label {
+	font-size: 14px;
+	color: #555;
+	overflow-wrap: anywhere;
+}
+
+.squashtm-report-stat-status {
+	font-size: 12px;
+	color: #687385;
+}
+
+/* Durée et bilan des erreurs */
+.squashtm-report-summary-row {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-bottom: 12px;
+	padding: 16px;
+	border: 1px solid #e1e5eb;
+	border-radius: 8px;
+	background: #fff;
+
+	>.jalios-icon {
+		flex: 0 0 auto;
+		font-size: 22px;
+		color: #33446B;
+	}
+
+	>strong {
+		margin-left: auto;
+		font-size: 20px;
+		white-space: nowrap;
+	}
+}
+
+.squashtm-report-summary-content {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+
+	>span {
+		color: #687385;
+		font-size: 13px;
+	}
+}
+
+/* Liste d'erreurs : défilement indépendant */
+#squashTmReportErrorSection {
+	min-width: 0;
+}
+
+#squashTmReportErrorList {
+	max-height: 280px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	margin-bottom: 0;
+	border-radius: 6px;
+
+	>li {
+		overflow-wrap: anywhere;
+		line-height: 1.5;
+	}
+}
+
+/* Bouton final */
+.squashtm-report-actions {
+	display: flex;
+	justify-content: flex-end;
+	padding: 16px 0;
+	border-top: none;
+	background: #fff;
+}
+
+/* ==========================================================
+   ANIMATION D'APPARITION
+   ========================================================== */
+
+@keyframes squashTmAnalysisAppear {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}

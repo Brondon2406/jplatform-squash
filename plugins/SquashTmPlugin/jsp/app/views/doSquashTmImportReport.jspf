@@ -1,0 +1,130 @@
+ <%-- En-tête du rapport --%>
+  <div class="squashtm-report-header">
+    <h2 class="squashtm-report-title">
+       <span class="jalios-icon icomoon-file-excel"></span>
+     <%= glp("jcmsplugin.squashtm.app.import.report.title") %>
+    </h2>
+
+    <p class="squashtm-report-project">
+     <%= glp("jcmsplugin.squashtm.app.import.report.Projets") %>
+      <strong id="squashTmReportProjectName"></strong>
+    </p>
+	
+	   <div id="squashTmReportStatus"   class="squashtm-import-status alert alert-success">
+	    		<%= glp("jcmsplugin.squashtm.app.import.report.success") %>
+		</div>
+  </div>
+
+  <%-- Résumé des données importées --%>
+  <div class="squashtm-report-section">
+    <h3> <%= glp("jcmsplugin.squashtm.app.import.report.summary") %> </h3>
+
+    <div class="squashtm-report-statistics">
+
+      <%-- Projets --%>
+      <div class="squashtm-report-stat-card">
+        <span class="jalios-icon icomoon-folder"></span>
+        <span class="squashtm-report-stat-label"><%= glp("jcmsplugin.squashtm.app.import.report.projects") %> </span>
+        <strong id="squashTmReportProjects"></strong>
+        <span class="squashtm-report-stat-status"> <%= glp("jcmsplugin.squashtm.app.import.report.created") %> </span>
+      </div>
+
+     <%-- Modules --%>
+<div class="squashtm-report-stat-card">
+    <span class="jalios-icon icomoon-folder"></span>
+    <span class="squashtm-report-stat-label"> <%= glp("jcmsplugin.squashtm.app.import.report.modules") %> </span>
+    <strong id="squashTmReportModules"></strong>
+    <span class="squashtm-report-stat-status"> <%= glp("jcmsplugin.squashtm.app.import.report.created") %> </span>
+</div>
+
+<%-- Sous-modules --%>
+<div class="squashtm-report-stat-card">
+    <span class="jalios-icon icomoon-folder-open"></span>
+    <span class="squashtm-report-stat-label"> <%= glp("jcmsplugin.squashtm.app.import.report.submodules") %> </span>
+    <strong id="squashTmReportSubModules"></strong>
+    <span class="squashtm-report-stat-status"><%= glp("jcmsplugin.squashtm.app.import.report.created") %> </span>
+</div>
+
+      <%-- Vues --%>
+      <div class="squashtm-report-stat-card">
+        <span class="jalios-icon icomoon-eye"></span>
+        <span class="squashtm-report-stat-label"><%= glp("jcmsplugin.squashtm.app.import.report.views") %> </span>
+        <strong id="squashTmReportViews"></strong>
+        <span class="squashtm-report-stat-status"><%= glp("jcmsplugin.squashtm.app.import.report.created-feminine") %> </span>
+      </div>
+
+      <%-- Fonctionnalités --%>
+      <div class="squashtm-report-stat-card">
+        <span class="jalios-icon icomoon-list"></span>
+        <span class="squashtm-report-stat-label"> <%= glp("jcmsplugin.squashtm.app.import.report.features") %> </span>
+        <strong id="squashTmReportFeatures"></strong>
+        <span class="squashtm-report-stat-status"> <%= glp("jcmsplugin.squashtm.app.import.report.created-feminine") %> </span>
+      </div>
+
+      <%-- Exigences --%>
+      <div class="squashtm-report-stat-card">
+        <span class="jalios-icon icomoon-file-text"></span>
+        <span class="squashtm-report-stat-label"> <%= glp("jcmsplugin.squashtm.app.import.report.requirements") %> </span>
+        <strong id="squashTmReportRequirements"></strong>
+        <span class="squashtm-report-stat-status"><%= glp("jcmsplugin.squashtm.app.import.report.imported-feminine") %> </span>
+      </div>
+
+      <%-- Cas de test --%>
+      <div class="squashtm-report-stat-card">
+        <span class="jalios-icon icomoon-list"></span>
+        <span class="squashtm-report-stat-label"> <%= glp("jcmsplugin.squashtm.app.import.report.test-cases") %> </span>
+        <strong id="squashTmReportTestCases"></strong>
+        <span class="squashtm-report-stat-status"> <%= glp("jcmsplugin.squashtm.app.import.report.imported") %> </span>
+      </div>
+      
+      <%-- Étapes de test --%>
+<div class="squashtm-report-stat-card">
+    <span class="jalios-icon icomoon-list"></span>
+    <span class="squashtm-report-stat-label"> <%= glp("jcmsplugin.squashtm.app.import.report.test-steps") %> </span>
+    <strong id="squashTmReportTestSteps"></strong>
+    <span class="squashtm-report-stat-status"> <%= glp("jcmsplugin.squashtm.app.import.report.imported-feminine") %> </span>
+</div>
+
+    </div>
+  </div>
+
+  <%-- Informations complémentaires --%>
+  <div class="squashtm-report-section">
+    <h3> <%= glp("jcmsplugin.squashtm.app.import.report.other-results") %> </h3>
+
+    <div class="squashtm-report-summary-row">
+      <span class="jalios-icon icomoon-time"></span>
+      <div class="squashtm-report-summary-content">
+        <strong> <%= glp("jcmsplugin.squashtm.app.import.report.duration") %> </strong>
+        <span><%= glp("jcmsplugin.squashtm.app.import.report.total-processing-time") %> </span>
+      </div>
+      <strong id="squashTmReportDuration"> s</strong>
+    </div>
+
+    <div class="squashtm-report-summary-row">
+      <span class="jalios-icon icomoon-warning"></span>
+      <div class="squashtm-report-summary-content">
+        <strong> <%= glp("jcmsplugin.squashtm.app.import.report.error-elements") %>  </strong>
+        <span> <%= glp("jcmsplugin.squashtm.app.import.report.error-description") %> </span>
+      </div>
+      <strong id="squashTmReportErrors"></strong>
+    </div>
+  </div>
+
+  <%-- Détails des erreurs --%>
+  <div class="squashtm-report-section" id="squashTmReportErrorSection" style="display: none;">
+
+		<jalios:accordion>
+ 			<jalios:accordion-panel title="Détails des erreurs">
+  				<ul id="squashTmReportErrorList" class="list-group"> </ul>
+   			</jalios:accordion-panel>
+		</jalios:accordion>
+  </div>
+
+  <%-- Action finale --%>
+  <div class="squashtm-report-actions">
+    <button type="button" id="squashTmReportFinishButton" class="btn btn-primary">
+      <span class="jalios-icon icomoon-check"></span>
+       <%= glp("jcmsplugin.squashtm.app.import.report.finish") %>
+    </button>
+  </div>
