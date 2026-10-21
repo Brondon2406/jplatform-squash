@@ -92,3 +92,52 @@ jcmsplugin.squashtm.app.import.information.description: Le fichier sélectionné
 
 jcmsplugin.squashtm.app.import.cancel: Annuler
 jcmsplugin.squashtm.app.import.submit: Importer
+
+# PROGRESSION DE L'IMPORTATION
+jcmsplugin.squashtm.app.import.progress.title: Importation vers Squash TM
+jcmsplugin.squashtm.app.import.progress.preparation: Préparation de l'importation...
+jcmsplugin.squashtm.app.import.progress.percentage: Progression :
+jcmsplugin.squashtm.app.import.progress.stage: Étape :
+jcmsplugin.squashtm.app.import.progress.initialization: Initialisation
+jcmsplugin.squashtm.app.import.progress.elapsed: Temps écoulé :
+
+# ANALYSE DU FICHIER EXCEL
+jcmsplugin.squashtm.app.import.analysis.title: Synthèse de l'analyse
+jcmsplugin.squashtm.app.import.analysis.description: Vérifiez les données du fichier avant de confirmer leur importation dans Squash TM.
+jcmsplugin.squashtm.app.import.analysis.Projets: Projet :
+jcmsplugin.squashtm.app.import.analysis.detected-lines: Lignes détectées
+jcmsplugin.squashtm.app.import.analysis.valid-lines: Lignes valides
+jcmsplugin.squashtm.app.import.analysis.anomalous-lines: Lignes anormales
+jcmsplugin.squashtm.app.import.analysis.duplicate-lines: Doublons détectés
+jcmsplugin.squashtm.app.import.analysis.validity-rate: Taux de validité :
+jcmsplugin.squashtm.app.import.analysis.inconsistencies: Incohérences détectées
+jcmsplugin.squashtm.app.import.analysis.no-inconsistencies: Aucune incohérence détectée.
+jcmsplugin.squashtm.app.import.analysis.confirm: Confirmer et importer
+
+# FICHIER SÉLECTIONNÉ
+jcmsplugin.squashtm.app.import.file.remove: Supprimer le fichier
+
+# RAPPORT D'IMPORTATION 
+jcmsplugin.squashtm.app.import.report.title: Rapport d'importation
+jcmsplugin.squashtm.app.import.report.success: Importation terminée avec succès
+jcmsplugin.squashtm.app.import.report.summary: Bilan des données importées
+jcmsplugin.squashtm.app.import.report.projects: Projets
+jcmsplugin.squashtm.app.import.report.Projets: Projet :
+jcmsplugin.squashtm.app.import.report.modules: Modules
+jcmsplugin.squashtm.app.import.report.submodules: Sous-modules
+jcmsplugin.squashtm.app.import.report.views: Vues
+jcmsplugin.squashtm.app.import.report.features: Fonctionnalités
+jcmsplugin.squashtm.app.import.report.requirements: Exigences
+jcmsplugin.squashtm.app.import.report.test-cases: Cas de test
+jcmsplugin.squashtm.app.import.report.test-steps: Étapes de test
+jcmsplugin.squashtm.app.import.report.created: Créés
+jcmsplugin.squashtm.app.import.report.created-feminine: Créées
+jcmsplugin.squashtm.app.import.report.imported: Importés
+jcmsplugin.squashtm.app.import.report.imported-feminine: Importées
+jcmsplugin.squashtm.app.import.report.other-results: Autres résultats
+jcmsplugin.squashtm.app.import.report.duration: Durée de l'importation
+jcmsplugin.squashtm.app.import.report.total-processing-time: Temps total du traitement
+jcmsplugin.squashtm.app.import.report.error-elements: Éléments en erreur
+jcmsplugin.squashtm.app.import.report.error-description: Éléments qui n'ont pas pu être importés
+jcmsplugin.squashtm.app.import.report.error-details: Détails des erreurs
+jcmsplugin.squashtm.app.import.report.finish: Terminer
