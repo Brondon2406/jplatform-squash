@@ -1,7 +1,16 @@
 package co.kozao.jcmsplugin.squashtm;
 
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.jalios.jcms.Channel;
 import com.jalios.jcms.Member;
 import com.jalios.jcms.plugin.PluginManager;
 import com.jalios.util.Util;
@@ -26,6 +35,11 @@ public class SquashTmManager {
 	private static SquashTmManager SINGLETON;
 
 	private final SquashTmService service;
+	private static final String SQUASHTM_CACHE_KEY_API_REACHABLE = "jcmsplugin.squashtm.cache.api-reachable";
+	private final Cache<String, String> API_CACHE = CacheBuilder.newBuilder()
+			.expireAfterWrite(20, TimeUnit.MINUTES)
+			.maximumSize(10)
+			.build();
 
 	/**
 	 * Constructeur privé du Singleton.
@@ -46,6 +60,64 @@ public class SquashTmManager {
 		}
 
 		return SINGLETON;
+	}
+	
+	public static boolean isCacheEnable() {
+		return Channel.getChannel().getBooleanProperty(SquashTmConstants.SQUASHTM_CACHE_ENABLED, false);
+	}
+	
+	public boolean isSquashTmApiReachable() {
+		StopWatch stopWatch = new StopWatch();
+		if (LOGGER.isDebugEnabled()) {
+			stopWatch.start();
+		}
+		boolean apiReachable = false;
+		if(isCacheEnable()) {
+			String lastAccessTime = API_CACHE.getIfPresent(SQUASHTM_CACHE_KEY_API_REACHABLE);
+			if(Util.notEmpty(lastAccessTime)) {
+				if(LOGGER.isDebugEnabled()) {
+					LOGGER.debug("Last time the API was successfully accessed (read from cache) : '" + lastAccessTime + "'");
+				}
+				apiReachable = true;
+			} else {
+				apiReachable = checkSquashTmApiAccess();
+				if(apiReachable) {
+					Date now = new Date();
+					API_CACHE.put(SQUASHTM_CACHE_KEY_API_REACHABLE, now.toString());
+					if(LOGGER.isDebugEnabled()) {
+						LOGGER.debug("Time of last to API added in cache : '" + lastAccessTime + "'");
+					}
+				}
+			}
+		} else {
+			apiReachable = checkSquashTmApiAccess();
+		}
+
+		if (LOGGER.isDebugEnabled()) {
+			stopWatch.stop();
+			LOGGER.debug(stopWatch.getTime(TimeUnit.MILLISECONDS)
+					+ " ms time elapsed for executing 'isSquashTmApiReachable()'");
+		}
+		return apiReachable;
+	}
+
+	private boolean checkSquashTmApiAccess() {
+		boolean answer = false;
+		String urlRemoteSquashTm = SquashTmUtils.getSquashTmServerUrl();
+		try {
+			URL u = new URL(urlRemoteSquashTm);
+			URLConnection conn = u.openConnection();
+			conn.connect();
+			conn.getInputStream().close();
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Internet connection established");
+			}
+			answer = true;
+		} catch (Exception e) {
+			answer = false;
+			LOGGER.info("No Internet Connection available, please connect with internet");
+		}
+		return answer;
 	}
 
 	/**

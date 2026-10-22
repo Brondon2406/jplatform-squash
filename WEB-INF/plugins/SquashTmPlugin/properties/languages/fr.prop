@@ -1,13 +1,13 @@
-
 #SHORTCUT
 data.$id.shortcut.jcmsplugin.squashtm.title: Squash TM
 data.$id.shortcut.jcmsplugin.squashtm.text: Ce Module Permettant l'import des données sur squash via un fichier Excel
 
-jcmsplugin.squashtm.app.title: Squash TM
-
 #App
+jcmsplugin.squashtm.app.title: Squash TM
 jcmsplugin.squashtm.app.importfiles.title: Import Excel
 jcmsplugin.squashtm.app.dashboard.title: Dashboard
+jcmsplugin.squashtm.cache.enabled: Activer le cache de données
+jcmsplugin.squashtm.authenticate.error.squashtm-api-not-available: L'api de Squash TM est injoignable. Veuillez vérifier votre connexion internet.
 
 
 #APP SIDEBAR
@@ -18,7 +18,6 @@ jcmsplugin.squashtm.app.sidebar.account-infos: Compte Squash TM lié
 jcmsplugin.squashtm.app.sidebar.account-infos.phone.title: Numéro de téléphone du compte Squash TM
 jcmsplugin.squashtm.app.sidebar.account-infos.email.title: E-mail du compte Squash TM
 jcmsplugin.squashtm.app.sidebar.account-infos.created-at: Créé le
-
 #jcmsplugin.squashtm.properties.app.sidebar.icon: Icône de la sidebar de l'app Squash TM
 
 #BODY
@@ -52,7 +51,6 @@ jcmsplugin.squashtm.token-form.submit: Se connecter
 jcmsplugin.squashtm.token-form.label=Veuillez renseigner un jeton d'API.
 jcmsplugin.squashtm.token-form.label.help=(généré depuis votre compte Squash TM)
 
-
 # BASIC
 jcmsplugin.squashtm.basic-form.title: Connexion à Squash TM
 jcmsplugin.squashtm.basic-form.submit: Se connecter
@@ -66,7 +64,6 @@ jcmsplugin.squashtm.basic-form.username: Nom d'utilisateur
 jcmsplugin.squashtm.auth.callback.title: Squash TM
 jcmsplugin.squashtm.auth.callback.error: L'authentification avec Squash TM a échoué !
 jcmsplugin.squashtm.auth.callback.back: Retour à l'application
-
 
 # IMPORT
 jcmsplugin.squashtm.app.import.title: Importer un fichier Excel

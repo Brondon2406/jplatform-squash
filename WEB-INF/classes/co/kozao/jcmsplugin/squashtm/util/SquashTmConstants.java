@@ -28,6 +28,8 @@ public final class SquashTmConstants {
 	/*
 	 * ============================================== PROPRIETES DUPLUGIN ============================================================
 	 */
+	
+	 public static final String SQUASHTM_CACHE_ENABLED = "jcmsplugin.squashtm.cache.enabled";
 
 	/**
 	 * URL du serveur Squash TM.

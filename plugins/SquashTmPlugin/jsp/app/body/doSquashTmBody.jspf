@@ -8,14 +8,19 @@
 	SquashTmManager squashTmManager = SquashTmManager.getInstance(); 
 	Boolean isConnectAttribute = (Boolean) request.getAttribute( "jcmsplugin.squashtm.token.is-connect" ); 
 	boolean isConnect = isConnectAttribute != null && isConnectAttribute.booleanValue();
+	boolean isApiReachable = SquashTmManager.getInstance().isSquashTmApiReachable(); 
 	
 if (!squashTmManager.isPluginActive(loggedMember)) {%>
 	<jalios:message dismissable="false" css="gedbox-unifiedInsert-message" level="<%= MessageLevel.WARN %>">
         <p><%= glp("jcmsplugin.squashtm.error.configured") %> </p>
 	</jalios:message>
+<% }else if(!isApiReachable){ %>
+	<jalios:message dismissable="false" css="gedbox-unifiedInsert-message" level="<%=MessageLevel.WARN %>">
+		<p><%=glp("jcmsplugin.squashtm.authenticate.error.squashtm-api-not-available")%><br/></p> 
+	</jalios:message>	
 <%} else if (!isConnect){%>
-	<% AuthentificationMode authMode = SquashTmUtils.getAuthentificationMode();%>
 	<jalios:message dismissable="false" css="gedbox-unifiedInsert-message" level="<%= MessageLevel.INFO %>">
+		<% AuthentificationMode authMode = SquashTmUtils.getAuthentificationMode();%>
 		<p><%= glp("jcmsplugin.squashtm.signin-please") %> </p>
 		<% if (authMode == AuthentificationMode.BASIC) { %>
 		<a href="#" class="btn btn-primary modal" data-jalios-modal-url="/plugins/SquashTmPlugin/jsp/auth/doSquashTmBasicForm.jsp"> 
