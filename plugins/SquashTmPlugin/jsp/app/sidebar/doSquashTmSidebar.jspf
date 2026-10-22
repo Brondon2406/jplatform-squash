@@ -61,9 +61,7 @@ String iconApp = SquashTmUtils.getAppSidebarIcon();
   </div>
 
   <div class="account-actions">
-    <a class="btn modal"
-       href="plugins/SquashTmPlugin/jsp/auth/doSquashTmLogoutCurrentUser.jsp"
-       title="<%= glp("jcmsplugin.squashtm.app.sidebar.auth.logout.title") %>">
+    <a class="btn modal" href="plugins/SquashTmPlugin/jsp/auth/doSquashTmLogoutCurrentUser.jsp" title="<%= glp("jcmsplugin.squashtm.app.sidebar.auth.logout.title") %>">
       <span class="jalios-icon sidebar-logout icomoon-switch"></span>
       <%= glp("jcmsplugin.squashtm.app.sidebar.auth.logout") %>
     </a>

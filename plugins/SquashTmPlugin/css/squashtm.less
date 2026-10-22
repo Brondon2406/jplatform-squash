@@ -10,19 +10,20 @@
 		.widget.field-enumerate .radio {
 			&.active {
 				LABEL {
-				    background-color: @app-color-squashtm;
-				}				
+					background-color: @app-color-squashtm;
+				}
 			}
 		}
 	}
 }
 
-.app-sidebar-section{
-	.app-sidebar-menu{
-		li.active{
+.app-sidebar-section {
+	.app-sidebar-menu {
+		li.active {
 			background-color: @app-color-squashtm !important;
-			&.is-checked:after{
-				top: 20px!important;
+
+			&.is-checked:after {
+				top: 20px !important;
 			}
 		}
 	}
@@ -147,20 +148,6 @@
 		}
 	}
 
-	.squashtm-logout-modal {
-
-		.modal-header {
-			background-color: #D9534F;
-			color: #fff !important;
-		}
-
-		.modal-header .close {
-			color: #fff !important;
-			opacity: 1;
-		}
-
-	}
-
 	.app-sidebar {
 
 		.app-sidebar-section-views {
@@ -181,7 +168,6 @@
 				}
 			}
 
-
 			.squashtm-progress-container {
 				margin-bottom: 24px;
 				padding: 16px;
@@ -268,6 +254,48 @@
 				font-size: 12px;
 			}
 
+		}
+	}
+}
+
+/* Modale de confirmation de déconnexion */
+.squashtm-logout-modal {
+
+	/* En-tête rouge */
+	.modal-header {
+		background-color: #D9534F !important;
+		color: #FFFFFF !important;
+		border-bottom-color: #D9534F !important;
+
+		.modal-title {
+			color: #FFFFFF !important;
+		}
+
+		.close {
+			color: #FFFFFF !important;
+			opacity: 1;
+			text-shadow: none;
+		}
+	}
+
+	/* Bouton de confirmation rouge */
+	.modal-footer {
+		.btn-primary {
+			background-color: #D9534F !important;
+			border-color: #D43F3A !important;
+			color: #FFFFFF !important;
+
+			&:hover,
+			&:focus {
+				background-color: #C9302C !important;
+				border-color: #AC2925 !important;
+				color: #FFFFFF !important;
+			}
+
+			&:active {
+				background-color: #AC2925 !important;
+				border-color: #761C19 !important;
+			}
 		}
 	}
 }

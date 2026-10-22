@@ -19,7 +19,7 @@
 		
 	<jalios:buffer name='MODAL_BUTTONS'>
 	    <button type="button" class="btn btn-default" onclick="jQuery.jalios.ui.Modal.close(false);"> <%= glp("ui.com.btn.close") %> </button>
-	    <button type="submit" class="btn btn-primary ajax-refresh" name="submit" value="true" style="background-color: #D9534F;"> <%= glp("jcmsplugin.squashtm.authentication.auth.logout.modal.btn.title") %> </button>
+	    <button type="submit" class="btn btn-primary ajax-refresh" name="submit" value="true" > <%= glp("jcmsplugin.squashtm.authentication.auth.logout.modal.btn.title") %> </button>
 	</jalios:buffer>	
 </jalios:modal>
 
