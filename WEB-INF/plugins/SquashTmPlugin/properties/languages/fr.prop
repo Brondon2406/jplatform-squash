@@ -29,6 +29,7 @@ jcmsplugin.squashtm.app.sidebar.auth.logout: 	Se déconnecter de Squash TM
 jcmsplugin.squashtm.app.sidebar.auth.logout.title: Déconnexion de Squash TM
 jcmsplugin.squashtm.authentication.auth.logout.modal.btn.title: Déconnecter de façon temporaire
 jcmsplugin.squashtm.token-form.error.invalid: Le jeton d'API saisi est invalide. Vérifiez-le et réessayez.
+jcmsplugin.squashtm.app.import.template.download: Télécharger le modèle
 
 #PROPIETES
 jcmsplugin.squashtm.provider.app.auth.domain-name.url: Nom de domaine Squash TM

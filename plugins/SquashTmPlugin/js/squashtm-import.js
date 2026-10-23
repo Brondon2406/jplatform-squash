@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function() {
     var fileInput = document.getElementById("squashTmExcelFile");
     var dropZone = document.getElementById("squashTmDropZone");
+    var templateDownload = document.getElementById("squashTmTemplateDownload");
     var fileError = document.getElementById("squashTmFileError");
     var selectedFile = document.getElementById("squashTmSelectedFile");
     var fileName = document.getElementById("squashTmFileName");
@@ -104,6 +105,11 @@ document.addEventListener("DOMContentLoaded", function() {
         fileSize.textContent = formatFileSize(file.size);
         dropZone.style.display = "none";
         selectedFile.style.display = "block";
+		
+        if (templateDownload) {
+            templateDownload.style.display = "none";
+        }
+		
         projectContainer.style.display = "block";
         information.style.display = "block";
         action.style.display = "flex";
@@ -324,6 +330,12 @@ document.addEventListener("DOMContentLoaded", function() {
         information.style.display = "none";
         action.style.display = "none";
         dropZone.style.display = "flex";
+		
+		// Réafficher le téléchargement du modèle
+		if (templateDownload) {
+		    templateDownload.style.display = "flex";
+		}
+		
         fileError.style.display = "none";
         dropZone.classList.remove("dragover");
         importButton.disabled = true;

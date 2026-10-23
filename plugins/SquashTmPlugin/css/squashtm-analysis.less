@@ -1,4 +1,3 @@
-
 // Include variables and mixins
 @import "../../../css/jalios/core/init-mixins.less"; // Use init-mixins.less if more mixins are required
 
@@ -254,7 +253,32 @@
 	.squashtm-analysis-actions .btn {
 		width: 100%;
 	}
+}
 
+/* ==========================================================
+   HEADER DE LA PROGRESSION DE L'IMPORTATION
+   ========================================================== */
 
+.squashtm-progress-header {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e1e5eb;
 
+  .panel-heading {
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .squashtm-progress-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.4;
+
+    .jalios-icon {
+      margin-right: 8px;
+    }
+  }
 }
