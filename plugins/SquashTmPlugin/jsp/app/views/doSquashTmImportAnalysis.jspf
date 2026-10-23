@@ -1,110 +1,91 @@
+ 
+ <%-- ============== SYNTHESE DE L'ANALYSE ============== --%>
+ 
  <%-- En-tête --%>
-  <div class="squashtm-analysis-header">
+<div class="squashtm-analysis-header">
     <h2 class="squashtm-analysis-title">
       <span class="jalios-icon icomoon-file-excel"></span>
       <%= glp("jcmsplugin.squashtm.app.import.analysis.title") %>
     </h2>
-
     <p> <%= glp("jcmsplugin.squashtm.app.import.analysis.description") %> </p>
-
     <p>
       <strong> <%= glp("jcmsplugin.squashtm.app.import.analysis.Projets") %> </strong>
-      <span id="squashTmAnalysisProjectName">
-        <%= squashTmImportHandler.getImportAnalysis() != null
-            ? squashTmImportHandler.getImportAnalysis().getProjectName()
-            : "" %>
-      </span>
+	      <span id="squashTmAnalysisProjectName">
+	       	  <%= squashTmImportHandler.getImportAnalysis() != null ? squashTmImportHandler.getImportAnalysis().getProjectName() : "" %>
+	      </span>
     </p>
-  </div>
+</div>
 
   <%-- Statistiques --%>
-  <div class="squashtm-analysis-statistics">
+<div class="squashtm-analysis-statistics">
 
     <div class="squashtm-analysis-stat-card">
       <span> <%= glp("jcmsplugin.squashtm.app.import.analysis.detected-lines") %> </span>
-      <strong id="squashTmAnalysisDetected">
-        <%= squashTmImportHandler.getImportAnalysis() != null
-            ? squashTmImportHandler.getImportAnalysis().getDetectedLineCount()
-            : 0 %>
-      </strong>
+	      <strong id="squashTmAnalysisDetected">
+	        <%= squashTmImportHandler.getImportAnalysis() != null ? squashTmImportHandler.getImportAnalysis().getDetectedLineCount() : 0 %>
+	      </strong>
     </div>
 
     <div class="squashtm-analysis-stat-card">
       <span> <%= glp("jcmsplugin.squashtm.app.import.analysis.valid-lines") %> </span>
-      <strong id="squashTmAnalysisValid">
-        <%= squashTmImportHandler.getImportAnalysis() != null
-            ? squashTmImportHandler.getImportAnalysis().getValidLineCount()
-            : 0 %>
-      </strong>
+	      <strong id="squashTmAnalysisValid">
+	        <%= squashTmImportHandler.getImportAnalysis() != null ? squashTmImportHandler.getImportAnalysis().getValidLineCount() : 0 %>
+	      </strong>
     </div>
 
     <div class="squashtm-analysis-stat-card">
       <span> <%= glp("jcmsplugin.squashtm.app.import.analysis.anomalous-lines") %> </span>
-      <strong id="squashTmAnalysisAnomalous">
-        <%= squashTmImportHandler.getImportAnalysis() != null
-            ? squashTmImportHandler.getImportAnalysis().getAnomalousLineCount()
-            : 0 %>
-      </strong>
+	      <strong id="squashTmAnalysisAnomalous">
+	        <%= squashTmImportHandler.getImportAnalysis() != null ? squashTmImportHandler.getImportAnalysis().getAnomalousLineCount() : 0 %>
+	      </strong>
     </div>
 
     <div class="squashtm-analysis-stat-card">
       <span> <%= glp("jcmsplugin.squashtm.app.import.analysis.duplicate-lines") %> </span>
-      <strong id="squashTmAnalysisDuplicates">
-        <%= squashTmImportHandler.getImportAnalysis() != null
-            ? squashTmImportHandler.getImportAnalysis().getDuplicateLineCount()
-            : 0 %>
-      </strong>
+	      <strong id="squashTmAnalysisDuplicates">
+	        <%= squashTmImportHandler.getImportAnalysis() != null ? squashTmImportHandler.getImportAnalysis().getDuplicateLineCount() : 0 %>
+	      </strong>
     </div>
 
-  </div>
+</div>
 
   <%-- Taux de validité --%>
   <div class="squashtm-analysis-validity">
     <strong> <%= glp("jcmsplugin.squashtm.app.import.analysis.validity-rate") %> </strong>
-
-    <span id="squashTmAnalysisValidityRate">
-      <%= squashTmImportHandler.getImportAnalysis() != null ? String.format( java.util.Locale.FRANCE, "%.2f", squashTmImportHandler.getImportAnalysis().getValidityRate()) : "0,00" %> %
-    </span>
+	    <span id="squashTmAnalysisValidityRate">
+	      <%= squashTmImportHandler.getImportAnalysis() != null ? String.format( java.util.Locale.FRANCE, "%.2f", squashTmImportHandler.getImportAnalysis().getValidityRate()) : "0,00" %> %
+	    </span>
   </div>
 
   <%-- Liste des incohérences --%>
-  <div class="squashtm-analysis-inconsistencies">
+<div class="squashtm-analysis-inconsistencies">
     <h3> <%= glp("jcmsplugin.squashtm.app.import.analysis.inconsistencies") %> </h3>
-
-    <% if (squashTmImportHandler.getImportAnalysis() != null && !squashTmImportHandler.getImportAnalysis() .getInconsistencies().isEmpty()) { %>
-
+   		 <% if (squashTmImportHandler.getImportAnalysis() != null && !squashTmImportHandler.getImportAnalysis() .getInconsistencies().isEmpty()) { %>
       <ul class="list-group">
         <% for (String inconsistency : squashTmImportHandler.getImportAnalysis() .getInconsistencies()) { %>
           <li class="list-group-item">
             <span class="jalios-icon icomoon-warning"></span>
             <%= inconsistency %>
           </li>
-
         <% } %>
       </ul>
-
     <% } else { %>
-
       <div class="alert alert-success">
         <%= glp("jcmsplugin.squashtm.app.import.analysis.no-inconsistencies") %>
       </div>
-
     <% } %>
-  </div>
+</div>
 
   <%-- Boutons d'action --%>
   <div class="squashtm-analysis-actions">
-
     <button type="submit" id="squashTmCancelAnalysisButton" class="btn btn-default">
-      		<span class="jalios-icon icomoon-close"></span>
-     	 <%= glp("jcmsplugin.squashtm.app.import.cancel") %>
+      	<span class="jalios-icon icomoon-close"></span>
+     	   <%= glp("jcmsplugin.squashtm.app.import.cancel") %>
     </button>
 
-    <button type="submit"
-            id="squashTmConfirmImportButton"
-            class="btn btn-primary">
+    <button type="submit" id="squashTmConfirmImportButton" class="btn btn-primary">
       <span class="jalios-icon icomoon-upload"></span>
-      <%= glp("jcmsplugin.squashtm.app.import.analysis.confirm") %>
+          <%= glp("jcmsplugin.squashtm.app.import.analysis.confirm") %>
     </button>
-
   </div>
+  
