@@ -227,10 +227,6 @@ document.addEventListener("DOMContentLoaded", function() {
         analysisContainer.classList.add("analysis-animated");
     }
 
-    if (importForm && importForm.dataset.analysisReady === "true") {
-        showAnalysisSummary();
-    }
-
     /*
      * ============== CONFIRMER L'IMPORTATION ==============
      */
@@ -329,11 +325,12 @@ document.addEventListener("DOMContentLoaded", function() {
         projectContainer.style.display = "none";
         information.style.display = "none";
         action.style.display = "none";
-        dropZone.style.display = "flex";
-		
-		// Réafficher le téléchargement du modèle
+       
+		// Réafficher la zone de dépôt et le téléchargement du modèle.
+		dropZone.style.display = "flex";
+
 		if (templateDownload) {
-		    templateDownload.style.display = "flex";
+		    templateDownload.style.display = "block";
 		}
 		
         fileError.style.display = "none";
