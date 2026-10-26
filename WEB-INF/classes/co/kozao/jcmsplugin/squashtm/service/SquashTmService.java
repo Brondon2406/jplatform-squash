@@ -637,18 +637,10 @@ public class SquashTmService {
 
 		LoggedUserInfo info = new LoggedUserInfo();
 
-		/*
-		 * ID
-		 */
-
 		if (user.has("id")) {
 
 			info.setId(user.get("id").getAsString());
 		}
-
-		/*
-		 * Nom
-		 */
 
 		String firstName = getString(user, "first_name");
 
@@ -658,17 +650,9 @@ public class SquashTmService {
 
 		info.setFullName(fullName);
 
-		/*
-		 * Email
-		 */
-
 		String email = getString(user, "email");
 
 		info.setEmailAddr(email);
-
-		/*
-		 * Date création
-		 */
 
 		String createdOn = getString(user, "created_on");
 

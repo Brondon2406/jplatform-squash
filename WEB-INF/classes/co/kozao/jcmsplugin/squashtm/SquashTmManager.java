@@ -23,27 +23,19 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 /**
  * Manager principal du connecteur Squash TM.
  *
- * <p>
  * Cette classe centralise les opérations de connexion, de déconnexion et de
  * récupération des informations de l'utilisateur Squash TM.
- * </p>
  */
 public class SquashTmManager {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmManager.class);
 
 	private static SquashTmManager SINGLETON;
-
 	private final SquashTmService service;
+	
 	private static final String SQUASHTM_CACHE_KEY_API_REACHABLE = "jcmsplugin.squashtm.cache.api-reachable";
-	private final Cache<String, String> API_CACHE = CacheBuilder.newBuilder()
-			.expireAfterWrite(20, TimeUnit.MINUTES)
-			.maximumSize(10)
-			.build();
+	private final Cache<String, String> API_CACHE = CacheBuilder.newBuilder().expireAfterWrite(20, TimeUnit.MINUTES) .maximumSize(10).build();
 
-	/**
-	 * Constructeur privé du Singleton.
-	 */
 	private SquashTmManager() {
 		service = new SquashTmService();
 	}
@@ -61,30 +53,31 @@ public class SquashTmManager {
 
 		return SINGLETON;
 	}
-	
+
 	public static boolean isCacheEnable() {
 		return Channel.getChannel().getBooleanProperty(SquashTmConstants.SQUASHTM_CACHE_ENABLED, false);
 	}
-	
+
 	public boolean isSquashTmApiReachable() {
 		StopWatch stopWatch = new StopWatch();
 		if (LOGGER.isDebugEnabled()) {
 			stopWatch.start();
 		}
 		boolean apiReachable = false;
-		if(isCacheEnable()) {
+		if (isCacheEnable()) {
 			String lastAccessTime = API_CACHE.getIfPresent(SQUASHTM_CACHE_KEY_API_REACHABLE);
-			if(Util.notEmpty(lastAccessTime)) {
-				if(LOGGER.isDebugEnabled()) {
-					LOGGER.debug("Last time the API was successfully accessed (read from cache) : '" + lastAccessTime + "'");
+			if (Util.notEmpty(lastAccessTime)) {
+				if (LOGGER.isDebugEnabled()) {
+					LOGGER.debug(
+							"Last time the API was successfully accessed (read from cache) : '" + lastAccessTime + "'");
 				}
 				apiReachable = true;
 			} else {
 				apiReachable = checkSquashTmApiAccess();
-				if(apiReachable) {
+				if (apiReachable) {
 					Date now = new Date();
 					API_CACHE.put(SQUASHTM_CACHE_KEY_API_REACHABLE, now.toString());
-					if(LOGGER.isDebugEnabled()) {
+					if (LOGGER.isDebugEnabled()) {
 						LOGGER.debug("Time of last to API added in cache : '" + lastAccessTime + "'");
 					}
 				}
@@ -213,15 +206,6 @@ public class SquashTmManager {
 	/**
 	 * Lance une authentification auprès de Squash TM.
 	 *
-	 * <p>
-	 * Le mode TOKEN ou BASIC est déterminé par le Service.
-	 * </p>
-	 *
-	 * <p>
-	 * Le Member JCMS sert uniquement de contexte pour récupérer les credentials
-	 * Squash TM associés à cet utilisateur.
-	 * </p>
-	 *
 	 * @param member membre JCMS courant
 	 * @return true si l'authentification réussit
 	 */
@@ -240,9 +224,6 @@ public class SquashTmManager {
 
 		LoggedUserInfo userInfo = service.authenticate(member);
 
-		/*
-		 * L'authentification a échoué.
-		 */
 		if (userInfo == null) {
 
 			LOGGER.warn("Authentification Squash TM échouée.");
@@ -262,9 +243,6 @@ public class SquashTmManager {
 		 */
 		SquashTmUtils.setSquashTmRemoteUserInfos(userInfo);
 
-		/*
-		 * Vérification des données réellement sauvegardées.
-		 */
 		LoggedUserInfo savedInfo = SquashTmUtils.getSquashTmRemoteUserInfos(member);
 
 		LOGGER.error("========== INFOS SQUASH TM SAUVEGARDEES ==========");
@@ -298,17 +276,16 @@ public class SquashTmManager {
 	}
 
 	/**
-     * Déconnecte le compte Squash TM associé au membre courant.
-     */
-    public void disconnect() {
+	 * Déconnecte le compte Squash TM associé au membre courant.
+	 */
+	public void disconnect() {
 
-        SquashTmUtils.setSquashTmApiToken("");
-        SquashTmUtils.setSquashTmUsername("");
-        SquashTmUtils.setSquashTmPassword("");
+		SquashTmUtils.setSquashTmApiToken("");
+		SquashTmUtils.setSquashTmUsername("");
+		SquashTmUtils.setSquashTmPassword("");
 
-        SquashTmUtils.deleteSquashTmRemoteUserInfos();
+		SquashTmUtils.deleteSquashTmRemoteUserInfos();
 
-        LOGGER.info(
-                "Déconnexion Squash TM effectuée.");
-    }
+		LOGGER.info("Déconnexion Squash TM effectuée.");
+	}
 }

@@ -18,25 +18,11 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 public class SquashTmBasicFormHandler extends JcmsFormHandler {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmBasicFormHandler.class);
-
-	/**
-	 * Indique si l'opération de connexion Basic est demandée.
-	 */
+	
 	private boolean opSign = false;
-
-	/**
-	 * Nom d'utilisateur Squash TM.
-	 */
 	private String username;
-
-	/**
-	 * Mot de passe Squash TM.
-	 */
 	private String password;
 
-	/**
-	 * Retourne l'URL de l'application Squash TM.
-	 */
 	public String getAppUrl() {
 		return "/jcms/plugins/SquashTmPlugin/jsp/app/squashTm.jsp";
 	}
@@ -50,17 +36,9 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 		LOGGER.error("========== SquashTmBasicFormHandler.processAction() ==========");
 		LOGGER.error("opSign = " + opSign);
 
-		/*
-		 * Si l'utilisateur a demandé une connexion, on valide les informations puis on
-		 * tente la connexion.
-		 */
 		if (opSign && validateBasic()) {
 			return true;
 		}
-
-		/*
-		 * Sinon, on laisse JCMS poursuivre son traitement normal.
-		 */
 		return super.processAction();
 	}
 
@@ -72,9 +50,6 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 
 		LOGGER.error("========== validateBasic() ==========");
 
-		/*
-		 * Vérification du username.
-		 */
 		if (Util.isEmpty(username)) {
 
 			setErrorMsg("jcmsplugin.squashtm.basic-form.error.username");
@@ -82,9 +57,6 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 			return false;
 		}
 
-		/*
-		 * Vérification du password.
-		 */
 		if (Util.isEmpty(password)) {
 
 			setErrorMsg("jcmsplugin.squashtm.basic-form.error.password");
@@ -104,24 +76,15 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 			return false;
 		}
 
-		/*
-		 * Sauvegarde temporaire des credentials Squash TM.
-		 */
 		SquashTmUtils.setSquashTmUsername(username);
 		SquashTmUtils.setSquashTmPassword(password);
 
 		LOGGER.info("Credentials Squash TM reçus pour l'authentification Basic.");
 
-		/*
-		 * Authentification réelle auprès de Squash TM.
-		 */
 		boolean connected = SquashTmManager.getInstance().connect(member);
 
 		LOGGER.info("Résultat authentification Basic : " + connected);
 
-		/*
-		 * Si l'authentification échoue, on supprime les credentials sauvegardés.
-		 */
 		if (!connected) {
 
 			SquashTmUtils.setSquashTmUsername("");
