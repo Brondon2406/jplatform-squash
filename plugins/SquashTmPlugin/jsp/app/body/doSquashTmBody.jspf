@@ -39,5 +39,6 @@ if (!squashTmManager.isPluginActive(loggedMember)) {%>
         <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsDashboard.jspf" %>
     <% } else if (appHandler.showImportFiles()) { %>
         <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsImport.jspf" %>
-    <% } %>
+    <% } else if (appHandler.showAdministration()) { %>
+    <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsAdministration.jspf" %>
 <%}%>

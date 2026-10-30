@@ -14,6 +14,7 @@ jcmsplugin.squashtm.authenticate.error.squashtm-api-not-available: L'api de Squa
 jcmsplugin.squashtm.app.sidebar.sidebar-section.views: Affichage
 jcmsplugin.squashtm.app.sidebar.dashboard.label: Dashboard
 jcmsplugin.squashtm.app.sidebar.importfiles.label: Import Excel
+jcmsplugin.squashtm.app.sidebar.administration.label: Administration
 jcmsplugin.squashtm.app.sidebar.account-infos: Compte Squash TM lié
 jcmsplugin.squashtm.app.sidebar.account-infos.phone.title: Numéro de téléphone du compte Squash TM
 jcmsplugin.squashtm.app.sidebar.account-infos.email.title: E-mail du compte Squash TM

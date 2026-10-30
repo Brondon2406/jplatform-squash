@@ -13,7 +13,7 @@ public class SquashTmAppHandler extends JcmsFormHandler {
 	private View view = View.DASHBOARD;
 
 	public enum View {
-		DASHBOARD, IMPORT_FILES
+		DASHBOARD, IMPORT_FILES, ADMINISTRATION
 	}
 
 	public String getAppUrl() {
@@ -36,6 +36,10 @@ public class SquashTmAppHandler extends JcmsFormHandler {
 
 	public String getImportFilesUrl() {
 		return getViewUrl(View.IMPORT_FILES);
+	}
+
+	public String getAdministrationUrl() {
+		return getViewUrl(View.ADMINISTRATION);
 	}
 
 	private String getViewUrl(View view) {
@@ -63,6 +67,11 @@ public class SquashTmAppHandler extends JcmsFormHandler {
 
 	public boolean showImportFiles() {
 		boolean display = getBoxDisplayFilter().equalsIgnoreCase(View.IMPORT_FILES.name());
+		return display;
+	}
+
+	public boolean showAdministration() {
+		boolean display = getBoxDisplayFilter().equalsIgnoreCase(View.ADMINISTRATION.name());
 		return display;
 	}
 
