@@ -38,9 +38,6 @@ public class SquashTmImportJobManager {
 		return thread;
 	});
 
-	private SquashTmImportJobManager() {
-	}
-
 	public static SquashTmImportJobManager getInstance() {
 		return INSTANCE;
 	}
@@ -106,7 +103,6 @@ public class SquashTmImportJobManager {
 				} catch (Exception e) {
 					LOGGER.error("[IMPORT JOB] Erreur pendant l'importation : " + jobId, e);
 
-					// Construire un résultat final, même si l'import échoue brutalement.
 					ImportSquashTmResult failedResult = new ImportSquashTmResult();
 					failedResult.setSuccess(false);
 					failedResult.setProjectName(projectName);
@@ -231,7 +227,6 @@ public class SquashTmImportJobManager {
 			throw new IOException("Cette analyse n'existe plus ou a déjà été utilisée.");
 		}
 
-		// Retrait atomique : empêche une seconde confirmation du même identifiant.
 		if (!pendingImports.remove(analysisId, pending)) {
 			throw new IOException("Cette analyse a déjà été confirmée ou annulée.");
 		}
@@ -280,10 +275,8 @@ public class SquashTmImportJobManager {
 	 */
 	private void cleanupExpiredAnalyses() {
 
-		// Durée maximale de conservation : 30 minutes.
 		final long expirationDelay = 30L * 60L * 1000L;
 
-		// Instant actuel en millisecondes.
 		final long currentTime = System.currentTimeMillis();
 
 		for (String analysisId : pendingImports.keySet()) {
@@ -294,10 +287,8 @@ public class SquashTmImportJobManager {
 				continue;
 			}
 
-			// Calculer l'âge de l'analyse.
 			long age = currentTime - pending.getCreatedAt();
 
-			// Supprimer uniquement les analyses expirées.
 			if (age >= expirationDelay && pendingImports.remove(analysisId, pending)) {
 
 				try {

@@ -96,8 +96,8 @@ public class SquashTmService {
 		try {
 
 			/*
-			 * ============================================================ 1. VALIDATION DU
-			 * TOKEN ============================================================
+			 * ======================== 1. VALIDATION DU TOKEN
+			 * =====================================
 			 */
 
 			String tokenUrl = baseUrl + "/api/rest/latest/tokens";
@@ -145,12 +145,6 @@ public class SquashTmService {
 				return null;
 			}
 
-			/*
-			 * ============================================================ 2. RECUPERATION
-			 * DE L'UTILISATEUR ASSOCIE AU TOKEN
-			 * ============================================================
-			 */
-
 			JsonObject tokenObject = tokens.get(0).getAsJsonObject();
 
 			if (!tokenObject.has("user")) {
@@ -175,12 +169,6 @@ public class SquashTmService {
 
 			LOGGER.error("userId = " + userId);
 
-			/*
-			 * ============================================================ 3. RECUPERATION
-			 * DU PROFIL SQUASH TM
-			 * ============================================================
-			 */
-
 			LOGGER.error("========== TEST CODE VERSION ==========");
 
 			LOGGER.error("!!! NOUVELLE VERSION SquashTmService !!!");
@@ -191,9 +179,6 @@ public class SquashTmService {
 
 			LOGGER.error("userUrl = " + userUrl);
 
-			/*
-			 * UNE SEULE requête vers /users/{id}.
-			 */
 			String userJson = executeGet(userUrl, "Bearer " + token);
 
 			LOGGER.error("========== REPONSE /api/rest/latest/users/{id} ==========");
@@ -201,9 +186,7 @@ public class SquashTmService {
 			LOGGER.error(userJson);
 
 			/*
-			 * ============================================================ 4. CONSTRUCTION
-			 * DE LoggedUserInfo
-			 * ============================================================
+			 * ==================== DE LoggedUserInfo ======================
 			 */
 
 			LoggedUserInfo info = null;
@@ -213,10 +196,6 @@ public class SquashTmService {
 				info = buildLoggedUserInfo(userJson);
 			}
 
-			/*
-			 * Sécurité : si le profil n'a pas pu être construit, on crée quand même un
-			 * objet afin de conserver l'id du compte.
-			 */
 			if (info == null) {
 
 				LOGGER.warn("Impossible de construire LoggedUserInfo depuis /api/rest/latest/users/" + userId);
@@ -224,9 +203,6 @@ public class SquashTmService {
 				info = new LoggedUserInfo();
 			}
 
-			/*
-			 * L'id provient directement de Squash TM.
-			 */
 			if (Util.isEmpty(info.getId())) {
 
 				info.setId(userId);
@@ -257,14 +233,6 @@ public class SquashTmService {
 
 			LOGGER.info("Date création   : " + info.getCreatedAt());
 
-			/*
-			 * IMPORTANT :
-			 *
-			 * On retourne uniquement les informations provenant de Squash TM.
-			 *
-			 * Le Member JCMS n'est PAS utilisé pour compléter le nom, l'email ou la date de
-			 * création.
-			 */
 			return info;
 
 		} catch (Exception e) {
@@ -307,11 +275,6 @@ public class SquashTmService {
 			return null;
 		}
 
-		/*
-		 * ============================================================ 2. URL SQUASH TM
-		 * ============================================================
-		 */
-
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
 
 		LOGGER.error("Base URL Squash TM = [" + baseUrl + "]");
@@ -325,12 +288,6 @@ public class SquashTmService {
 
 		try {
 
-			/*
-			 * ======================================================== 3. CREATION
-			 * AUTHENTIFICATION BASIC
-			 * ========================================================
-			 */
-
 			String credentials = username + ":" + password;
 
 			String encodedCredentials = Base64.getEncoder()
@@ -338,12 +295,7 @@ public class SquashTmService {
 
 			String authorization = "Basic " + encodedCredentials;
 
-			/*
-			 * ======================================================== 4. RECUPERATION DE
-			 * LA LISTE DES UTILISATEURS
-			 * ========================================================
-			 */
-
+	
 			String usersUrl = baseUrl + "/api/rest/latest/users?size=1000";
 
 			LOGGER.error("========== RECHERCHE UTILISATEUR SQUASH ==========");
@@ -362,10 +314,6 @@ public class SquashTmService {
 
 			LOGGER.error("Réponse reçue : " + usersJson);
 
-			/*
-			 * ======================================================== 5. PARSING DE LA
-			 * COLLECTION ========================================================
-			 */
 
 			JsonObject root = JsonParser.parseString(usersJson).getAsJsonObject();
 
@@ -389,10 +337,6 @@ public class SquashTmService {
 
 			LOGGER.error("Nombre d'utilisateurs reçus = " + users.size());
 
-			/*
-			 * ======================================================== 6. RECHERCHE DU
-			 * LOGIN ========================================================
-			 */
 
 			String userId = null;
 
@@ -425,10 +369,7 @@ public class SquashTmService {
 				}
 			}
 
-			/*
-			 * ======================================================== 7. UTILISATEUR
-			 * INTROUVABLE ========================================================
-			 */
+			
 
 			if (Util.isEmpty(userId)) {
 
@@ -436,21 +377,6 @@ public class SquashTmService {
 
 				return null;
 			}
-
-			/*
-			 * ======================================================== 8. RECUPERATION DU
-			 * PROFIL COMPLET ========================================================
-			 *
-			 * /users retourne seulement les informations résumées.
-			 *
-			 * On appelle donc :
-			 *
-			 * GET /api/rest/latest/users/{id}
-			 *
-			 * pour récupérer :
-			 *
-			 * - first_name - last_name - email - created_on - etc.
-			 */
 
 			String userUrl = baseUrl + "/api/rest/latest/users/" + userId;
 
@@ -464,10 +390,6 @@ public class SquashTmService {
 
 			LOGGER.error(userJson);
 
-			/*
-			 * ======================================================== 9. VERIFICATION DU
-			 * PROFIL ========================================================
-			 */
 
 			if (Util.isEmpty(userJson)) {
 
@@ -475,11 +397,6 @@ public class SquashTmService {
 
 				return null;
 			}
-
-			/*
-			 * ======================================================== 10. CONSTRUCTION
-			 * LoggedUserInfo ========================================================
-			 */
 
 			LoggedUserInfo info = buildLoggedUserInfo(userJson);
 
@@ -490,10 +407,6 @@ public class SquashTmService {
 				return null;
 			}
 
-			/*
-			 * ======================================================== 11. LOGS FINAUX
-			 * ========================================================
-			 */
 
 			LOGGER.error("========== LOGGED USER INFO BASIC ==========");
 
@@ -512,12 +425,6 @@ public class SquashTmService {
 
 			LOGGER.info("Date création   : " + info.getCreatedAt());
 
-			/*
-			 * IMPORTANT :
-			 *
-			 * Le Member JCMS n'est jamais utilisé pour compléter les informations de
-			 * l'utilisateur Squash TM.
-			 */
 			return info;
 
 		} catch (Exception e) {
@@ -714,9 +621,7 @@ public class SquashTmService {
 
 			LOGGER.info("Réponse Squash TM HTTP DELETE = " + responseCode);
 
-			/*
-			 * Toutes les réponses 2xx sont considérées comme des réponses de succès.
-			 */
+			
 			if (responseCode < 200 || responseCode >= 300) {
 
 				throw new IOException(
@@ -982,8 +887,7 @@ public class SquashTmService {
 				java.io.InputStream errorStream = connection.getErrorStream();
 
 				if (errorStream != null) {
-					try (BufferedReader reader = new BufferedReader(
-							new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
+					try (BufferedReader reader = new BufferedReader( new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
 
 						String line;
 
@@ -993,11 +897,8 @@ public class SquashTmService {
 					}
 				}
 
-				LOGGER.error("Erreur POST Squash TM" + " | HTTP = " + responseCode + " | URL = " + urlString
-						+ " | Réponse = " + errorResponse);
-
-				throw new IOException("Squash TM a refusé la requête POST." + " HTTP = " + responseCode
-						+ " | Réponse = " + errorResponse);
+				LOGGER.error("Erreur POST Squash TM" + " | HTTP = " + responseCode + " | URL = " + urlString + " | Réponse = " + errorResponse);
+				throw new IOException("Squash TM a refusé la requête POST." + " HTTP = " + responseCode + " | Réponse = " + errorResponse);
 			}
 
 			StringBuilder response = new StringBuilder();

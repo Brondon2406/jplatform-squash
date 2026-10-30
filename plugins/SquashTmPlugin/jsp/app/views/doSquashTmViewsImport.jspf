@@ -9,8 +9,6 @@
     if (squashTmImportHandler.validate()) {
         return;
     }
-
-System.out.println( "[DEBUG JSP] importJobId = " + squashTmImportHandler.getImportJobId() );
 %>
 
   <form action="" method="post" enctype="multipart/form-data" name="squashTmImportForm" id="squashTmImportForm" data-analysis-ready="<%= squashTmImportHandler.getImportAnalysis() != null %>" data-import-completed="<%= squashTmImportHandler.getImportResult() != null %>" 

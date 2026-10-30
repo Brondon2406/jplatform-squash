@@ -1,6 +1,4 @@
- 
- <%-- ============== SYNTHESE DE L'ANALYSE ============== --%>
- 
+  
  <%-- En-tête --%>
 <div class="squashtm-analysis-header">
     <h2 class="squashtm-analysis-title">
@@ -53,7 +51,7 @@
   <div class="squashtm-analysis-validity">
     <strong> <%= glp("jcmsplugin.squashtm.app.import.analysis.validity-rate") %> </strong>
 	    <span id="squashTmAnalysisValidityRate">
-	      <%= squashTmImportHandler.getImportAnalysis() != null ? String.format( java.util.Locale.FRANCE, "%.2f", squashTmImportHandler.getImportAnalysis().getValidityRate()) : "0,00" %> %
+	      <%= squashTmImportHandler.getFormattedValidityRate() %> %
 	    </span>
   </div>
 

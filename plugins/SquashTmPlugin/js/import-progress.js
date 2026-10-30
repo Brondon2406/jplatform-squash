@@ -50,10 +50,10 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-        var percentage = Math.max(
-            0,
-            Math.min(100, Number(data.percentage) || 0)
-        );
+		var percentage = Math.max(
+		    0,
+		    Math.min(data.completed ? 100 : 100, Number(data.percentage) || 0)
+		);
 
         if (progressBar) {
             progressBar.style.width = percentage + "%";
@@ -135,15 +135,15 @@ document.addEventListener("DOMContentLoaded", function() {
             reportProjectName.textContent = data.projectName || "Non renseigné";
         }
 
-		if (reportStatus) {
-		    reportStatus.textContent = success
-		        ? "Importation terminée avec succès."
-		        : "Importation terminée avec des erreurs.";
+        if (reportStatus) {
+            reportStatus.textContent = success
+                ? "Importation terminée avec succès."
+                : "Importation terminée avec des erreurs.";
 
-		    reportStatus.className = success
-		        ? "squashtm-import-status alert alert-success"
-		        : "squashtm-import-status alert alert-danger";
-		}
+            reportStatus.className = success
+                ? "squashtm-import-status alert alert-success"
+                : "squashtm-import-status alert alert-danger";
+        }
 
         // Un seul projet est concerné par le fichier importé.
         if (reportProjects) {

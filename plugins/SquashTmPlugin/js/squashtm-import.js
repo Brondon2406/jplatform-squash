@@ -17,13 +17,12 @@ document.addEventListener("DOMContentLoaded", function() {
     var importButton = document.getElementById("squashTmImportButton");
     var cancelButton = document.getElementById("squashTmCancelButton");
     var selectedFileObject = null;
-    // Actions envoyées au SquashTmImportHandler.
+
     var analyzeAction = document.getElementById("opAnalyze");
     var importAction = document.getElementById("opImport");
     var cancelAnalysisAction = document.getElementById("opCancelAnalysis");
     var analysisIdInput = document.getElementById("analysisId");
 
-    // Synthèse de l'analyse.
     var analysisContainer = document.getElementById("squashTmAnalysisContainer");
     var confirmImportButton = document.getElementById("squashTmConfirmImportButton");
     var cancelAnalysisButton = document.getElementById("squashTmCancelAnalysisButton");
@@ -152,15 +151,12 @@ document.addEventListener("DOMContentLoaded", function() {
     if (importForm) {
         importForm.addEventListener("submit", function(event) {
 
-            // Une action de confirmation ou d'annulation
-            // a déjà été préparée par son bouton.
             if ((importAction && importAction.value === "true")
                 || (cancelAnalysisAction
                     && cancelAnalysisAction.value === "true")) {
                 return;
             }
 
-            // Le premier clic sur Importer lance uniquement l'analyse.
             if (!fileInput
                 || !fileInput.files.length
                 || !isExcelFile(fileInput.files[0])) {
@@ -221,7 +217,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
         analysisContainer.style.display = "block";
 
-        // Relancer l'animation à chaque affichage de la synthèse.
         analysisContainer.classList.remove("analysis-animated");
         void analysisContainer.offsetWidth;
         analysisContainer.classList.add("analysis-animated");
@@ -326,7 +321,6 @@ document.addEventListener("DOMContentLoaded", function() {
         information.style.display = "none";
         action.style.display = "none";
        
-		// Réafficher la zone de dépôt et le téléchargement du modèle.
 		dropZone.style.display = "flex";
 
 		if (templateDownload) {
@@ -348,8 +342,6 @@ document.addEventListener("DOMContentLoaded", function() {
         } else if (importForm.dataset.analysisReady === "true") {
             showAnalysisSummary();
         } else {
-            // Aucun import en cours ni analyse en attente :
-            // afficher le formulaire initial.
             if (importHeader) {
                 importHeader.style.display = "";
             }
@@ -374,7 +366,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function showImportProgressOnly() {
 
-        // Masquer le titre et le formulaire de sélection
         importHeader.style.display = "none";
         importPanel.style.display = "none";
 

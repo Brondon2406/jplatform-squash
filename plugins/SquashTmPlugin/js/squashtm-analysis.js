@@ -23,15 +23,10 @@ document.addEventListener("DOMContentLoaded", function() {
     var analyzeButton = document.getElementById("squashTmImportButton");
     var cancelButton = document.getElementById("squashTmCancelButton");
 
-    // Actions envoyées au handler Java.
     var analyzeAction = document.getElementById("opAnalyze");
     var importAction = document.getElementById("opImport");
     var cancelAnalysisAction = document.getElementById("opCancelAnalysis");
     var analysisIdInput = document.getElementById("analysisId");
-
-    // ==========================================================
-    // ELEMENTS DE LA SYNTHESE
-    // ==========================================================
 
     var analysisContainer = document.getElementById("squashTmAnalysisContainer");
     var confirmImportButton = document.getElementById("squashTmConfirmImportButton");
@@ -214,7 +209,6 @@ document.addEventListener("DOMContentLoaded", function() {
     if (importForm) {
         importForm.addEventListener("submit", function(event) {
 
-            // La synthèse possède ses propres actions.
             if (analysisContainer
                 && analysisContainer.dataset.analysisReady === "true") {
                 return;
@@ -238,7 +232,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 return;
             }
 
-            // Demander une analyse au serveur, pas un import direct.
             if (analyzeAction) {
                 analyzeAction.value = "true";
             }
@@ -251,8 +244,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 cancelAnalysisAction.value = "false";
             }
 
-            // Ne pas appeler importForm.submit() ici :
-            // le navigateur doit envoyer normalement le formulaire.
         });
     }
 
@@ -316,9 +307,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (importPanel) {
             importPanel.style.display = "none";
         }
-
-        // La synthèse est affichée uniquement si le serveur
-        // confirme qu'une analyse est disponible.
+		
         analysisContainer.style.display = "block";
     }
 
@@ -346,8 +335,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 cancelAnalysisAction.value = "false";
             }
 
-            // La JSP doit soumettre le formulaire de confirmation
-            // contenant l'identifiant d'analyse.
             if (importForm) {
                 importForm.submit();
             } else {

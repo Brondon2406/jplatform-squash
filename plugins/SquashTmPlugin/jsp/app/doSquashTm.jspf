@@ -27,7 +27,7 @@ jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/import-progress.js");
 
 %>
 <%@ include file='/jcore/doHeader.jspf'%>
-<div class="ajax-refresh-div" datajalios-refresh-url="plugins/SquashTmPlugin/jsp/app/squashTm.jsp">
+
 	<jalios:app name="squashtm" collapsedSidebar="false" collapsableSidebar="true">
 	
 	<% if (!sqTmManager.canConnectToSquashTm(loggedMember)) { %>
@@ -50,7 +50,5 @@ jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/import-progress.js");
 	 <% } %>
 	 
 	</jalios:app>
-
-</div>
 
 <%@ include file='/jcore/doAjaxFooter.jspf' %>

@@ -33,7 +33,7 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmView;
  *
  * Son rôle est uniquement de transformer :
  *
- * Excel ↓ ImportData
+ * Excel ImportData
  */
 public class ExcelSquashTmImportService {
 
@@ -51,32 +51,19 @@ public class ExcelSquashTmImportService {
 	private static final int COLUMN_ACTION = 4;
 	private static final int COLUMN_EXPECTED_RESULT = 5;
 
-	/**
-	 * Compteur des références d'exigences.
-	 */
 	private int requirementCounter;
-
-	/**
-	 * Compteur des références de cas de test.
-	 */
 	private int testCaseCounter;
-	/**
-	 * Compteurs des éléments construits pendant l'analyse.
-	 */
+	
 	private int moduleCount;
 	private int subModuleCount;
 	private int viewCount;
 	private int featureCount;
 	private int testStepCount;
-	/**
-	 * Statistiques de l'analyse du fichier Excel.
-	 */
+	
 	private int detectedLineCount;
 	private int validLineCount;
 	private int anomalousLineCount;
-	/**
-	 * Nombre de lignes dupliquées détectées.
-	 */
+
 	private int duplicateLineCount;
 
 	/**
@@ -91,7 +78,7 @@ public class ExcelSquashTmImportService {
 	 * Numéros des lignes Excel comportant au moins une anomalie. Permet de ne
 	 * compter chaque ligne qu'une seule fois.
 	 */
-	private final java.util.Set<String> anomalousLines = new java.util.HashSet<>();
+	private final Set<String> anomalousLines = new HashSet<>();
 
 	/**
 	 * Incohérences détectées pendant la lecture du fichier Excel.

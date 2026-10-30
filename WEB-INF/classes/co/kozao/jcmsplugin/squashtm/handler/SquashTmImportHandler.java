@@ -16,48 +16,24 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmImportJobManager;
-import co.kozao.jcmsplugin.squashtm.service.SquashTmImportManager;
 
 /**
  * Handler responsable du lancement de l'import d'un fichier Excel vers Squash
  * TM.
  *
- * <p>
- * Le Handler récupère les données provenant de la JSP puis délègue toute la
- * logique d'import au {@link SquashTmImportManager}.
- * </p>
  */
 public class SquashTmImportHandler extends JcmsFormHandler {
 
-	private static final Logger LOGGER = Logger.getLogger(SquashTmImportHandler.class);
-
-	/**
-	 * Fichier Excel sélectionné par l'utilisateur.
-	 */
-	// private File excelFile;
 	private String projectName;
-
-	/** Action de préanalyse du fichier Excel. */
 	private boolean opAnalyze;
-
-	/** Action de confirmation de l'importation. */
 	private boolean opImport;
-
-	/** Action d'annulation de l'analyse. */
 	private boolean opCancelAnalysis;
-
-	/** Identifiant de l'analyse conservée côté serveur. */
 	private String analysisId;
-
-	/** Synthèse de l'analyse du fichier Excel. */
+	private String importJobId;
 	private ImportSquashTmAnalysis importAnalysis;
 
 	private final SquashTmImportJobManager importJobManager = SquashTmImportJobManager.getInstance();
-
-	/**
-	 * Identifiant de l'importation en cours.
-	 */
-	private String importJobId;
+	private static final Logger LOGGER = Logger.getLogger(SquashTmImportHandler.class);
 
 	/**
 	 * Résultat du dernier import exécuté.
@@ -137,6 +113,24 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		importResult.setProjectName(projectName);
 		importResult.addTechnicalError(message);
 	}
+	
+	
+	/**
+	 * Retourne le taux de validité formaté avec deux décimales.
+	 *
+	 * @return le taux formaté selon les conventions françaises
+	 */
+	public String getFormattedValidityRate() {
+	    if (importAnalysis == null) {
+	        return "0,00";
+	    }
+
+	    return String.format(
+	        java.util.Locale.FRANCE,
+	        "%.2f",
+	        importAnalysis.getValidityRate()
+	    );
+	}
 
 	/**
 	 * Prépare l'en-tête d'authentification avant le lancement de l'importation en
@@ -153,7 +147,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 			throw new IOException("Le mode d'authentification Squash TM n'est pas configuré.");
 		}
 
-		// Authentification par token
 		if (AuthentificationMode.TOKEN.equals(mode)) {
 
 			String token = SquashTmUtils.getSquashTmApiToken();
@@ -165,7 +158,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 			return "Bearer " + token;
 		}
 
-		// Authentification par identifiant et mot de passe
 		if (AuthentificationMode.BASIC.equals(mode)) {
 
 			String username = SquashTmUtils.getSquashTmUsername();
@@ -210,7 +202,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 			LOGGER.info("[IMPORT][JOB] Importation démarrée. ID : " + importJobId);
 
-			// Le résultat sera disponible après la fin du traitement.
 			importResult = null;
 
 			return true;
@@ -245,9 +236,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 		try {
 
-			// =====================================================
-			// ÉTAPE 1 : ANALYSE DU FICHIER EXCEL
-			// =====================================================
 			if (opAnalyze) {
 
 				LOGGER.info("[HANDLER 7] Action détectée : ANALYSE.");
@@ -318,10 +306,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 				return false;
 			}
-
-			// =====================================================
-			// ÉTAPE 2 : ANNULATION DE L'ANALYSE
-			// =====================================================
+			
 			if (opCancelAnalysis) {
 
 				LOGGER.info("[HANDLER 20] Action détectée : ANNULATION.");
@@ -341,9 +326,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 				return false;
 			}
 
-			// =====================================================
-			// ÉTAPE 3 : CONFIRMATION DE L'IMPORTATION
-			// =====================================================
 			if (opImport) {
 
 				LOGGER.info("[HANDLER 24] Action détectée : CONFIRMATION.");
@@ -386,10 +368,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 			LOGGER.error("[HANDLER 33] Erreur pendant le traitement.", e);
 
-			/*
-			 * Récupérer la synthèse si l'analyse existe encore. Si elle a déjà été
-			 * consommée ou expirée, elle sera absente.
-			 */
 			if (analysisId != null && !analysisId.trim().isEmpty()) {
 
 				importAnalysis = importJobManager.getAnalysis(analysisId);
