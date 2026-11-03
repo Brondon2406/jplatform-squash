@@ -34,11 +34,12 @@ if (!squashTmManager.isPluginActive(loggedMember)) {%>
 		<% } %>
 		
 	</jalios:message>
-<% } else {%>
-    <% if (appHandler.showDashboard()) { %>
-        <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsDashboard.jspf" %>
-    <% } else if (appHandler.showImportFiles()) { %>
-        <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsImport.jspf" %>
-    <% } else if (appHandler.showAdministration()) { %>
-    <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsAdministration.jspf" %>
-<%}%>
+	<% } else {%>
+	    <% if (appHandler.showDashboard()) { %>
+	        <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsDashboard.jspf" %>
+	    <% } else if (appHandler.showImportFiles()) { %>
+	        <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsImport.jspf" %>
+	    <% } else if (appHandler.showAdministration()) { %>
+	    <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsAdministration.jspf" %>
+	<%}%>
+<% } %>

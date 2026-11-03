@@ -16,14 +16,6 @@ import co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo;
 /**
  * Utilitaires du plugin Squash TM.
  *
- * <p>
- * Cette classe centralise :
- * <ul>
- * <li>les propriétés du plugin ;</li>
- * <li>les préférences du Member JCMS ;</li>
- * <li>le mode d'authentification ;</li>
- * <li>les informations utilisateur Squash TM.</li>
- * </ul>
  */
 public final class SquashTmUtils {
 

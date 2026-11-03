@@ -26,7 +26,7 @@ String iconApp = SquashTmUtils.getAppSidebarIcon();
                		 </a>
             </li>
             
-             <%-- IMPORT FILES --%>
+             <%-- ADMINISTRATION --%>
             <li class="sidebar-item <%= appHandler.showAdministration() ? " active is-checked" : "" %>">
                 <% String administrationTitleView = glp("jcmsplugin.squashtm.app.sidebar.administration.label"); %>
                		 <a href="<%= appHandler.getAdministrationUrl() %>">
