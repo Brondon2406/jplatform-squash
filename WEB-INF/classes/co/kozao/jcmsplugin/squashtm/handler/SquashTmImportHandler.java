@@ -30,26 +30,12 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 	private boolean opCancelAnalysis;
 	private String analysisId;
 	private String importJobId;
+	private String selectedComparisonIndexes;
 	private ImportSquashTmAnalysis importAnalysis;
+	private ImportSquashTmResult importResult;
 
 	private final SquashTmImportJobManager importJobManager = SquashTmImportJobManager.getInstance();
 	private static final Logger LOGGER = Logger.getLogger(SquashTmImportHandler.class);
-
-	/**
-	 * Résultat du dernier import exécuté.
-	 *
-	 * <p>
-	 * Cet objet est uniquement utilisé pendant la requête afin de transmettre le
-	 * résultat à la JSP.
-	 * </p>
-	 */
-	private ImportSquashTmResult importResult;
-
-	/*
-	 * public File getExcelFile() { return excelFile; }
-	 * 
-	 * public void setExcelFile(File excelFile) { this.excelFile = excelFile; }
-	 */
 
 	public String getProjectName() {
 		return projectName;
@@ -107,29 +93,32 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		return importAnalysis;
 	}
 
+	public String getSelectedComparisonIndexes() {
+		return selectedComparisonIndexes;
+	}
+
+	public void setSelectedComparisonIndexes(String selectedComparisonIndexes) {
+		this.selectedComparisonIndexes = selectedComparisonIndexes;
+	}
+
 	private void setImportError(String message) {
 
 		importResult = new ImportSquashTmResult();
 		importResult.setProjectName(projectName);
 		importResult.addTechnicalError(message);
 	}
-	
-	
+
 	/**
 	 * Retourne le taux de validité formaté avec deux décimales.
 	 *
 	 * @return le taux formaté selon les conventions françaises
 	 */
 	public String getFormattedValidityRate() {
-	    if (importAnalysis == null) {
-	        return "0,00";
-	    }
+		if (importAnalysis == null) {
+			return "0,00";
+		}
 
-	    return String.format(
-	        java.util.Locale.FRANCE,
-	        "%.2f",
-	        importAnalysis.getValidityRate()
-	    );
+		return String.format(java.util.Locale.FRANCE, "%.2f", importAnalysis.getValidityRate());
 	}
 
 	/**
@@ -281,7 +270,9 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 				LOGGER.info("[HANDLER 14] Appel de analyzeImport().");
 
-				analysisId = importJobManager.analyzeImport(uploadedFile, projectName.trim());
+				String authorizationHeader = prepareAuthorizationHeader();
+
+				analysisId = importJobManager.analyzeImport(uploadedFile, projectName.trim(), authorizationHeader);
 
 				LOGGER.info("[HANDLER 15] Analyse terminée. ID : " + analysisId);
 
@@ -306,7 +297,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 				return false;
 			}
-			
+
 			if (opCancelAnalysis) {
 
 				LOGGER.info("[HANDLER 20] Action détectée : ANNULATION.");
@@ -347,13 +338,15 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 				LOGGER.info("[HANDLER 28] Authentification préparée.");
 				LOGGER.info("[HANDLER 29] Appel de confirmImport().");
 
-				importJobId = importJobManager.confirmImport(analysisId, authorizationHeader);
+				importJobId = importJobManager.confirmImport(analysisId, authorizationHeader,
+						selectedComparisonIndexes);
 
 				LOGGER.info("[HANDLER 30] Importation démarrée. ID : " + importJobId);
 
 				analysisId = null;
 				importAnalysis = null;
 				importResult = null;
+				selectedComparisonIndexes = null;
 
 				LOGGER.info("[HANDLER 31] Données de l'analyse réinitialisées.");
 
@@ -364,7 +357,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 			return false;
 
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
 
 			LOGGER.error("[HANDLER 33] Erreur pendant le traitement.", e);
 
@@ -377,7 +370,8 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 				}
 			}
 
-			setImportError(e.getMessage());
+			setImportError(e.getMessage() != null ? e.getMessage()
+					: "Une erreur technique est survenue : " + e.getClass().getSimpleName());
 
 			return false;
 

@@ -8,9 +8,14 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -295,7 +300,6 @@ public class SquashTmService {
 
 			String authorization = "Basic " + encodedCredentials;
 
-	
 			String usersUrl = baseUrl + "/api/rest/latest/users?size=1000";
 
 			LOGGER.error("========== RECHERCHE UTILISATEUR SQUASH ==========");
@@ -313,7 +317,6 @@ public class SquashTmService {
 			}
 
 			LOGGER.error("Réponse reçue : " + usersJson);
-
 
 			JsonObject root = JsonParser.parseString(usersJson).getAsJsonObject();
 
@@ -336,7 +339,6 @@ public class SquashTmService {
 			JsonArray users = embedded.getAsJsonArray("users");
 
 			LOGGER.error("Nombre d'utilisateurs reçus = " + users.size());
-
 
 			String userId = null;
 
@@ -369,8 +371,6 @@ public class SquashTmService {
 				}
 			}
 
-			
-
 			if (Util.isEmpty(userId)) {
 
 				LOGGER.warn("Utilisateur Squash TM introuvable : " + username);
@@ -390,7 +390,6 @@ public class SquashTmService {
 
 			LOGGER.error(userJson);
 
-
 			if (Util.isEmpty(userJson)) {
 
 				LOGGER.warn("Impossible de récupérer le profil complet " + "de l'utilisateur Squash TM : " + userId);
@@ -406,7 +405,6 @@ public class SquashTmService {
 
 				return null;
 			}
-
 
 			LOGGER.error("========== LOGGED USER INFO BASIC ==========");
 
@@ -589,51 +587,6 @@ public class SquashTmService {
 	public boolean testConnection(Member member) {
 
 		return authenticate(member) != null;
-	}
-
-	/**
-	 * Exécute une requête HTTP DELETE vers Squash TM.
-	 *
-	 * @param urlString     URL de la ressource à supprimer
-	 * @param authorization en-tête Authorization
-	 * @throws IOException si la requête échoue
-	 */
-	private void executeDelete(String urlString, String authorization) throws IOException {
-
-		HttpURLConnection connection = null;
-
-		try {
-			URL url = URI.create(urlString).toURL();
-
-			connection = (HttpURLConnection) url.openConnection();
-
-			connection.setRequestMethod("DELETE");
-			connection.setConnectTimeout(CONNECT_TIMEOUT);
-			connection.setReadTimeout(READ_TIMEOUT);
-
-			connection.setRequestProperty("Accept", "application/json");
-
-			if (Util.notEmpty(authorization)) {
-				connection.setRequestProperty("Authorization", authorization);
-			}
-
-			int responseCode = connection.getResponseCode();
-
-			LOGGER.info("Réponse Squash TM HTTP DELETE = " + responseCode);
-
-			
-			if (responseCode < 200 || responseCode >= 300) {
-
-				throw new IOException(
-						"Squash TM a refusé la requête DELETE. " + "HTTP = " + responseCode + " | URL = " + urlString);
-			}
-
-		} finally {
-
-			if (connection != null) {
-				connection.disconnect();
-			}
-		}
 	}
 
 	/**
@@ -887,7 +840,8 @@ public class SquashTmService {
 				java.io.InputStream errorStream = connection.getErrorStream();
 
 				if (errorStream != null) {
-					try (BufferedReader reader = new BufferedReader( new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
+					try (BufferedReader reader = new BufferedReader(
+							new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
 
 						String line;
 
@@ -897,8 +851,10 @@ public class SquashTmService {
 					}
 				}
 
-				LOGGER.error("Erreur POST Squash TM" + " | HTTP = " + responseCode + " | URL = " + urlString + " | Réponse = " + errorResponse);
-				throw new IOException("Squash TM a refusé la requête POST." + " HTTP = " + responseCode + " | Réponse = " + errorResponse);
+				LOGGER.error("Erreur POST Squash TM" + " | HTTP = " + responseCode + " | URL = " + urlString
+						+ " | Réponse = " + errorResponse);
+				throw new IOException("Squash TM a refusé la requête POST." + " HTTP = " + responseCode
+						+ " | Réponse = " + errorResponse);
 			}
 
 			StringBuilder response = new StringBuilder();
@@ -923,6 +879,129 @@ public class SquashTmService {
 					+ " | URL = " + urlString, e);
 
 			throw e;
+
+		} finally {
+
+			if (connection != null) {
+				connection.disconnect();
+			}
+		}
+	}
+
+	/**
+	 * Exécute une requête HTTP PATCH avec un corps JSON.
+	 *
+	 * Utilise le client HTTP standard de Java 17, qui prend en charge PATCH.
+	 *
+	 * @param urlString     URL de l'API Squash TM
+	 * @param authorization en-tête Authorization
+	 * @param jsonBody      corps JSON de la requête
+	 * @return réponse de Squash TM, éventuellement vide
+	 * @throws IOException en cas d'erreur HTTP ou réseau
+	 */
+	private String executePatch(String urlString, String authorization, String jsonBody) throws IOException {
+
+		if (Util.isEmpty(urlString)) {
+			throw new IOException("L'URL de la requête PATCH est vide.");
+		}
+
+		try {
+
+			HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(CONNECT_TIMEOUT)).build();
+
+			HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(URI.create(urlString))
+					.timeout(Duration.ofMillis(READ_TIMEOUT)).header("Accept", "application/json")
+					.header("Content-Type", "application/json").method("PATCH", HttpRequest.BodyPublishers
+							.ofString(jsonBody != null ? jsonBody : "", StandardCharsets.UTF_8));
+
+			if (Util.notEmpty(authorization)) {
+				requestBuilder.header("Authorization", authorization);
+			}
+
+			HttpRequest request = requestBuilder.build();
+
+			long startTime = System.currentTimeMillis();
+
+			HttpResponse<String> response = client.send(request,
+					HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+			long elapsedTime = System.currentTimeMillis() - startTime;
+
+			int responseCode = response.statusCode();
+
+			LOGGER.info("PATCH Squash TM : HTTP " + responseCode + " | durée = " + elapsedTime + " ms" + " | URL = "
+					+ urlString);
+
+			if (responseCode < 200 || responseCode >= 300) {
+
+				throw new IOException("Squash TM a refusé la requête PATCH." + " HTTP = " + responseCode
+						+ " | Réponse = " + response.body());
+			}
+
+			return response.body() != null ? response.body() : "";
+
+		} catch (InterruptedException e) {
+
+			Thread.currentThread().interrupt();
+
+			throw new IOException("La requête PATCH vers Squash TM a été interrompue.", e);
+
+		} catch (IllegalArgumentException e) {
+
+			throw new IOException("URL invalide pour la requête PATCH : " + urlString, e);
+		}
+	}
+
+	/**
+	 * Exécute une requête HTTP DELETE.
+	 *
+	 * @param urlString     URL de l'API Squash TM
+	 * @param authorization en-tête Authorization
+	 * @throws IOException en cas d'erreur HTTP ou réseau
+	 */
+	private void executeDelete(String urlString, String authorization) throws IOException {
+
+		HttpURLConnection connection = null;
+
+		try {
+			URL url = URI.create(urlString).toURL();
+			connection = (HttpURLConnection) url.openConnection();
+
+			connection.setRequestMethod("DELETE");
+			connection.setConnectTimeout(CONNECT_TIMEOUT);
+			connection.setReadTimeout(READ_TIMEOUT);
+
+			connection.setRequestProperty("Accept", "application/json");
+
+			if (Util.notEmpty(authorization)) {
+				connection.setRequestProperty("Authorization", authorization);
+			}
+
+			int responseCode = connection.getResponseCode();
+
+			LOGGER.info("DELETE Squash TM : HTTP " + responseCode + " | URL : " + urlString);
+
+			if (responseCode < 200 || responseCode >= 300) {
+
+				StringBuilder errorResponse = new StringBuilder();
+
+				java.io.InputStream errorStream = connection.getErrorStream();
+
+				if (errorStream != null) {
+					try (BufferedReader reader = new BufferedReader(
+							new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
+
+						String line;
+
+						while ((line = reader.readLine()) != null) {
+							errorResponse.append(line);
+						}
+					}
+				}
+
+				throw new IOException("Squash TM a refusé la requête DELETE. HTTP = " + responseCode + " | Réponse = "
+						+ errorResponse);
+			}
 
 		} finally {
 
@@ -1100,6 +1179,51 @@ public class SquashTmService {
 	}
 
 	/**
+	 * Met à jour le nom d'un cas de test existant.
+	 *
+	 * @param testCaseId identifiant du cas de test
+	 * @param name       nouveau nom
+	 * @return cas de test mis à jour
+	 * @throws IOException si la mise à jour échoue
+	 */
+	public JsonObject updateTestCase(long testCaseId, String name) throws IOException {
+
+		if (testCaseId <= 0) {
+			throw new IOException("L'identifiant du cas de test est invalide.");
+		}
+
+		if (Util.isEmpty(name)) {
+			throw new IOException("Le nouveau nom du cas de test est vide.");
+		}
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		JsonObject testCase = new JsonObject();
+		testCase.addProperty("_type", "test-case");
+		testCase.addProperty("name", name.trim());
+
+		String url = baseUrl + "/api/rest/latest/test-cases/" + testCaseId;
+
+		String response = executePatch(url, getAuthorization(), testCase.toString());
+
+		if (Util.isEmpty(response)) {
+			LOGGER.info("Cas de test mis à jour avec succès : id=" + testCaseId);
+			return new JsonObject();
+		}
+
+		try {
+			return JsonParser.parseString(response).getAsJsonObject();
+
+		} catch (Exception e) {
+			throw new IOException("La réponse de mise à jour du cas de test n'est pas un JSON valide.", e);
+		}
+	}
+
+	/**
 	 * Récupère l'arbre des dossiers d'exigences d'un projet.
 	 *
 	 * @param projectId identifiant du projet Squash TM
@@ -1119,6 +1243,7 @@ public class SquashTmService {
 		String url = baseUrl + "/api/rest/latest/requirement-folders/tree/" + projectId;
 
 		String response = executeGet(url, authorization);
+		LOGGER.info("Arbre des dossiers d'exigences : " + response);
 
 		if (Util.isEmpty(response)) {
 			throw new IOException("Squash TM n'a retourné aucun arbre " + "de dossiers d'exigences.");
@@ -1133,6 +1258,63 @@ public class SquashTmService {
 			throw new IOException(
 					"L'arbre des dossiers d'exigences " + "retourné par Squash TM n'est pas un JSON valide.", e);
 		}
+	}
+
+	/**
+	 * Récupère les détails d'un cas de test Squash TM.
+	 *
+	 * @param testCaseId identifiant du cas de test
+	 * @return détails du cas de test
+	 * @throws IOException si la récupération échoue
+	 */
+	public JsonObject getTestCase(long testCaseId) throws IOException {
+
+		if (testCaseId <= 0) {
+			throw new IOException("L'identifiant du cas de test est invalide.");
+		}
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		String url = baseUrl + "/api/rest/latest/test-cases/" + testCaseId;
+
+		return executeGetJson(url, "Impossible de récupérer le cas de test " + testCaseId);
+	}
+
+	/**
+	 * Récupère le contenu paginé d'un dossier d'exigences.
+	 */
+	public JsonObject getRequirementFolderContent(long folderId, int page, int size) throws IOException {
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		String url = baseUrl + "/api/rest/latest/requirement-folders/" + folderId + "/content?page=" + page + "&size="
+				+ size;
+
+		return executeGetJson(url, "Impossible de récupérer le contenu du dossier d'exigences.");
+	}
+
+	/**
+	 * Récupère les détails d'une exigence.
+	 */
+	public JsonObject getRequirement(long requirementId) throws IOException {
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		String url = baseUrl + "/api/rest/latest/requirements/" + requirementId;
+
+		return executeGetJson(url, "Impossible de récupérer l'exigence " + requirementId);
 	}
 
 	/**
@@ -1156,6 +1338,8 @@ public class SquashTmService {
 
 		String response = executeGet(url, authorization);
 
+		LOGGER.info("Arbre des dossiers de cas de test : " + response);
+
 		if (Util.isEmpty(response)) {
 			throw new IOException("Squash TM n'a retourné aucun arbre " + "de dossiers de cas de test.");
 		}
@@ -1168,6 +1352,131 @@ public class SquashTmService {
 
 			throw new IOException(
 					"L'arbre des dossiers de cas de test " + "retourné par Squash TM n'est pas un JSON valide.", e);
+		}
+	}
+
+	/**
+	 * Récupère le contenu paginé d'un dossier de cas de test.
+	 */
+	public JsonObject getTestCaseFolderContent(long folderId, int page, int size) throws IOException {
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		String url = baseUrl + "/api/rest/latest/test-case-folders/" + folderId + "/content?page=" + page + "&size="
+				+ size;
+
+		return executeGetJson(url, "Impossible de récupérer le contenu du dossier de cas de test.");
+	}
+
+	/**
+	 * Récupère toutes les étapes d'un cas de test.
+	 *
+	 * @param testCaseId identifiant du cas de test
+	 * @return toutes les étapes du cas de test
+	 * @throws IOException si la récupération échoue ou si la réponse est invalide
+	 */
+	public JsonArray getTestCaseSteps(long testCaseId) throws IOException {
+
+		if (testCaseId <= 0) {
+			throw new IOException("Identifiant du cas de test invalide.");
+		}
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		JsonArray allSteps = new JsonArray();
+
+		int page = 0;
+		int size = 100;
+		int totalPages;
+
+		do {
+
+			String url = baseUrl + "/api/rest/latest/test-cases/" + testCaseId + "/steps?page=" + page + "&size="
+					+ size;
+
+			JsonObject response = executeGetJson(url,
+					"Impossible de récupérer les étapes du cas de test " + testCaseId);
+
+			// Vérification de _embedded.
+			if (!response.has("_embedded") || !response.get("_embedded").isJsonObject()) {
+
+				throw new IOException("Réponse invalide : _embedded absent pour le cas de test " + testCaseId);
+			}
+
+			JsonObject embedded = response.getAsJsonObject("_embedded");
+
+			// Vérification du tableau des étapes.
+			if (!embedded.has("steps") || !embedded.get("steps").isJsonArray()) {
+
+				throw new IOException("Réponse invalide : étapes absentes pour le cas de test " + testCaseId);
+			}
+
+			JsonArray steps = embedded.getAsJsonArray("steps");
+
+			for (JsonElement step : steps) {
+				allSteps.add(step);
+			}
+
+			// Vérification de la pagination.
+			if (!response.has("page") || !response.get("page").isJsonObject()) {
+
+				throw new IOException("Informations de pagination absentes pour le cas de test " + testCaseId);
+			}
+
+			JsonObject pagination = response.getAsJsonObject("page");
+
+			if (!pagination.has("totalPages") || pagination.get("totalPages").isJsonNull()) {
+
+				throw new IOException("Nombre total de pages introuvable pour le cas de test " + testCaseId);
+			}
+
+			totalPages = pagination.get("totalPages").getAsInt();
+
+			if (totalPages < 0) {
+				throw new IOException("Nombre de pages invalide pour le cas de test " + testCaseId);
+			}
+
+			page++;
+
+		} while (page < totalPages);
+
+		LOGGER.info("Étapes récupérées pour le cas de test " + testCaseId + " : " + allSteps.size());
+
+		return allSteps;
+	}
+
+	/**
+	 * Exécute une requête GET et convertit la réponse en JsonObject.
+	 */
+	private JsonObject executeGetJson(String url, String errorMessage) throws IOException {
+
+		String authorization = getAuthorization();
+
+		String response = executeGet(url, authorization);
+
+		if (Util.isEmpty(response)) {
+			throw new IOException(errorMessage + " : réponse vide.");
+		}
+
+		try {
+			JsonElement json = JsonParser.parseString(response);
+
+			if (!json.isJsonObject()) {
+				throw new IOException(errorMessage + " : format JSON inattendu.");
+			}
+
+			return json.getAsJsonObject();
+
+		} catch (com.google.gson.JsonParseException e) {
+			throw new IOException(errorMessage + " : JSON invalide.", e);
 		}
 	}
 
@@ -1373,6 +1682,55 @@ public class SquashTmService {
 	}
 
 	/**
+	 * Met à jour le nom d'une exigence existante.
+	 *
+	 * @param requirementId identifiant de l'exigence
+	 * @param name          nouveau nom
+	 * @return exigence mise à jour
+	 * @throws IOException si la mise à jour échoue
+	 */
+	public JsonObject updateRequirement(long requirementId, String name) throws IOException {
+
+		if (requirementId <= 0) {
+			throw new IOException("L'identifiant de l'exigence est invalide.");
+		}
+
+		if (Util.isEmpty(name)) {
+			throw new IOException("Le nouveau nom de l'exigence est vide.");
+		}
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		JsonObject currentVersion = new JsonObject();
+		currentVersion.addProperty("_type", "requirement-version");
+		currentVersion.addProperty("name", name.trim());
+
+		JsonObject requirement = new JsonObject();
+		requirement.addProperty("_type", "requirement");
+		requirement.add("current_version", currentVersion);
+
+		String url = baseUrl + "/api/rest/latest/requirements/" + requirementId;
+
+		String response = executePatch(url, getAuthorization(), requirement.toString());
+
+		if (Util.isEmpty(response)) {
+			LOGGER.info("Exigence mise à jour avec succès : id=" + requirementId);
+			return new JsonObject();
+		}
+
+		try {
+			return JsonParser.parseString(response).getAsJsonObject();
+
+		} catch (Exception e) {
+			throw new IOException("La réponse de mise à jour de l'exigence n'est pas un JSON valide.", e);
+		}
+	}
+
+	/**
 	 * Crée un cas de test standard dans un dossier Squash TM.
 	 *
 	 * @param name           nom du cas de test
@@ -1513,4 +1871,96 @@ public class SquashTmService {
 			throw new IOException("La réponse de création du test step " + "n'est pas un JSON valide.", e);
 		}
 	}
+
+	/**
+	 * Met à jour une étape existante d'un cas de test.
+	 *
+	 * @param stepId         identifiant de l'étape
+	 * @param action         nouvelle action
+	 * @param expectedResult nouveau résultat attendu
+	 * @return étape mise à jour
+	 * @throws IOException si la mise à jour échoue
+	 */
+	public JsonObject updateTestStep(long stepId, String action, String expectedResult) throws IOException {
+
+		if (stepId <= 0) {
+			throw new IOException("L'identifiant de l'étape est invalide.");
+		}
+
+		if (Util.isEmpty(action)) {
+			throw new IOException("L'action de l'étape est vide.");
+		}
+
+		if (Util.isEmpty(expectedResult)) {
+			throw new IOException("Le résultat attendu de l'étape est vide.");
+		}
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		JsonObject step = new JsonObject();
+		step.addProperty("_type", "action-step");
+		step.addProperty("action", action.trim());
+		step.addProperty("expected_result", expectedResult.trim());
+
+		String url = baseUrl + "/api/rest/latest/test-steps/" + stepId;
+
+		String response = executePatch(url, getAuthorization(), step.toString());
+
+		if (Util.isEmpty(response)) {
+			LOGGER.info("Étape de test mise à jour avec succès : id=" + stepId);
+			return new JsonObject();
+		}
+
+		try {
+			return JsonParser.parseString(response).getAsJsonObject();
+
+		} catch (Exception e) {
+			throw new IOException("La réponse de mise à jour de l'étape n'est pas un JSON valide.", e);
+		}
+	}
+
+	/**
+	 * Supprime plusieurs étapes de test à partir de leurs identifiants.
+	 *
+	 * @param stepIds identifiants des étapes à supprimer
+	 * @throws IOException si la suppression échoue
+	 */
+	public void deleteTestSteps(Set<Long> stepIds) throws IOException {
+
+		if (stepIds == null || stepIds.isEmpty()) {
+			return;
+		}
+
+		StringBuilder ids = new StringBuilder();
+
+		for (Long stepId : stepIds) {
+
+			if (stepId == null || stepId <= 0) {
+				throw new IOException("Un identifiant d'étape à supprimer est invalide.");
+			}
+
+			if (ids.length() > 0) {
+				ids.append(",");
+			}
+
+			ids.append(stepId);
+		}
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL de Squash TM n'est pas configurée.");
+		}
+
+		String url = baseUrl + "/api/rest/latest/test-steps/" + ids;
+
+		executeDelete(url, getAuthorization());
+
+		LOGGER.info("Étapes Squash TM supprimées : " + ids);
+	}
+
 }

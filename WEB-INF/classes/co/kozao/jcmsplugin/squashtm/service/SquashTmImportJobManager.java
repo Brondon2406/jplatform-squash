@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -15,6 +17,8 @@ import org.apache.log4j.Logger;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmProgress;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmComparisonItem;
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmData;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.PendingImport;
 
 /**
@@ -143,7 +147,7 @@ public class SquashTmImportJobManager {
 	 * @return identifiant de l'analyse en attente
 	 * @throws IOException si le fichier ne peut pas être analysé
 	 */
-	public String analyzeImport(File uploadedFile, String projectName) throws IOException {
+	public String analyzeImport(File uploadedFile, String projectName, String authorizationHeader) throws IOException {
 
 		if (uploadedFile == null || !uploadedFile.isFile()) {
 			throw new IOException("Le fichier Excel est introuvable.");
@@ -153,6 +157,10 @@ public class SquashTmImportJobManager {
 			throw new IOException("Le nom du projet est obligatoire.");
 		}
 
+		if (authorizationHeader == null || authorizationHeader.trim().isEmpty()) {
+			throw new IOException("Les informations d'authentification Squash TM sont absentes.");
+		}
+
 		File temporaryFile = Files.createTempFile("squashtm-pending-", ".xlsx").toFile();
 
 		try {
@@ -160,15 +168,33 @@ public class SquashTmImportJobManager {
 
 			ExcelSquashTmImportService analysisService = new ExcelSquashTmImportService();
 
-			analysisService.parse(temporaryFile, projectName.trim());
+			ImportSquashTmData importData = analysisService.parse(temporaryFile, projectName.trim());
 
 			ImportSquashTmAnalysis analysis = analysisService.buildAnalysis(projectName.trim());
 
+			SquashTmImportManager importManager = new SquashTmImportManager(authorizationHeader);
+
+			// Comparaison du contenu Excel avec Squash TM.
+			importManager.compareExistingProject(importData, analysis);
+
+			// Vérification de la cohérence des résultats.
+			if (analysis.isExistingProject() && analysis.getExistingProjectId() <= 0) {
+				throw new IOException("Le projet existe, mais son identifiant est introuvable.");
+			}
+
+			if (analysis.getComparisonItems() == null) {
+				throw new IOException("La comparaison n'a produit aucun résultat exploitable.");
+			}
+
 			String analysisId = UUID.randomUUID().toString();
 
-			PendingImport pendingImport = new PendingImport(temporaryFile, projectName.trim(), analysis);
+			PendingImport pendingImport = new PendingImport(temporaryFile, projectName.trim(), analysis, importData);
 
 			pendingImports.put(analysisId, pendingImport);
+
+			LOGGER.info("[IMPORT ANALYSIS] Projet existant : " + analysis.isExistingProject());
+
+			LOGGER.info("[IMPORT ANALYSIS] Nombre d'éléments comparés : " + analysis.getComparisonItems().size());
 
 			LOGGER.info("[IMPORT ANALYSIS] Analyse terminée : " + analysisId);
 
@@ -205,11 +231,13 @@ public class SquashTmImportJobManager {
 	}
 
 	/**
-	 * Confirme une analyse et démarre l'importation en arrière-plan.
+	 * Confirme une analyse et démarre le traitement en arrière-plan.
 	 *
-	 * Une analyse ne peut être confirmée qu'une seule fois.
+	 * Nouveau projet : exécute le processus d'importation habituel. Projet existant
+	 * : applique uniquement les décisions sélectionnées.
 	 */
-	public String confirmImport(String analysisId, String authorizationHeader) throws IOException {
+	public String confirmImport(String analysisId, String authorizationHeader, String selectedComparisonIndexes)
+			throws IOException {
 
 		if (analysisId == null || analysisId.trim().isEmpty()) {
 			throw new IOException("L'identifiant de l'analyse est absent.");
@@ -227,13 +255,61 @@ public class SquashTmImportJobManager {
 			throw new IOException("Cette analyse n'existe plus ou a déjà été utilisée.");
 		}
 
-		if (!pendingImports.remove(analysisId, pending)) {
-			throw new IOException("Cette analyse a déjà été confirmée ou annulée.");
+		synchronized (pending) {
+
+			// Vérifier que l'analyse est toujours disponible.
+			if (pendingImports.get(analysisId) != pending) {
+				throw new IOException("Cette analyse a déjà été confirmée ou annulée.");
+			}
+
+			// Pour un projet existant, appliquer les sélections.
+			if (pending.getAnalysis().isExistingProject()) {
+
+				if (!pending.getAnalysis().hasActionsToPerform()) {
+					throw new IOException("Le projet Squash TM est déjà à jour : aucun élément à créer ou à renommer.");
+				}
+
+				applySelectedComparisonIndexes(pending.getAnalysis(), selectedComparisonIndexes);
+
+				validateSelectedActions(pending.getAnalysis());
+
+				if (!hasSelectedAction(pending.getAnalysis())) {
+					throw new IOException(
+							"Aucun élément sélectionné : cochez au moins un élément à créer ou à renommer.");
+				}
+			}
+
+			// Retirer l'analyse pour empêcher une deuxième confirmation.
+			if (!pendingImports.remove(analysisId, pending)) {
+				throw new IOException("Cette analyse a déjà été confirmée ou annulée.");
+			}
 		}
 
+		// CAS 1 : le projet existe déjà dans Squash TM.
+		if (pending.getAnalysis().isExistingProject()) {
+
+			try {
+				return startExistingProjectImport(pending, authorizationHeader);
+
+			} catch (IOException e) {
+
+				try {
+					Files.deleteIfExists(pending.getTemporaryFile().toPath());
+				} catch (IOException deleteException) {
+					LOGGER.warn("Impossible de supprimer le fichier temporaire.", deleteException);
+				}
+
+				throw e;
+			}
+		}
+
+		// CAS 2 : le projet n'existe pas encore.
+		// On conserve le processus d'importation actuel.
 		try {
 			return startImport(pending.getTemporaryFile(), pending.getProjectName(), authorizationHeader);
+
 		} finally {
+
 			try {
 				Files.deleteIfExists(pending.getTemporaryFile().toPath());
 			} catch (IOException e) {
@@ -253,10 +329,17 @@ public class SquashTmImportJobManager {
 			return false;
 		}
 
-		PendingImport pending = pendingImports.remove(analysisId);
+		PendingImport pending = pendingImports.get(analysisId);
 
 		if (pending == null) {
 			return false;
+		}
+
+		synchronized (pending) {
+
+			if (!pendingImports.remove(analysisId, pending)) {
+				return false;
+			}
 		}
 
 		try {
@@ -287,17 +370,25 @@ public class SquashTmImportJobManager {
 				continue;
 			}
 
-			long age = currentTime - pending.getCreatedAt();
+			synchronized (pending) {
 
-			if (age >= expirationDelay && pendingImports.remove(analysisId, pending)) {
-
-				try {
-					Files.deleteIfExists(pending.getTemporaryFile().toPath());
-				} catch (IOException e) {
-					LOGGER.warn("Impossible de supprimer le fichier d'analyse expirée.", e);
+				// L'analyse a peut-être déjà été confirmée ou annulée.
+				if (pendingImports.get(analysisId) != pending) {
+					continue;
 				}
 
-				LOGGER.info("[IMPORT ANALYSIS] Analyse expirée : " + analysisId);
+				long age = currentTime - pending.getCreatedAt();
+
+				if (age >= expirationDelay && pendingImports.remove(analysisId, pending)) {
+
+					try {
+						Files.deleteIfExists(pending.getTemporaryFile().toPath());
+					} catch (IOException e) {
+						LOGGER.warn("Impossible de supprimer le fichier d'analyse expirée.", e);
+					}
+
+					LOGGER.info("[IMPORT ANALYSIS] Analyse expirée : " + analysisId);
+				}
 			}
 		}
 	}
@@ -317,6 +408,202 @@ public class SquashTmImportJobManager {
 	public ImportSquashTmResult getResult(String jobId) {
 		ImportJob job = jobs.get(jobId);
 		return job == null ? null : job.result;
+	}
+
+	/**
+	 * Démarre l'application des décisions sur un projet Squash TM existant.
+	 */
+	private String startExistingProjectImport(PendingImport pending, String authorizationHeader) throws IOException {
+
+		String jobId = UUID.randomUUID().toString();
+
+		ImportJob job = new ImportJob();
+
+		jobs.put(jobId, job);
+
+		try {
+			executor.submit(() -> {
+
+				try {
+					LOGGER.info("[IMPORT JOB] Application des décisions : " + jobId);
+
+					SquashTmImportManager importManager = new SquashTmImportManager(authorizationHeader);
+
+					ImportSquashTmResult result = importManager.applySelectedActions(pending.getImportData(),
+							pending.getAnalysis(), job.progress);
+
+					job.result = result;
+
+					if (result != null && result.isSuccess()) {
+						job.progress.finish(true, "Traitement terminé avec succès.");
+					} else {
+						job.progress.finish(false, "Le traitement est terminé avec des erreurs.");
+					}
+
+					LOGGER.info("[IMPORT JOB] Fin : " + jobId);
+
+				} catch (Exception e) {
+
+					LOGGER.error("[IMPORT JOB] Erreur pendant l'application des décisions : " + jobId, e);
+
+					ImportSquashTmResult failedResult = new ImportSquashTmResult();
+					failedResult.setSuccess(false);
+					failedResult.setProjectName(pending.getProjectName());
+					failedResult.setFileName(pending.getTemporaryFile().getName());
+
+					failedResult.addTechnicalError("Une erreur technique est survenue : "
+							+ (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+
+					job.result = failedResult;
+
+					job.progress.finish(false, "Une erreur technique est survenue.");
+
+				} finally {
+
+					try {
+						Files.deleteIfExists(pending.getTemporaryFile().toPath());
+					} catch (IOException e) {
+						LOGGER.warn("Impossible de supprimer le fichier temporaire.", e);
+					}
+				}
+			});
+
+		} catch (RuntimeException e) {
+
+			jobs.remove(jobId);
+
+			throw new IOException("Impossible de démarrer le traitement du projet existant.", e);
+		}
+
+		return jobId;
+	}
+
+	private void applySelectedComparisonIndexes(ImportSquashTmAnalysis analysis, String selectedComparisonIndexes)
+			throws IOException {
+
+		if (analysis == null || analysis.getComparisonItems() == null) {
+			throw new IOException("Analyse d'importation invalide.");
+		}
+
+		List<ImportSquashTmComparisonItem> items = analysis.getComparisonItems();
+
+		// Toutes les actions sont ignorées par défaut.
+		for (ImportSquashTmComparisonItem item : items) {
+			item.setSelectedAction(ImportSquashTmComparisonItem.ACTION_IGNORE);
+		}
+
+		// Une sélection vide est autorisée.
+		if (selectedComparisonIndexes == null || selectedComparisonIndexes.trim().isEmpty()) {
+			return;
+		}
+
+		Set<Integer> selectedIndexes = new LinkedHashSet<>();
+
+		// -1 permet de détecter également les éléments vides en fin de chaîne.
+		String[] values = selectedComparisonIndexes.split(",", -1);
+
+		for (String value : values) {
+
+			if (value == null || value.trim().isEmpty()) {
+				throw new IOException("La liste des éléments sélectionnés est invalide.");
+			}
+
+			final int index;
+
+			try {
+				index = Integer.parseInt(value.trim());
+			} catch (NumberFormatException e) {
+				throw new IOException("Indice de sélection invalide : " + value);
+			}
+
+			if (index < 0 || index >= items.size()) {
+				throw new IOException("Indice de sélection hors limites : " + index);
+			}
+
+			if (!selectedIndexes.add(index)) {
+				throw new IOException("Indice de sélection répété : " + index);
+			}
+		}
+
+		// Attribution des actions autorisées.
+		for (Integer index : selectedIndexes) {
+
+			ImportSquashTmComparisonItem item = items.get(index);
+
+			if (ImportSquashTmComparisonItem.STATUS_EXCEL_ONLY.equals(item.getStatus())) {
+
+				item.setSelectedAction(ImportSquashTmComparisonItem.ACTION_CREATE);
+
+			} else if (ImportSquashTmComparisonItem.STATUS_RENAME.equals(item.getStatus())) {
+
+				item.setSelectedAction(ImportSquashTmComparisonItem.ACTION_UPDATE);
+
+			} else {
+
+				throw new IOException("Cet élément ne peut pas être sélectionné : " + item.getElementName());
+			}
+		}
+	}
+
+	private boolean hasSelectedAction(ImportSquashTmAnalysis analysis) {
+
+		if (analysis == null || analysis.getComparisonItems() == null) {
+			return false;
+		}
+
+		for (ImportSquashTmComparisonItem item : analysis.getComparisonItems()) {
+
+			if (item == null) {
+				continue;
+			}
+
+			String action = item.getSelectedAction();
+
+			if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)
+					|| ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private void validateSelectedActions(ImportSquashTmAnalysis analysis) throws IOException {
+
+		if (analysis == null || analysis.getComparisonItems() == null) {
+			throw new IOException("Analyse d'importation invalide.");
+		}
+
+		for (ImportSquashTmComparisonItem item : analysis.getComparisonItems()) {
+
+			String status = item.getStatus();
+			String action = item.getSelectedAction();
+
+			if (action == null || ImportSquashTmComparisonItem.ACTION_IGNORE.equals(action)) {
+				continue;
+			}
+
+			if (ImportSquashTmComparisonItem.STATUS_EXCEL_ONLY.equals(status)) {
+
+				if (!ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
+					throw new IOException("Action non autorisée pour : " + item.getElementName());
+				}
+
+			} else if (ImportSquashTmComparisonItem.STATUS_RENAME.equals(status)) {
+
+				if (!ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+					throw new IOException("Action non autorisée pour : " + item.getElementName());
+				}
+
+				if (item.getSquashId() <= 0) {
+					throw new IOException(
+							"Identifiant Squash TM manquant pour le renommage de : " + item.getElementName());
+				}
+
+			} else {
+				throw new IOException("Une action non autorisée a été détectée pour : " + item.getElementName());
+			}
+		}
 	}
 
 	private static class ImportJob {

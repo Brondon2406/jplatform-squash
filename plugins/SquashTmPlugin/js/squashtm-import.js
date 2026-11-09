@@ -22,10 +22,15 @@ document.addEventListener("DOMContentLoaded", function() {
     var importAction = document.getElementById("opImport");
     var cancelAnalysisAction = document.getElementById("opCancelAnalysis");
     var analysisIdInput = document.getElementById("analysisId");
+    var selectedComparisonIndexesInput = document.getElementById("selectedComparisonIndexes");
 
     var analysisContainer = document.getElementById("squashTmAnalysisContainer");
     var confirmImportButton = document.getElementById("squashTmConfirmImportButton");
     var cancelAnalysisButton = document.getElementById("squashTmCancelAnalysisButton");
+
+    if (!importForm || !fileInput || !dropZone || !projectName) {
+        return;
+    }
 
     /*   
      * ============== SELECTION DU FICHIER =================
@@ -104,11 +109,11 @@ document.addEventListener("DOMContentLoaded", function() {
         fileSize.textContent = formatFileSize(file.size);
         dropZone.style.display = "none";
         selectedFile.style.display = "block";
-		
+
         if (templateDownload) {
             templateDownload.style.display = "none";
         }
-		
+
         projectContainer.style.display = "block";
         information.style.display = "block";
         action.style.display = "flex";
@@ -234,6 +239,22 @@ document.addEventListener("DOMContentLoaded", function() {
                 return;
             }
 
+            // Récupérer les opérations sélectionnées.
+            if (selectedComparisonIndexesInput) {
+
+                var selectedCheckboxes = document.querySelectorAll(
+                    ".squashtm-comparison-select:checked"
+                );
+
+                var selectedIndexes = [];
+
+                selectedCheckboxes.forEach(function(checkbox) {
+                    selectedIndexes.push(checkbox.value);
+                });
+
+                selectedComparisonIndexesInput.value = selectedIndexes.join(",");
+            }
+
             if (importAction) {
                 importAction.value = "true";
             }
@@ -320,13 +341,17 @@ document.addEventListener("DOMContentLoaded", function() {
         projectContainer.style.display = "none";
         information.style.display = "none";
         action.style.display = "none";
-       
-		dropZone.style.display = "flex";
 
-		if (templateDownload) {
-		    templateDownload.style.display = "block";
-		}
-		
+        dropZone.style.display = "flex";
+
+        if (templateDownload) {
+            templateDownload.style.display = "block";
+        }
+
+        if (selectedComparisonIndexesInput) {
+            selectedComparisonIndexesInput.value = "";
+        }
+
         fileError.style.display = "none";
         dropZone.classList.remove("dragover");
         importButton.disabled = true;

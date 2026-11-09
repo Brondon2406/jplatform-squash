@@ -19,7 +19,7 @@ jcmsplugin.squashtm.app.sidebar.account-infos: Compte Squash TM lié
 jcmsplugin.squashtm.app.sidebar.account-infos.phone.title: Numéro de téléphone du compte Squash TM
 jcmsplugin.squashtm.app.sidebar.account-infos.email.title: E-mail du compte Squash TM
 jcmsplugin.squashtm.app.sidebar.account-infos.created-at: Créé le
-#jcmsplugin.squashtm.properties.app.sidebar.icon: Icône de la sidebar de l'app Squash TM
+#jcmsplugin.squashtm.properties.app.sidebar.icon: Icône de la sidebar de l'app Squash TM 
 
 #BODY
 jcmsplugin.squashtm.signin-please: Vous n'êtes pas connecté(e) à SquashTm. Veuillez vous identifier avec votre compte Squash TM.
@@ -140,3 +140,21 @@ jcmsplugin.squashtm.app.import.report.error-elements: Éléments en erreur
 jcmsplugin.squashtm.app.import.report.error-description: Éléments qui n'ont pas pu être importés
 jcmsplugin.squashtm.app.import.report.error-details: Détails des erreurs
 jcmsplugin.squashtm.app.import.report.finish: Terminer
+
+
+# Analyse - Comparaison Squash TM
+jcmsplugin.squashtm.app.import.analysis.comparison.title: Résultat de la comparaison avec Squash TM
+jcmsplugin.squashtm.app.import.analysis.comparison.requirement-folder: Dossier d'exigences
+jcmsplugin.squashtm.app.import.analysis.comparison.testcase-folder: Dossier de cas de test
+jcmsplugin.squashtm.app.import.analysis.comparison.requirement: Exigence
+jcmsplugin.squashtm.app.import.analysis.comparison.testcase: Cas de test
+jcmsplugin.squashtm.app.import.analysis.comparison.excel-only: Présent uniquement dans Excel
+jcmsplugin.squashtm.app.import.analysis.comparison.different: Différent
+jcmsplugin.squashtm.app.import.analysis.comparison.squash-only: Présent uniquement dans Squash TM
+
+# Comparaison avec Squash TM
+jcmsplugin.squashtm.app.import.analysis.comparison.selection-description: Sélectionnez uniquement les créations et les renommages que vous souhaitez appliquer.
+jcmsplugin.squashtm.app.import.analysis.comparison.rename-proposed: Renommage proposé
+jcmsplugin.squashtm.app.import.analysis.comparison.creation-proposed: Création proposée
+jcmsplugin.squashtm.app.import.analysis.comparison.original-name: Ancien nom
+jcmsplugin.squashtm.app.import.analysis.comparison.new-name: Nouveau nom

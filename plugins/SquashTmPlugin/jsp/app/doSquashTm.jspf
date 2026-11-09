@@ -21,7 +21,6 @@ jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm.css");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/importfiles.css");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm-analysis.css");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm-report.css");
-jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-analysis.js");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-import.js");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/import-progress.js");
 

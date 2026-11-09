@@ -160,7 +160,7 @@
 /* Zone de consultation des incohérences */
 .squashtm-analysis-inconsistencies .list-group {
 	max-height: 350px;
-	overflow-y: scroll;
+	overflow-y: auto;
 	overflow-x: hidden;
 
 	margin-bottom: 0;
@@ -260,25 +260,196 @@
    ========================================================== */
 
 .squashtm-progress-header {
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #e1e5eb;
+	margin-bottom: 20px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #e1e5eb;
 
-  .panel-heading {
-    padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
+	.panel-heading {
+		padding: 0;
+		background: transparent;
+		border: none;
+		box-shadow: none;
+	}
 
-  .squashtm-progress-title {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    line-height: 1.4;
+	.squashtm-progress-title {
+		margin: 0;
+		font-size: 24px;
+		font-weight: 600;
+		line-height: 1.4;
 
-    .jalios-icon {
-      margin-right: 8px;
-    }
-  }
+		.jalios-icon {
+			margin-right: 8px;
+		}
+	}
+}
+
+
+/* ==========================================================
+   RESULTAT DE LA COMPARAISON AVEC SQUASH TM
+   ========================================================== */
+
+.squashtm-analysis-comparison {
+
+	margin-bottom: 20px;
+
+}
+
+.squashtm-analysis-comparison h3 {
+
+	margin-top: 0;
+
+	margin-bottom: 15px;
+
+	font-size: 18px;
+
+	font-weight: 600;
+
+}
+
+.squashtm-analysis-comparison h3 .jalios-icon {
+
+	margin-right: 8px;
+
+}
+
+/* Zone de consultation des éléments comparés */
+
+.squashtm-analysis-comparison .list-group {
+
+	max-height: 400px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	margin-bottom: 0;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background-color: #fff;
+
+}
+
+/* Chaque élément comparé */
+
+.squashtm-analysis-comparison .list-group-item {
+	padding: 14px 15px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+
+}
+
+/* Informations sur l'élément */
+
+.squashtm-comparison-item {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+
+}
+
+.squashtm-comparison-item>strong {
+	color: #333;
+	font-size: 14px;
+	font-weight: 600;
+
+}
+
+.squashtm-comparison-item>.text-muted {
+	color: #777;
+	font-size: 12px;
+
+}
+
+/* Type de l'élément */
+
+.squashtm-comparison-item>span:not(.text-muted) {
+	color: #666;
+	font-size: 12px;
+
+}
+
+/* Statut de comparaison */
+
+.squashtm-comparison-status {
+	margin-top: 4px;
+
+}
+
+.squashtm-comparison-status .label {
+	display: inline-block;
+	padding: 5px 9px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+
+}
+
+/* Détails des différences */
+
+.squashtm-comparison-differences {
+	margin: 8px 0 0;
+	padding-left: 20px;
+	color: #555;
+	font-size: 13px;
+
+}
+
+.squashtm-comparison-differences li {
+	margin-bottom: 4px;
+
+}
+
+.squashtm-comparison-differences li:last-child {
+	margin-bottom: 0;
+
+}
+
+/* ==========================================================
+   SELECTION DES CREATIONS ET RENOMMAGES
+   ========================================================== */
+
+.squashtm-comparison-selection {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	width: 100%;
+	margin: 0;
+	cursor: pointer;
+}
+
+.squashtm-comparison-selection>input[type="checkbox"] {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	margin-top: 4px;
+	cursor: pointer;
+}
+
+.squashtm-comparison-selection-content {
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+	min-width: 0;
+	flex: 1;
+}
+
+.squashtm-comparison-selection-content strong {
+	color: #333;
+	font-weight: 600;
+}
+
+.squashtm-comparison-selection-content .text-muted {
+	color: #777;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.squashtm-comparison-type {
+	color: #666;
+	font-size: 12px;
+}
+
+.squashtm-comparison-status {
+	margin-top: 2px;
+}
+
+.squashtm-comparison-selection:hover {
+	background-color: #fafafa;
 }

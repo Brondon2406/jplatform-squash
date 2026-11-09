@@ -29,18 +29,14 @@ public class ImportSquashTmModule {
 			subModules.add(subModule);
 		}
 	}
-	
 
 	public List<ImportSquashTmSubModule> getSubModules() {
 		return subModules;
 	}
 
 	public void setSubModules(List<ImportSquashTmSubModule> subModules) {
-		this.subModules = subModules != null
-				? subModules
-				: new ArrayList<>();
+		this.subModules = subModules != null ? subModules : new ArrayList<>();
 	}
-
 
 	public String getName() {
 		return name;

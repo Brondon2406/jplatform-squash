@@ -1,3 +1,4 @@
+<%@ page import="co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult" %>
 <%@ page contentType="text/html; charset=UTF-8" %><%
 %><jsp:useBean id="squashTmImportHandler" scope="request" class="co.kozao.jcmsplugin.squashtm.handler.SquashTmImportHandler"><%
 %><jsp:setProperty name="squashTmImportHandler" property="request"       value="<%= request %>"/><%
@@ -11,12 +12,34 @@
     }
 %>
 
-  <form action="" method="post" enctype="multipart/form-data" name="squashTmImportForm" id="squashTmImportForm" data-analysis-ready="<%= squashTmImportHandler.getImportAnalysis() != null %>" data-import-completed="<%= squashTmImportHandler.getImportResult() != null %>" 
+  <form action="" method="post" enctype="multipart/form-data" name="squashTmImportForm" id="squashTmImportForm" data-progress-url="<%= request.getContextPath() %>/plugins/SquashTmPlugin/jsp/importProgress/importProgress.jsp" 
+  data-analysis-ready="<%= squashTmImportHandler.getImportAnalysis() != null %>" data-import-completed="<%= squashTmImportHandler.getImportResult() != null %>" 
 	      data-import-job-id="<%= squashTmImportHandler.getImportJobId() != null ? squashTmImportHandler.getImportJobId() : "" %>">
 	 <input type="hidden" id="opAnalyze" name="opAnalyze" value="false" />
 	 <input type="hidden" id="opImport" name="opImport" value="false" />
 	 <input type="hidden" id="opCancelAnalysis" name="opCancelAnalysis" value="false" />
 	 <input type="hidden" id="analysisId" name="analysisId" value="<%= squashTmImportHandler.getAnalysisId() != null ? squashTmImportHandler.getAnalysisId() : "" %>" />
+	 <input type="hidden" id="selectedComparisonIndexes" name="selectedComparisonIndexes" value="" />
+	
+	<%-- ============== ERREURS DE TRAITEMENT (analyse / confirmation) ============== --%>
+	 
+	 <%
+	 	ImportSquashTmResult handlerResult = squashTmImportHandler.getImportResult();
+
+	 	if (handlerResult != null
+	 			&& squashTmImportHandler.getImportJobId() == null
+	 			&& handlerResult.getTechnicalErrors() != null
+	 			&& !handlerResult.getTechnicalErrors().isEmpty()) {
+	 %>
+	 <div class="alert alert-danger squashtm-import-error">
+	 	<ul>
+	 	<% for (String handlerError : handlerResult.getTechnicalErrors()) { %>
+	 		<li><%= handlerError == null ? "" : handlerError.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") %></li>
+	 	<% } %>
+	 	</ul>
+	 </div>
+	 <% } %>
+	 
             
      <%-- ============== VUE D'IMPORT ============== --%> 
 	<div class="squashtm-import-container">
@@ -27,7 +50,7 @@
 	<div id="squashTmAnalysisContainer" class="squashtm-analysis-container" style="display: none;">
 		<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportAnalysis.jspf" %>
 	</div>
-	
+	 	
 	<%-- ============== RAPPORT FINAL D'IMPORTATION ============== --%>
 	<div id="squashTmImportReport" class="squashtm-import-report" style="display: none;">
 		<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportReport.jspf" %> 

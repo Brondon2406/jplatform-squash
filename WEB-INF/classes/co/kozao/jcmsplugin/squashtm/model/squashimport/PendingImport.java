@@ -5,40 +5,45 @@ import java.io.File;
 /**
  * Représente un import Excel analysé, mais pas encore confirmé.
  *
- * Les données sont conservées temporairement jusqu'à la confirmation
- * ou l'annulation de l'importation.
+ * Les données sont conservées temporairement jusqu'à la confirmation ou
+ * l'annulation de l'importation.
  */
 public class PendingImport {
 
-    private final File temporaryFile;
-    private final String projectName;
-    private final ImportSquashTmAnalysis analysis;
-    private final long createdAt;
+	private final File temporaryFile;
+	private final String projectName;
+	private final ImportSquashTmAnalysis analysis;
+	private final long createdAt;
+	private final ImportSquashTmData importData;
 
-    public PendingImport(
-            File temporaryFile,
-            String projectName,
-            ImportSquashTmAnalysis analysis) {
+	public PendingImport(File temporaryFile, String projectName, ImportSquashTmAnalysis analysis,
+			ImportSquashTmData importData) {
 
-        this.temporaryFile = temporaryFile;
-        this.projectName = projectName;
-        this.analysis = analysis;
-        this.createdAt = System.currentTimeMillis();
-    }
+		this.temporaryFile = temporaryFile;
+		this.projectName = projectName;
+		this.analysis = analysis;
+		this.importData = importData;
+		this.createdAt = System.currentTimeMillis();
+	}
 
-    public File getTemporaryFile() {
-        return temporaryFile;
-    }
+	public File getTemporaryFile() {
+		return temporaryFile;
+	}
 
-    public String getProjectName() {
-        return projectName;
-    }
+	public String getProjectName() {
+		return projectName;
+	}
 
-    public ImportSquashTmAnalysis getAnalysis() {
-        return analysis;
-    }
+	public ImportSquashTmAnalysis getAnalysis() {
+		return analysis;
+	}
 
-    public long getCreatedAt() {
-        return createdAt;
-    }
+	public long getCreatedAt() {
+		return createdAt;
+	}
+
+	public ImportSquashTmData getImportData() {
+		return importData;
+	}
+
 }

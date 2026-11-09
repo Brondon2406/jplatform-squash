@@ -5,10 +5,17 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmComparisonItem;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmData;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmFeature;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmModule;
@@ -34,6 +41,7 @@ public class SquashTmImportManager {
 
 	private final ExcelSquashTmImportService excelImportService;
 	private final SquashTmService squashTmService;
+	private int createdFolderCount;
 
 	/**
 	 * Constructeur utilisé lorsque l'importation est exécutée en arrière-plan.
@@ -200,6 +208,558 @@ public class SquashTmImportManager {
 	}
 
 	/**
+	 * Retourne le noeud racine (le projet) d'un arbre de dossiers Squash TM.
+	 *
+	 * @param tree arbre retourné par l'API
+	 * @return le noeud racine
+	 * @throws IOException si l'arbre est invalide
+	 */
+	private JsonObject getTreeRoot(JsonElement tree) throws IOException {
+
+		if (tree == null || tree.isJsonNull()) {
+			throw new IOException("Arborescence Squash TM invalide.");
+		}
+
+		if (tree.isJsonArray()) {
+
+			JsonArray roots = tree.getAsJsonArray();
+
+			if (roots.size() == 0 || !roots.get(0).isJsonObject()) {
+				throw new IOException("Racine de l'arborescence introuvable.");
+			}
+
+			return roots.get(0).getAsJsonObject();
+		}
+
+		if (tree.isJsonObject()) {
+			return tree.getAsJsonObject();
+		}
+
+		throw new IOException("Format de l'arborescence Squash TM invalide.");
+	}
+
+	/**
+	 * Recherche un sous-dossier direct par son nom.
+	 *
+	 * Selon le noeud, Squash TM place les sous-dossiers dans "folders" ou dans
+	 * "children" : les deux propriétés sont donc examinées.
+	 *
+	 * @param parent     noeud parent (projet ou dossier)
+	 * @param folderName nom recherché
+	 * @return le dossier trouvé ou null
+	 */
+	private JsonObject findChildFolder(JsonObject parent, String folderName) {
+
+		for (String property : new String[] { "folders", "children" }) {
+
+			if (!parent.has(property) || !parent.get(property).isJsonArray()) {
+				continue;
+			}
+
+			for (JsonElement element : parent.getAsJsonArray(property)) {
+
+				if (!element.isJsonObject()) {
+					continue;
+				}
+
+				JsonObject folder = element.getAsJsonObject();
+
+				if (folder.has("name") && !folder.get("name").isJsonNull()
+						&& folderName.equals(folder.get("name").getAsString().trim())) {
+
+					return folder;
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Retourne le tableau dans lequel ajouter un sous-dossier nouvellement créé.
+	 */
+	private JsonArray getWritableChildren(JsonObject parent) {
+
+		if (parent.has("children") && parent.get("children").isJsonArray()) {
+			return parent.getAsJsonArray("children");
+		}
+
+		if (parent.has("folders") && parent.get("folders").isJsonArray()) {
+			return parent.getAsJsonArray("folders");
+		}
+
+		JsonArray children = new JsonArray();
+
+		parent.add("children", children);
+
+		return children;
+	}
+
+	/**
+	 * Retourne l'identifiant du dossier ciblé en créant les dossiers manquants.
+	 *
+	 * Le premier niveau est rattaché au projet ("project"). Les niveaux suivants
+	 * doivent être rattachés au dossier parent (type "requirement-folder" ou
+	 * "test-case-folder"), sinon Squash TM cherche un projet portant l'identifiant
+	 * du dossier parent.
+	 */
+	private long ensureTargetedFolder(JsonElement tree, String folderPath, String folderType) throws IOException {
+
+		if (tree == null || tree.isJsonNull() || isEmpty(folderPath)) {
+			throw new IOException("Arborescence ou chemin de dossier invalide.");
+		}
+
+		JsonObject currentParent = getTreeRoot(tree);
+
+		if (!currentParent.has("id") || currentParent.get("id").isJsonNull()) {
+			throw new IOException("Identifiant du projet introuvable dans l'arborescence.");
+		}
+
+		long parentId = currentParent.get("id").getAsLong();
+		String parentType = "project";
+
+		for (String rawName : folderPath.split("/")) {
+
+			String folderName = rawName.trim();
+
+			if (folderName.isEmpty()) {
+				continue;
+			}
+
+			JsonObject targetFolder = findChildFolder(currentParent, folderName);
+
+			// Le dossier n'existe pas : création.
+			if (targetFolder == null) {
+
+				if ("requirement-folder".equals(folderType)) {
+
+					targetFolder = squashTmService.createRequirementFolder(folderName, parentType, parentId);
+
+				} else if ("test-case-folder".equals(folderType)) {
+
+					targetFolder = squashTmService.createTestCaseFolder(folderName, parentType, parentId);
+
+				} else {
+
+					throw new IOException("Type de dossier inconnu : " + folderType);
+				}
+
+				if (targetFolder == null || !targetFolder.has("id") || targetFolder.get("id").isJsonNull()) {
+
+					throw new IOException("Impossible de créer le dossier : " + folderName);
+				}
+
+				createdFolderCount++;
+
+				// Garantit que le dossier pourra être retrouvé par son nom.
+				if (!targetFolder.has("name") || targetFolder.get("name").isJsonNull()) {
+					targetFolder.addProperty("name", folderName);
+				}
+
+				// Ajout à l'arbre local pour éviter de recréer le même dossier.
+				getWritableChildren(currentParent).add(targetFolder);
+			}
+
+			parentId = targetFolder.get("id").getAsLong();
+			parentType = folderType;
+			currentParent = targetFolder;
+		}
+
+		return parentId;
+	}
+
+	private long findTargetedFolder(JsonElement tree, String folderPath) throws IOException {
+
+		if (tree == null || tree.isJsonNull() || isEmpty(folderPath)) {
+			throw new IOException("Arbre ou chemin de dossier invalide.");
+		}
+
+		JsonObject currentFolder = getTreeRoot(tree);
+
+		if (!currentFolder.has("id") || currentFolder.get("id").isJsonNull()) {
+			throw new IOException("Identifiant du projet introuvable.");
+		}
+
+		long currentId = currentFolder.get("id").getAsLong();
+
+		for (String rawName : folderPath.split("/")) {
+
+			String folderName = rawName.trim();
+
+			if (folderName.isEmpty()) {
+				continue;
+			}
+
+			JsonObject foundFolder = findChildFolder(currentFolder, folderName);
+
+			if (foundFolder == null || !foundFolder.has("id") || foundFolder.get("id").isJsonNull()) {
+
+				throw new IOException("Le dossier parent n'existe pas ou n'a pas été sélectionné : " + folderName);
+			}
+
+			currentId = foundFolder.get("id").getAsLong();
+			currentFolder = foundFolder;
+		}
+
+		return currentId;
+	}
+
+	/**
+	 * Vérifie que chaque dossier manquant dans un chemin possède une action CREATE
+	 * explicitement sélectionnée.
+	 */
+	private void validateSelectedFolderParents(JsonElement tree, String folderPath, String folderType,
+			String projectName, Map<String, ImportSquashTmComparisonItem> decisions) throws IOException {
+
+		String[] folders = folderPath.split("/");
+		StringBuilder currentPath = new StringBuilder();
+
+		for (String folder : folders) {
+
+			folder = folder.trim();
+
+			if (folder.isEmpty()) {
+				continue;
+			}
+
+			if (currentPath.length() > 0) {
+				currentPath.append("/");
+			}
+
+			currentPath.append(folder);
+
+			try {
+
+				// Le dossier existe déjà : aucune création nécessaire.
+				findTargetedFolder(tree, currentPath.toString());
+
+			} catch (IOException e) {
+
+				String comparisonPath = projectName.trim() + "/" + currentPath;
+				String key = buildComparisonKey(folderType, comparisonPath);
+
+				ImportSquashTmComparisonItem decision = decisions.get(key);
+
+				if (decision == null
+						|| !ImportSquashTmComparisonItem.ACTION_CREATE.equals(decision.getSelectedAction())) {
+
+					throw new IOException("Création impossible : le dossier parent '" + currentPath
+							+ "' n'existe pas et n'a pas été sélectionné.");
+				}
+			}
+		}
+	}
+
+	private void updateExistingImportProgress(ImportSquashTmProgress progress, int completed, int total) {
+
+		if (progress == null || total <= 0) {
+			return;
+		}
+
+		int percentage = 60 + (int) ((38.0 * completed) / total);
+
+		percentage = Math.min(98, percentage);
+
+		progress.update(percentage, "DONNEES", completed + " / " + total + " action(s) traitée(s).");
+	}
+
+	public ImportSquashTmResult applySelectedActions(ImportSquashTmData importData, ImportSquashTmAnalysis analysis,
+			ImportSquashTmProgress progress) throws IOException {
+
+		if (importData == null || analysis == null) {
+			throw new IOException("Les données de comparaison sont indisponibles.");
+		}
+
+		if (!analysis.isExistingProject()) {
+			throw new IOException("Cette opération est réservée aux projets existants.");
+		}
+
+		long projectId = analysis.getExistingProjectId();
+
+		if (projectId <= 0) {
+			throw new IOException("Identifiant du projet Squash TM invalide.");
+		}
+
+		ImportSquashTmResult result = new ImportSquashTmResult();
+
+		result.setProjectName(importData.getProjectName());
+		createdFolderCount = 0;
+
+		// Récupération des deux arborescences du projet existant.
+		JsonElement requirementTree = squashTmService.getRequirementFolderTree(projectId);
+
+		JsonElement testCaseTree = squashTmService.getTestCaseFolderTree(projectId);
+
+		// Indexation des décisions prises pendant la comparaison.
+		Map<String, ImportSquashTmComparisonItem> decisions = new LinkedHashMap<>();
+
+		for (ImportSquashTmComparisonItem item : analysis.getComparisonItems()) {
+			if (item != null && item.getComparisonKey() != null) {
+				decisions.put(item.getComparisonKey(), item);
+			}
+		}
+
+		int totalActions = 0;
+
+		for (ImportSquashTmComparisonItem item : decisions.values()) {
+
+			String action = item.getSelectedAction();
+
+			if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)
+					|| ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+
+				totalActions++;
+			}
+		}
+
+		int completedActions = 0;
+
+		if (progress != null) {
+			progress.update(60, "DONNEES", "Préparation des créations dans le projet existant...");
+		}
+
+		// Création des dossiers explicitement sélectionnés.
+		for (ImportSquashTmComparisonItem item : decisions.values()) {
+
+			if (!ImportSquashTmComparisonItem.ACTION_CREATE.equals(item.getSelectedAction())) {
+				continue;
+			}
+
+			String type = item.getElementType();
+
+			if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(type)) {
+
+				String folderPath = removeProjectRoot(item.getElementPath(), importData.getProjectName());
+
+				validateSelectedFolderParents(requirementTree, folderPath,
+						ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER, importData.getProjectName(), decisions);
+
+				ensureTargetedFolder(requirementTree, folderPath, "requirement-folder");
+
+			} else if (ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER.equals(type)) {
+
+				String folderPath = removeProjectRoot(item.getElementPath(), importData.getProjectName());
+
+				validateSelectedFolderParents(testCaseTree, folderPath,
+						ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER, importData.getProjectName(), decisions);
+
+				ensureTargetedFolder(testCaseTree, folderPath, "test-case-folder");
+
+			} else {
+
+				continue;
+			}
+
+			completedActions++;
+
+			updateExistingImportProgress(progress, completedActions, totalActions);
+		}
+
+		// Parcours des données Excel.
+		for (ImportSquashTmModule module : importData.getModules()) {
+
+			if (module == null || module.getSubModules() == null) {
+				continue;
+			}
+
+			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
+
+				if (subModule == null || subModule.getViews() == null) {
+					continue;
+				}
+
+				for (ImportSquashTmView view : subModule.getViews()) {
+
+					if (view == null || view.getFeatures() == null) {
+						continue;
+					}
+
+					for (ImportSquashTmFeature feature : view.getFeatures()) {
+
+						if (feature == null) {
+							continue;
+						}
+
+						String featurePath = buildFolderPath(module.getName(), subModule.getName(), view.getName(),
+								feature.getName());
+
+						// Création des exigences sélectionnées.
+						if (feature.getRequirements() != null) {
+
+							for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
+
+								if (requirement == null || isEmpty(requirement.getName())) {
+									continue;
+								}
+
+								String comparisonPath = importData.getProjectName().trim() + "/" + featurePath;
+
+								String elementPath = comparisonPath + "/" + requirement.getName().trim();
+
+								String comparisonKey = buildComparisonKey(ImportSquashTmComparisonItem.TYPE_REQUIREMENT,
+										elementPath);
+
+								ImportSquashTmComparisonItem decision = decisions.get(comparisonKey);
+
+								if (decision == null) {
+									continue;
+								}
+
+								String action = decision.getSelectedAction();
+
+								if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
+
+									// Crée automatiquement tous les dossiers manquants du chemin.
+									long folderId = ensureTargetedFolder(requirementTree, featurePath,"requirement-folder");
+
+									squashTmService.createRequirement(requirement.getName().trim(), "", folderId);
+
+									result.setRequirementCount(result.getRequirementCount() + 1);
+
+									completedActions++;
+
+									updateExistingImportProgress(progress, completedActions, totalActions);
+
+								} else if (ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+
+									if (decision.getSquashId() <= 0) {
+										throw new IOException(
+												"Identifiant Squash TM absent pour le renommage de l'exigence : "
+														+ requirement.getName());
+									}
+
+									// Seul le nom est modifié.
+									squashTmService.updateRequirement(decision.getSquashId(), requirement.getName());
+
+									result.setRequirementCount(result.getRequirementCount() + 1);
+
+									completedActions++;
+
+									updateExistingImportProgress(progress, completedActions, totalActions);
+								}
+							}
+						}
+
+						// Création des cas de test sélectionnés.
+						if (feature.getTestCases() != null) {
+
+							for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
+
+								if (testCase == null || isEmpty(testCase.getName())) {
+									continue;
+								}
+
+								String comparisonPath = importData.getProjectName().trim() + "/" + featurePath;
+
+								String elementPath = comparisonPath + "/" + testCase.getName().trim();
+
+								String comparisonKey = buildComparisonKey(ImportSquashTmComparisonItem.TYPE_TEST_CASE,
+										elementPath);
+
+								ImportSquashTmComparisonItem decision = decisions.get(comparisonKey);
+
+								if (decision == null) {
+									continue;
+								}
+
+								String action = decision.getSelectedAction();
+
+								if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
+									long folderId = ensureTargetedFolder(testCaseTree, featurePath, "test-case-folder");
+
+									JsonObject createdTestCase = squashTmService
+											.createTestCase(testCase.getName().trim(), "", folderId);
+
+									if (createdTestCase == null || !createdTestCase.has("id")
+											|| createdTestCase.get("id").isJsonNull()) {
+										throw new IOException("Impossible de récupérer l'identifiant du cas de test : "
+												+ testCase.getName());
+									}
+
+									long testCaseId = createdTestCase.get("id").getAsLong();
+
+									result.setTestCaseCount(result.getTestCaseCount() + 1);
+
+									// Création des étapes du cas de test.
+									if (testCase.getSteps() != null) {
+
+										for (ImportSquashTmTestStep step : testCase.getSteps()) {
+
+											if (step == null) {
+												continue;
+											}
+
+											squashTmService.createTestStep(testCaseId, step.getAction(),
+													step.getExpectedResult());
+
+											result.setTestStepCount(result.getTestStepCount() + 1);
+										}
+									}
+
+									completedActions++;
+
+									updateExistingImportProgress(progress, completedActions, totalActions);
+								}
+
+								else if (ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+
+									if (decision.getSquashId() <= 0) {
+										throw new IOException(
+												"Identifiant Squash TM absent pour le renommage du cas de test : "
+														+ testCase.getName());
+									}
+
+									// Seul le nom du cas de test est modifié.
+									// Les étapes ne sont ni comparées ni modifiées.
+									squashTmService.updateTestCase(decision.getSquashId(), testCase.getName());
+
+									result.setTestCaseCount(result.getTestCaseCount() + 1);
+
+									completedActions++;
+
+									updateExistingImportProgress(progress, completedActions, totalActions);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if (progress != null)
+
+		{
+			progress.update(98, "TERMINE", "Les actions sélectionnées ont été exécutées.");
+		}
+
+		result.setFolderCount(createdFolderCount);
+
+		result.setSuccess(result.getTechnicalErrors().isEmpty());
+
+		return result;
+	}
+
+	private String removeProjectRoot(String path, String projectName) {
+
+		if (isEmpty(path) || isEmpty(projectName)) {
+			return path;
+		}
+
+		String normalizedPath = normalizeComparisonPath(path);
+		String normalizedProjectName = projectName.trim();
+
+		if (normalizedPath.equals(normalizedProjectName)) {
+			return "";
+		}
+
+		if (normalizedPath.startsWith(normalizedProjectName + "/")) {
+			return normalizedPath.substring(normalizedProjectName.length() + 1);
+		}
+
+		return normalizedPath;
+	}
+
+	/**
 	 * Effectue l'import des données déjà analysées vers Squash TM.
 	 *
 	 * @param importData données provenant du fichier Excel
@@ -231,18 +791,19 @@ public class SquashTmImportManager {
 
 		long projectId;
 
-		/*
-		 * ============================================================ 2. PROJET
-		 * EXISTANT ============================================================
-		 */
-
 		if (existingProject != null) {
+
+			/*
+			 * ============================================================ PROJET EXISTANT
+			 * : NOUVEAU FONCTIONNEMENT
+			 * ============================================================
+			 */
 
 			result.setExistingProjectReused(true);
 
 			if (!existingProject.has("id") || existingProject.get("id").isJsonNull()) {
 
-				throw new IOException("Le projet Squash TM existe mais son identifiant " + "n'a pas été retourné.");
+				throw new IOException("Le projet Squash TM existe mais son identifiant n'a pas été retourné.");
 			}
 
 			projectId = existingProject.get("id").getAsLong();
@@ -250,22 +811,21 @@ public class SquashTmImportManager {
 			LOGGER.info("Projet Squash TM existant trouvé : " + projectName + " (id=" + projectId + ")");
 
 			/*
-			 * Le projet lui-même est conservé.
+			 * IMPORTANT : Le contenu du projet existant ne doit jamais être supprimé.
 			 *
-			 * Seul son contenu est supprimé afin de pouvoir recréer le projet à partir du
-			 * nouveau fichier Excel.
+			 * La comparaison avec Excel sera effectuée dans le nouveau traitement dédié aux
+			 * projets existants.
 			 */
-			LOGGER.info("Suppression de l'ancien contenu du projet...");
 
-			squashTmService.deleteProjectContent(projectId);
-
-			LOGGER.info("Ancien contenu supprimé.");
+			throw new IOException("Le projet existe déjà. La comparaison avec son contenu "
+					+ "doit être effectuée avant de lancer l'importation.");
 
 		} else {
 
 			/*
-			 * ======================================================== 3. PROJET INEXISTANT
-			 * ========================================================
+			 * ============================================================ PROJET
+			 * INEXISTANT : ANCIEN FONCTIONNEMENT
+			 * ============================================================
 			 */
 
 			LOGGER.info("Aucun projet existant trouvé.");
@@ -304,7 +864,6 @@ public class SquashTmImportManager {
 		 * Rien n'est conservé après l'import.
 		 */
 		Map<String, Long> requirementFolderIds = new HashMap<>();
-
 		Map<String, Long> testCaseFolderIds = new HashMap<>();
 
 		/*
@@ -651,7 +1210,6 @@ public class SquashTmImportManager {
 								}
 
 								long testCaseId = createdTestCase.get("id").getAsLong();
-
 								result.setTestCaseCount(result.getTestCaseCount() + 1);
 								completedDataItems++;
 
@@ -788,8 +1346,7 @@ public class SquashTmImportManager {
 	 * à importer.
 	 *
 	 * @param importData données extraites du fichier Excel
-	 * @return tableau contenant : [0] le nombre d'exigences, [1] le nombre de cas
-	 *         de test, [2] le nombre d'étapes
+	 * @return [0] exigences, [1] cas de test, [2] étapes
 	 */
 	private int[] countImportItems(ImportSquashTmData importData) {
 
@@ -825,35 +1382,38 @@ public class SquashTmImportManager {
 							continue;
 						}
 
+						// Compter les exigences.
 						if (feature.getRequirements() != null) {
+
 							for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
 
-								if (requirement != null && requirement.getName() != null
-										&& !requirement.getName().trim().isEmpty()) {
+								if (requirement != null && !isEmpty(requirement.getName())) {
 									requirementCount++;
 								}
 							}
 						}
 
+						// Compter les cas de test et leurs étapes.
 						if (feature.getTestCases() != null) {
+
 							for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
 
-								if (testCase == null || testCase.getName() == null
-										|| testCase.getName().trim().isEmpty()) {
+								if (testCase == null || isEmpty(testCase.getName())) {
 									continue;
 								}
 
 								testCaseCount++;
 
 								if (testCase.getSteps() != null) {
+
 									for (ImportSquashTmTestStep step : testCase.getSteps()) {
 
-										if (step != null && step.getAction() != null
-												&& !step.getAction().trim().isEmpty()
-												&& step.getExpectedResult() != null
-												&& !step.getExpectedResult().trim().isEmpty()) {
-											testStepCount++;
+										if (step == null || isEmpty(step.getAction())
+												|| isEmpty(step.getExpectedResult())) {
+											continue;
 										}
+
+										testStepCount++;
 									}
 								}
 							}
@@ -967,6 +1527,813 @@ public class SquashTmImportManager {
 		}
 
 		return folderCount;
+	}
+
+	/**
+	 * Recherche un projet existant dans Squash TM.
+	 *
+	 * Cette méthode ne crée, ne modifie et ne supprime aucune donnée.
+	 *
+	 * @param projectName nom du projet recherché
+	 * @return projet trouvé ou null si le projet n'existe pas
+	 * @throws IOException si la recherche échoue
+	 */
+	public JsonObject findExistingProject(String projectName) throws IOException {
+
+		if (projectName == null || projectName.trim().isEmpty()) {
+			throw new IOException("Le nom du projet est obligatoire.");
+		}
+
+		LOGGER.info("[PROJECT CHECK] Recherche du projet : " + projectName);
+
+		JsonObject project = squashTmService.findProjectByName(projectName.trim());
+
+		if (project != null) {
+			LOGGER.info("[PROJECT CHECK] Projet existant trouvé.");
+		} else {
+			LOGGER.info("[PROJECT CHECK] Projet inexistant.");
+		}
+
+		return project;
+	}
+
+	public JsonObject inspectExistingProject(String projectName) throws IOException {
+
+		if (isEmpty(projectName)) {
+			throw new IOException("Le nom du projet est obligatoire.");
+		}
+
+		LOGGER.info("[PROJECT INSPECTION] Recherche : " + projectName);
+
+		JsonObject project = squashTmService.findProjectByName(projectName.trim());
+
+		if (project == null) {
+			LOGGER.info("[PROJECT INSPECTION] Projet inexistant.");
+			return null;
+		}
+
+		if (!project.has("id") || project.get("id").isJsonNull()) {
+			throw new IOException("L'identifiant du projet est absent.");
+		}
+
+		long projectId = project.get("id").getAsLong();
+
+		LOGGER.info("[PROJECT INSPECTION] Projet trouvé : id=" + projectId);
+
+		// Récupération des deux arbres.
+		JsonElement requirementTree = squashTmService.getRequirementFolderTree(projectId);
+		LOGGER.info("========== JSON ARBRE EXIGENCES ==========");
+		LOGGER.info(requirementTree != null ? requirementTree.toString() : "ARBRE EXIGENCES NULL");
+
+		JsonElement testCaseTree = squashTmService.getTestCaseFolderTree(projectId);
+		LOGGER.info("========== JSON ARBRE CAS DE TEST ==========");
+		LOGGER.info(testCaseTree != null ? testCaseTree.toString() : "ARBRE CAS DE TEST NULL");
+
+		if (requirementTree == null || requirementTree.isJsonNull()) {
+			throw new IOException("Impossible de récupérer l'arborescence des exigences du projet.");
+		}
+
+		if (testCaseTree == null || testCaseTree.isJsonNull()) {
+			throw new IOException("Impossible de récupérer l'arborescence des cas de test du projet.");
+		}
+
+		// Résultat global de l'inspection.
+		JsonObject inspection = new JsonObject();
+
+		inspection.add("project", project);
+		inspection.add("requirementTree", requirementTree);
+		inspection.add("testCaseTree", testCaseTree);
+
+		// Récupération du contenu de chaque dossier.
+		inspection.add("requirementFolders", inspectFolderContents(requirementTree, true));
+
+		inspection.add("testCaseFolders", inspectFolderContents(testCaseTree, false));
+
+		LOGGER.info("[PROJECT INSPECTION] Inspection terminée.");
+
+		return inspection;
+	}
+
+	/**
+	 * Compare les éléments Excel avec le contenu d'un projet Squash TM existant.
+	 *
+	 * La comparaison repose sur le type et le chemin hiérarchique complet.
+	 *
+	 * Les éléments identiques et les éléments uniquement présents dans Squash TM ne
+	 * sont pas transmis à l'interface.
+	 */
+	public void compareExistingProject(ImportSquashTmData importData, ImportSquashTmAnalysis analysis)
+			throws IOException {
+
+		if (importData == null || analysis == null) {
+			throw new IOException("Les données nécessaires à la comparaison sont absentes.");
+		}
+
+		JsonObject existingProjectData = inspectExistingProject(importData.getProjectName());
+
+		if (existingProjectData == null) {
+			analysis.setExistingProject(false);
+			return;
+		}
+
+		JsonObject project = existingProjectData.getAsJsonObject("project");
+
+		if (project == null || !project.has("id") || project.get("id").isJsonNull()) {
+			throw new IOException("Impossible de récupérer l'identifiant du projet Squash TM.");
+		}
+
+		long projectId = project.get("id").getAsLong();
+
+		analysis.setExistingProject(true);
+		analysis.setExistingProjectId(projectId);
+
+		Map<String, ImportSquashTmComparisonItem> excelItems = new LinkedHashMap<>();
+		Map<String, ImportSquashTmComparisonItem> squashItems = new LinkedHashMap<>();
+
+		// 1. Construire les éléments attendus depuis Excel.
+		collectExcelComparisonItems(importData, excelItems);
+
+		String projectName = importData.getProjectName().trim();
+
+		collectSquashFolderItems(existingProjectData.get("requirementTree"), projectName,
+				ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER, squashItems);
+
+		collectSquashFolderItems(existingProjectData.get("testCaseTree"), projectName,
+				ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER, squashItems);
+
+		// 3. Récupérer les exigences existantes.
+		collectSquashContentItems(existingProjectData.getAsJsonArray("requirementFolders"), true,
+				importData.getProjectName(), squashItems);
+
+		// 4. Récupérer les cas de test existants.
+		collectSquashContentItems(existingProjectData.getAsJsonArray("testCaseFolders"), false,
+				importData.getProjectName(), squashItems);
+
+		// ============================================================
+		// DIAGNOSTIC COMPLET DES DOSSIERS
+		// ============================================================
+
+		LOGGER.error("========== DEBUT DIAGNOSTIC COMPARAISON ==========");
+
+		LOGGER.error("[DIAGNOSTIC] Nombre total Excel : " + excelItems.size());
+		LOGGER.error("[DIAGNOSTIC] Nombre total Squash : " + squashItems.size());
+
+		// Afficher les dossiers Excel.
+		for (Map.Entry<String, ImportSquashTmComparisonItem> entry : excelItems.entrySet()) {
+
+			ImportSquashTmComparisonItem item = entry.getValue();
+
+			if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(item.getElementType())) {
+
+				LOGGER.error("[EXCEL REQUIREMENT FOLDER] " + entry.getKey());
+			}
+		}
+
+		// Afficher les dossiers Squash.
+		for (Map.Entry<String, ImportSquashTmComparisonItem> entry : squashItems.entrySet()) {
+
+			ImportSquashTmComparisonItem item = entry.getValue();
+
+			if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(item.getElementType())) {
+
+				LOGGER.error("[SQUASH REQUIREMENT FOLDER] " + entry.getKey());
+			}
+		}
+
+		LOGGER.error("========== FIN DIAGNOSTIC COMPARAISON ==========");
+
+		List<ImportSquashTmComparisonItem> excelOnly = new ArrayList<>();
+
+		// 5. Comparer les clés hiérarchiques.
+		for (Map.Entry<String, ImportSquashTmComparisonItem> entry : excelItems.entrySet()) {
+
+			ImportSquashTmComparisonItem excelItem = entry.getValue();
+
+			ImportSquashTmComparisonItem squashItem = squashItems.remove(entry.getKey());
+
+			if (squashItem == null) {
+
+				// Présent dans Excel, absent dans Squash TM au même chemin.
+				excelItem.setStatus(ImportSquashTmComparisonItem.STATUS_EXCEL_ONLY);
+
+				excelOnly.add(excelItem);
+
+			}
+
+			// Si l'élément existe avec le même type et le même chemin,
+			// il est identique pour notre périmètre de comparaison.
+			// Il n'est donc pas ajouté au résultat.
+		}
+
+		// Traces permettant de comprendre précisément chaque différence détectée.
+		for (ImportSquashTmComparisonItem item : excelOnly) {
+			LOGGER.info("[COMPARAISON][EXCEL SEUL] " + item.getComparisonKey());
+		}
+
+		for (ImportSquashTmComparisonItem item : squashItems.values()) {
+			LOGGER.info("[COMPARAISON][SQUASH SEUL] " + item.getComparisonKey());
+		}
+
+		// 6. Rechercher uniquement les renommages non ambigus.
+		addRenameCandidates(excelOnly, new ArrayList<>(squashItems.values()), analysis);
+
+		// 7. Ajouter les créations restantes.
+		for (ImportSquashTmComparisonItem item : excelOnly) {
+			analysis.addComparisonItem(item);
+		}
+
+		LOGGER.info("[COMPARAISON] Projet : " + importData.getProjectName());
+		LOGGER.info("[COMPARAISON] Éléments Excel : " + excelItems.size());
+		LOGGER.info("[COMPARAISON] Opérations proposées : " + analysis.getComparisonItems().size());
+		LOGGER.info("[COMPARAISON] Comparaison terminée.");
+	}
+
+	/**
+	 * Propose un renommage uniquement lorsqu'un seul élément Excel et un seul
+	 * élément Squash TM sont absents au même niveau hiérarchique.
+	 *
+	 * Les dossiers ne sont pas renommés par cette méthode. Seuls les noms des
+	 * exigences et des cas de test sont concernés.
+	 */
+	private void addRenameCandidates(List<ImportSquashTmComparisonItem> excelOnly,
+			List<ImportSquashTmComparisonItem> squashOnly, ImportSquashTmAnalysis analysis) {
+
+		for (int i = 0; i < excelOnly.size();) {
+
+			ImportSquashTmComparisonItem excelItem = excelOnly.get(i);
+
+			String type = excelItem.getElementType();
+
+			// Les renommages concernent uniquement les exigences et les cas de test.
+			if (!ImportSquashTmComparisonItem.TYPE_REQUIREMENT.equals(type)
+					&& !ImportSquashTmComparisonItem.TYPE_TEST_CASE.equals(type)) {
+
+				i++;
+				continue;
+			}
+
+			String excelParentPath = getParentPath(excelItem.getElementPath());
+
+			ImportSquashTmComparisonItem matchingSquashItem = null;
+
+			int excelSiblingCount = 0;
+			int squashSiblingCount = 0;
+
+			// Compter les éléments Excel absents dans le même dossier.
+			for (ImportSquashTmComparisonItem candidate : excelOnly) {
+
+				if (candidate.getElementType().equals(type)
+						&& getParentPath(candidate.getElementPath()).equals(excelParentPath)) {
+
+					excelSiblingCount++;
+				}
+			}
+
+			// Rechercher les éléments Squash TM absents dans le même dossier.
+			for (ImportSquashTmComparisonItem candidate : squashOnly) {
+
+				if (candidate.getElementType().equals(type)
+						&& getParentPath(candidate.getElementPath()).equals(excelParentPath)) {
+
+					squashSiblingCount++;
+					matchingSquashItem = candidate;
+				}
+			}
+
+			// Un seul candidat de chaque côté : le renommage est suffisamment
+			// identifiable pour être proposé à l'utilisateur.
+			if (excelSiblingCount == 1 && squashSiblingCount == 1) {
+
+				excelItem.setStatus(ImportSquashTmComparisonItem.STATUS_RENAME);
+
+				excelItem.setOriginalName(matchingSquashItem.getElementName());
+
+				excelItem.setSquashId(matchingSquashItem.getSquashId());
+
+				analysis.addComparisonItem(excelItem);
+
+				// Retirer l'élément Excel déjà traité.
+				excelOnly.remove(i);
+
+				// L'ancien élément Squash TM a été associé à ce renommage.
+				squashOnly.remove(matchingSquashItem);
+
+			} else {
+
+				// Plusieurs possibilités : ne pas deviner.
+				// L'élément Excel restera une création.
+				i++;
+			}
+		}
+	}
+
+	/**
+	 * Retourne le chemin du dossier parent d'un élément.
+	 */
+	private String getParentPath(String path) {
+
+		if (path == null || path.trim().isEmpty()) {
+			return "";
+		}
+
+		int lastSlash = path.lastIndexOf('/');
+
+		if (lastSlash < 0) {
+			return "";
+		}
+
+		return path.substring(0, lastSlash);
+	}
+
+	private void collectSquashFolderItems(JsonElement tree, String projectName, String folderType,
+			Map<String, ImportSquashTmComparisonItem> items) {
+
+		Map<Long, JsonObject> folders = new LinkedHashMap<>();
+
+		collectFolders(tree, "", folders);
+
+		for (JsonObject folder : folders.values()) {
+
+			String folderName = folder.get("name").getAsString();
+
+			String path = projectName.trim() + "/" + folder.get("path").getAsString();
+
+			String key = buildComparisonKey(folderType, path);
+
+			items.put(key, new ImportSquashTmComparisonItem(key, folderType, folderName, path,
+					ImportSquashTmComparisonItem.STATUS_SQUASH_ONLY, folder.get("id").getAsLong()));
+		}
+	}
+
+	private void collectSquashContentItems(JsonArray folders, boolean requirementFolder, String projectName,
+			Map<String, ImportSquashTmComparisonItem> items) throws IOException {
+
+		if (folders == null) {
+			return;
+		}
+
+		for (JsonElement folderElement : folders) {
+
+			if (folderElement == null || !folderElement.isJsonObject()) {
+				throw new IOException("Structure de dossier Squash TM invalide.");
+			}
+
+			JsonObject folder = folderElement.getAsJsonObject();
+
+			if (!folder.has("content") || !folder.get("content").isJsonArray()) {
+				throw new IOException("Contenu introuvable pour un dossier Squash TM.");
+			}
+
+			// Chemin du dossier, sans le nom du projet (construit depuis l'arbre).
+			String folderPath = folder.has("path") && !folder.get("path").isJsonNull()
+					? folder.get("path").getAsString()
+					: "";
+
+			JsonArray content = folder.getAsJsonArray("content");
+
+			for (JsonElement contentElement : content) {
+
+				if (contentElement == null || !contentElement.isJsonObject()) {
+					throw new IOException("Un élément du contenu Squash TM est invalide.");
+				}
+
+				JsonObject contentObject = contentElement.getAsJsonObject();
+
+				// Vérifier le type réel de l'élément retourné par Squash TM.
+				if (!contentObject.has("_type") || contentObject.get("_type").isJsonNull()) {
+					throw new IOException("Type d'un élément Squash TM introuvable.");
+				}
+
+				String squashType = contentObject.get("_type").getAsString();
+
+				// Les dossiers sont déjà récupérés depuis l'arborescence.
+				// Il ne faut donc pas les traiter comme des exigences ou des cas de test.
+				if (squashType.endsWith("-folder")) {
+					continue;
+				}
+
+				// Vérifier que l'élément correspond bien au contenu attendu.
+				if (requirementFolder && !"requirement".equals(squashType)) {
+					throw new IOException("Type inattendu dans un dossier d'exigences : " + squashType);
+				}
+
+				if (!requirementFolder && !("test-case".equals(squashType) || "scripted-test-case".equals(squashType)
+						|| "keyword-test-case".equals(squashType))) {
+					throw new IOException("Type inattendu dans un dossier de cas de test : " + squashType);
+				}
+
+				if (!contentObject.has("id") || contentObject.get("id").isJsonNull()) {
+					throw new IOException("Identifiant d'un élément Squash TM introuvable.");
+				}
+
+				long elementId = contentObject.get("id").getAsLong();
+
+				String elementType = requirementFolder ? ImportSquashTmComparisonItem.TYPE_REQUIREMENT
+						: ImportSquashTmComparisonItem.TYPE_TEST_CASE;
+
+				// Le nom provient du contenu du dossier. Le détail n'est demandé que si
+				// le nom est absent.
+				String elementName = "";
+
+				if (contentObject.has("name") && !contentObject.get("name").isJsonNull()) {
+					elementName = contentObject.get("name").getAsString();
+				}
+
+				if (isEmpty(elementName)) {
+
+					JsonObject detail = requirementFolder ? squashTmService.getRequirement(elementId)
+							: squashTmService.getTestCase(elementId);
+
+					if (detail != null && detail.has("name") && !detail.get("name").isJsonNull()) {
+						elementName = detail.get("name").getAsString();
+					}
+				}
+
+				if (isEmpty(elementName)) {
+					throw new IOException("Impossible de récupérer le nom de l'élément Squash TM : " + elementId);
+				}
+
+				elementName = elementName.trim();
+
+				// Même construction que côté Excel : projet / dossiers / nom.
+				// Le chemin ne dépend plus du format du champ "path" de l'API.
+				String squashPath = projectName.trim() + (folderPath.isEmpty() ? "" : "/" + folderPath) + "/"
+						+ elementName;
+
+				String key = buildComparisonKey(elementType, squashPath);
+
+				items.put(key, new ImportSquashTmComparisonItem(key, elementType, elementName, squashPath,
+						ImportSquashTmComparisonItem.STATUS_SQUASH_ONLY, elementId));
+			}
+		}
+	}
+
+	private String normalizeSquashPath(String path, String projectName) {
+
+		if (isEmpty(path)) {
+			return "";
+		}
+
+		String normalizedPath = path.replace("\\", "/").trim();
+
+		normalizedPath = normalizedPath.replaceAll("^/+|/+$", "");
+
+		String[] segments = normalizedPath.split("/");
+		StringBuilder result = new StringBuilder();
+
+		for (String segment : segments) {
+
+			String normalizedSegment = segment.trim();
+
+			if (normalizedSegment.isEmpty()) {
+				continue;
+			}
+
+			if (result.length() > 0) {
+				result.append("/");
+			}
+
+			result.append(normalizedSegment);
+		}
+
+		return result.toString();
+	}
+
+	/**
+	 * Construit la liste des éléments attendus à partir du fichier Excel.
+	 */
+	private void collectExcelComparisonItems(ImportSquashTmData importData,
+			Map<String, ImportSquashTmComparisonItem> items) {
+
+		if (importData == null || importData.getModules() == null) {
+			return;
+		}
+		String projectName = importData.getProjectName().trim();
+
+		for (ImportSquashTmModule module : importData.getModules()) {
+
+			if (module == null || isEmpty(module.getName())) {
+				continue;
+			}
+
+			String moduleName = module.getName().trim();
+			String modulePath = projectName + "/" + moduleName;
+
+			addExcelFolder(items, modulePath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER);
+			LOGGER.error("[EXCEL DEBUG] MODULE / REQUIREMENTS = " + modulePath);
+
+			addExcelFolder(items, modulePath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER);
+			LOGGER.error("[EXCEL DEBUG] MODULE / TEST CASES = " + modulePath);
+
+			if (module.getSubModules() == null) {
+				continue;
+			}
+
+			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
+
+				if (subModule == null || isEmpty(subModule.getName())) {
+					continue;
+				}
+
+				String subModuleName = subModule.getName().trim();
+
+				String subModulePath = projectName + "/" + buildFolderPath(moduleName, subModuleName, null, null);
+
+				addExcelFolder(items, subModulePath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER);
+				LOGGER.error("[EXCEL DEBUG] SOUS-MODULE / REQUIREMENTS = " + subModulePath);
+
+				addExcelFolder(items, subModulePath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER);
+				LOGGER.error("[EXCEL DEBUG] SOUS-MODULE / TEST CASES = " + subModulePath);
+
+				if (subModule.getViews() == null) {
+					continue;
+				}
+
+				for (ImportSquashTmView view : subModule.getViews()) {
+
+					if (view == null || isEmpty(view.getName())) {
+						continue;
+					}
+
+					String viewPath = projectName + "/"
+							+ buildFolderPath(moduleName, subModuleName, view.getName(), null);
+
+					addExcelFolder(items, viewPath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER);
+					LOGGER.error("[EXCEL DEBUG] VUE / REQUIREMENTS = " + viewPath);
+
+					addExcelFolder(items, viewPath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER);
+					LOGGER.error("[EXCEL DEBUG] VUE / TEST CASES = " + viewPath);
+
+					if (view.getFeatures() == null) {
+						continue;
+					}
+
+					for (ImportSquashTmFeature feature : view.getFeatures()) {
+						if (feature == null || isEmpty(feature.getName())) {
+							continue;
+						}
+
+						String featurePath = projectName + "/"
+								+ buildFolderPath(moduleName, subModuleName, view.getName(), feature.getName());
+
+						addExcelFolder(items, featurePath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER);
+						LOGGER.error("[EXCEL DEBUG] FONCTIONNALITE / REQUIREMENTS = " + featurePath);
+
+						addExcelFolder(items, featurePath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER);
+						LOGGER.error("[EXCEL DEBUG] FONCTIONNALITE / TEST CASES = " + featurePath);
+
+						if (feature.getRequirements() != null) {
+
+							for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
+
+								if (requirement == null || isEmpty(requirement.getName())) {
+									continue;
+								}
+
+								String requirementName = requirement.getName().trim();
+								String path = featurePath + "/" + requirementName;
+								LOGGER.error("[EXCEL DEBUG] EXIGENCE = " + path);
+
+								addExcelElement(items, ImportSquashTmComparisonItem.TYPE_REQUIREMENT, requirementName,
+										path);
+							}
+						}
+
+						if (feature.getTestCases() != null) {
+
+							for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
+
+								if (testCase == null || isEmpty(testCase.getName())) {
+									continue;
+								}
+
+								String testCaseName = testCase.getName().trim();
+
+								String path = featurePath + "/" + testCaseName;
+								LOGGER.error("[EXCEL DEBUG] CAS DE TEST = " + path);
+
+								addExcelElement(items, ImportSquashTmComparisonItem.TYPE_TEST_CASE, testCaseName, path);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Ajoute un dossier attendu dans la comparaison.
+	 */
+	private void addExcelFolder(Map<String, ImportSquashTmComparisonItem> items, String path, String folderType) {
+
+		String name = path.substring(path.lastIndexOf('/') + 1);
+
+		addExcelElement(items, folderType, name, path);
+	}
+
+	/**
+	 * Ajoute un élément Excel dans la liste.
+	 */
+	private void addExcelElement(Map<String, ImportSquashTmComparisonItem> items, String type, String name,
+			String path) {
+
+		String key = buildComparisonKey(type, path);
+
+		ImportSquashTmComparisonItem item = new ImportSquashTmComparisonItem(key, type, name, path,
+				ImportSquashTmComparisonItem.STATUS_EXCEL_ONLY, 0);
+
+		items.put(key, item);
+
+		LOGGER.info("[EXCEL ELEMENT PATH] Type=" + type + " | Nom=" + name + " | Chemin=" + path + " | Clé=" + key);
+	}
+
+	private String buildComparisonKey(String type, String path) {
+
+		return type + "|" + normalizeComparisonPath(path);
+	}
+
+	private JsonArray inspectFolderContents(JsonElement folderTree, boolean requirementFolder) throws IOException {
+
+		JsonArray inspectedFolders = new JsonArray();
+
+		Map<Long, JsonObject> folders = new LinkedHashMap<>();
+
+		collectFolders(folderTree, "", folders);
+
+		LOGGER.info("[FOLDER INSPECTION] Nombre de dossiers détectés : " + folders.size());
+
+		for (Map.Entry<Long, JsonObject> entry : folders.entrySet()) {
+
+			long folderId = entry.getKey();
+			JsonObject folder = entry.getValue();
+
+			JsonArray allContent = new JsonArray();
+
+			int page = 0;
+			int totalPages = 1;
+
+			do {
+
+				JsonObject response;
+
+				if (requirementFolder) {
+
+					response = squashTmService.getRequirementFolderContent(folderId, page, 100);
+
+				} else {
+
+					response = squashTmService.getTestCaseFolderContent(folderId, page, 100);
+				}
+				LOGGER.info("========== CONTENU DOSSIER " + folderId + " ==========");
+				LOGGER.info(response != null ? response.toString() : "CONTENU NULL");
+
+				if (response == null) {
+					throw new IOException("Réponse vide pour le dossier " + folderId);
+				}
+
+				// Un dossier vide est retourné sans "_embedded" : ce n'est pas une erreur.
+				if (response.has("_embedded") && response.get("_embedded").isJsonObject()) {
+
+					JsonObject embedded = response.getAsJsonObject("_embedded");
+
+					if (embedded.has("content") && embedded.get("content").isJsonArray()) {
+						allContent.addAll(embedded.getAsJsonArray("content"));
+					}
+				}
+
+				if (response.has("page") && response.get("page").isJsonObject()) {
+
+					JsonObject pageInfo = response.getAsJsonObject("page");
+
+					if (pageInfo.has("totalPages") && !pageInfo.get("totalPages").isJsonNull()) {
+
+						totalPages = pageInfo.get("totalPages").getAsInt();
+					}
+				}
+
+				page++;
+
+			} while (page < totalPages);
+
+			JsonObject inspectedFolder = new JsonObject();
+
+			inspectedFolder.addProperty("id", folderId);
+
+			if (folder.has("path")) {
+				inspectedFolder.add("path", folder.get("path"));
+			}
+
+			if (folder.has("name")) {
+				inspectedFolder.add("name", folder.get("name"));
+			}
+
+			inspectedFolder.add("content", allContent);
+
+			inspectedFolders.add(inspectedFolder);
+			LOGGER.info("========== CONTENU DOSSIER " + folderId + " ==========");
+			LOGGER.info(allContent);
+			LOGGER.info("[FOLDER INSPECTION] Dossier " + folderId + " : " + allContent.size() + " éléments récupérés.");
+		}
+
+		return inspectedFolders;
+	}
+
+	private void collectFolders(JsonElement element, String parentPath, Map<Long, JsonObject> folders) {
+
+		if (element == null || element.isJsonNull()) {
+			return;
+		}
+
+		// Plusieurs racines possibles : chacune est parcourue.
+		if (element.isJsonArray()) {
+
+			for (JsonElement child : element.getAsJsonArray()) {
+				collectFolders(child, parentPath, folders);
+			}
+
+			return;
+		}
+
+		if (!element.isJsonObject()) {
+			return;
+		}
+
+		JsonObject parent = element.getAsJsonObject();
+
+		// Les sous-dossiers sont dans "folders" (projet) ou "children" (dossier).
+		for (String property : new String[] { "folders", "children" }) {
+
+			if (!parent.has(property) || !parent.get(property).isJsonArray()) {
+				continue;
+			}
+
+			for (JsonElement childElement : parent.getAsJsonArray(property)) {
+
+				if (!childElement.isJsonObject()) {
+					continue;
+				}
+
+				JsonObject node = childElement.getAsJsonObject();
+
+				if (!node.has("id") || node.get("id").isJsonNull() || !node.has("name")
+						|| node.get("name").isJsonNull()) {
+					continue;
+				}
+
+				// Si le type est indiqué, seuls les dossiers sont retenus.
+				if (node.has("_type") && !node.get("_type").isJsonNull()
+						&& !node.get("_type").getAsString().toLowerCase().contains("folder")) {
+					continue;
+				}
+
+				long folderId = node.get("id").getAsLong();
+				String folderName = node.get("name").getAsString().trim();
+				String currentPath = parentPath.isEmpty() ? folderName : parentPath + "/" + folderName;
+
+				if (!folders.containsKey(folderId)) {
+
+					JsonObject folderInfo = new JsonObject();
+
+					folderInfo.addProperty("id", folderId);
+					folderInfo.addProperty("name", folderName);
+					folderInfo.addProperty("path", currentPath);
+
+					folders.put(folderId, folderInfo);
+				}
+
+				collectFolders(node, currentPath, folders);
+			}
+		}
+	}
+
+	/**
+	 * Normalise un chemin utilisé dans les comparaisons.
+	 */
+	private String normalizeComparisonPath(String path) {
+
+		if (isEmpty(path)) {
+			return "";
+		}
+
+		String[] segments = path.replace("\\", "/").split("/");
+		StringBuilder normalized = new StringBuilder();
+
+		for (String segment : segments) {
+
+			String value = segment.trim();
+
+			if (value.isEmpty()) {
+				continue;
+			}
+
+			if (normalized.length() > 0) {
+				normalized.append("/");
+			}
+
+			normalized.append(value);
+		}
+
+		return normalized.toString();
 	}
 
 }
