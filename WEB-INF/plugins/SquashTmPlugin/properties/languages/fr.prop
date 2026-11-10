@@ -148,13 +148,22 @@ jcmsplugin.squashtm.app.import.analysis.comparison.requirement-folder: Dossier d
 jcmsplugin.squashtm.app.import.analysis.comparison.testcase-folder: Dossier de cas de test
 jcmsplugin.squashtm.app.import.analysis.comparison.requirement: Exigence
 jcmsplugin.squashtm.app.import.analysis.comparison.testcase: Cas de test
+jcmsplugin.squashtm.app.import.analysis.comparison.teststep: Étape de test
+jcmsplugin.squashtm.app.import.analysis.comparison.update-proposed: Modification proposée
 jcmsplugin.squashtm.app.import.analysis.comparison.excel-only: Présent uniquement dans Excel
 jcmsplugin.squashtm.app.import.analysis.comparison.different: Différent
 jcmsplugin.squashtm.app.import.analysis.comparison.squash-only: Présent uniquement dans Squash TM
 
 # Comparaison avec Squash TM
 jcmsplugin.squashtm.app.import.analysis.comparison.selection-description: Sélectionnez uniquement les créations et les renommages que vous souhaitez appliquer.
-jcmsplugin.squashtm.app.import.analysis.comparison.rename-proposed: Renommage proposé
+jcmsplugin.squashtm.app.import.analysis.comparison.selection-required: Aucun élément sélectionné : cochez au moins un élément à créer ou à renommer.
+jcmsplugin.squashtm.app.import.analysis.comparison.rename-proposed: Modification proposé
 jcmsplugin.squashtm.app.import.analysis.comparison.creation-proposed: Création proposée
 jcmsplugin.squashtm.app.import.analysis.comparison.original-name: Ancien nom
 jcmsplugin.squashtm.app.import.analysis.comparison.new-name: Nouveau nom
+jcmsplugin.squashtm.app.import.analysis.comparison.filter.no-result: Aucun élément ne correspond aux filtres sélectionnés.
+jcmsplugin.squashtm.app.import.analysis.comparison.filter.toggle: Filtres
+jcmsplugin.squashtm.app.import.analysis.comparison.filter.data: Données
+jcmsplugin.squashtm.app.import.analysis.comparison.filter.state: État
+jcmsplugin.squashtm.app.import.analysis.comparison.filter.all: Tous
+jcmsplugin.squashtm.app.import.analysis.comparison.filter.select-all: Tout Sélectionner

@@ -33,6 +33,8 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 	private String selectedComparisonIndexes;
 	private ImportSquashTmAnalysis importAnalysis;
 	private ImportSquashTmResult importResult;
+	private String selectionError;
+	private boolean comparisonSelectionError;
 
 	private final SquashTmImportJobManager importJobManager = SquashTmImportJobManager.getInstance();
 	private static final Logger LOGGER = Logger.getLogger(SquashTmImportHandler.class);
@@ -103,9 +105,30 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 	private void setImportError(String message) {
 
+		comparisonSelectionError = false;
+
+		// Aucune case cochée : message affiché sous le libellé de sélection,
+		// et non dans la barre d'erreur générale.
+		if (SquashTmImportJobManager.NO_SELECTION_MESSAGE.equals(message)) {
+			comparisonSelectionError = true;
+			return;
+		}
+
 		importResult = new ImportSquashTmResult();
 		importResult.setProjectName(projectName);
 		importResult.addTechnicalError(message);
+	}
+
+	public String getSelectionError() {
+		return selectionError;
+	}
+
+	public void setSelectionError(String selectionError) {
+		this.selectionError = selectionError;
+	}
+
+	public boolean isComparisonSelectionError() {
+		return comparisonSelectionError;
 	}
 
 	/**
@@ -249,7 +272,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 					LOGGER.warn("[HANDLER 11] Arrêt : aucun fichier reçu.");
 
-					setImportError("Aucun fichier Excel n'a été reçu.");
+					//setImportError("Aucun fichier Excel n'a été reçu.");
 
 					return false;
 				}

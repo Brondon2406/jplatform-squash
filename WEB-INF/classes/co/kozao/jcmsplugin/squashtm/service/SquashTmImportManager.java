@@ -610,7 +610,8 @@ public class SquashTmImportManager {
 								if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
 
 									// Crée automatiquement tous les dossiers manquants du chemin.
-									long folderId = ensureTargetedFolder(requirementTree, featurePath,"requirement-folder");
+									long folderId = ensureTargetedFolder(requirementTree, featurePath,
+											"requirement-folder");
 
 									squashTmService.createRequirement(requirement.getName().trim(), "", folderId);
 
@@ -640,7 +641,7 @@ public class SquashTmImportManager {
 							}
 						}
 
-						// Création des cas de test sélectionnés.
+						// Création des cas de test et des étapes sélectionnés.
 						if (feature.getTestCases() != null) {
 
 							for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
@@ -658,13 +659,14 @@ public class SquashTmImportManager {
 
 								ImportSquashTmComparisonItem decision = decisions.get(comparisonKey);
 
-								if (decision == null) {
-									continue;
-								}
+								String action = decision != null ? decision.getSelectedAction() : null;
 
-								String action = decision.getSelectedAction();
+								long testCaseId = 0;
+								boolean createdWithAllSteps = false;
 
 								if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
+
+									// Crée automatiquement tous les dossiers manquants du chemin.
 									long folderId = ensureTargetedFolder(testCaseTree, featurePath, "test-case-folder");
 
 									JsonObject createdTestCase = squashTmService
@@ -676,32 +678,34 @@ public class SquashTmImportManager {
 												+ testCase.getName());
 									}
 
-									long testCaseId = createdTestCase.get("id").getAsLong();
+									testCaseId = createdTestCase.get("id").getAsLong();
 
 									result.setTestCaseCount(result.getTestCaseCount() + 1);
 
-									// Création des étapes du cas de test.
+									// Création de toutes les étapes du cas de test.
 									if (testCase.getSteps() != null) {
 
 										for (ImportSquashTmTestStep step : testCase.getSteps()) {
 
-											if (step == null) {
+											if (step == null || isEmpty(step.getAction())
+													|| isEmpty(step.getExpectedResult())) {
 												continue;
 											}
 
-											squashTmService.createTestStep(testCaseId, step.getAction(),
-													step.getExpectedResult());
+											squashTmService.createTestStep(testCaseId, step.getAction().trim(),
+													step.getExpectedResult().trim());
 
 											result.setTestStepCount(result.getTestStepCount() + 1);
 										}
 									}
 
+									createdWithAllSteps = true;
+
 									completedActions++;
 
 									updateExistingImportProgress(progress, completedActions, totalActions);
-								}
 
-								else if (ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+								} else if (ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
 
 									if (decision.getSquashId() <= 0) {
 										throw new IOException(
@@ -709,14 +713,26 @@ public class SquashTmImportManager {
 														+ testCase.getName());
 									}
 
-									// Seul le nom du cas de test est modifié.
-									// Les étapes ne sont ni comparées ni modifiées.
-									squashTmService.updateTestCase(decision.getSquashId(), testCase.getName());
+									testCaseId = decision.getSquashId();
+
+									// Seul le nom du cas de test est modifié ici ; les étapes sont traitées
+									// ensuite.
+									squashTmService.updateTestCase(testCaseId, testCase.getName());
 
 									result.setTestCaseCount(result.getTestCaseCount() + 1);
 
 									completedActions++;
 
+									updateExistingImportProgress(progress, completedActions, totalActions);
+								}
+
+								// Étapes cochées (création / modification), avec création automatique
+								// des dossiers et du cas de test si nécessaire.
+								int stepActions = applySelectedTestSteps(testCase, elementPath, featurePath, testCaseId,
+										createdWithAllSteps, decisions, testCaseTree, result);
+
+								if (stepActions > 0) {
+									completedActions += stepActions;
 									updateExistingImportProgress(progress, completedActions, totalActions);
 								}
 							}
@@ -766,8 +782,7 @@ public class SquashTmImportManager {
 	 * @param result     résultat de l'import
 	 * @throws Exception si une erreur technique survient
 	 */
-	private void importToSquashTm(ImportSquashTmData importData, ImportSquashTmResult result,
-			ImportSquashTmProgress progress, int[] totals, int totalFolders) throws Exception {
+	private void importToSquashTm(ImportSquashTmData importData, ImportSquashTmResult result, ImportSquashTmProgress progress, int[] totals, int totalFolders) throws Exception {
 
 		LOGGER.info("========== IMPORT VERS SQUASH TM ==========");
 
@@ -842,6 +857,7 @@ public class SquashTmImportManager {
 			projectId = createdProject.get("id").getAsLong();
 
 			LOGGER.info("Projet Squash TM créé avec succès : " + projectName + " (id=" + projectId + ")");
+			result.setProjectId(projectId);
 		}
 
 		/*
@@ -1702,6 +1718,16 @@ public class SquashTmImportManager {
 
 		LOGGER.error("========== FIN DIAGNOSTIC COMPARAISON ==========");
 
+		// Identifiants des cas de test déjà présents dans Squash TM (clé -> id).
+		Map<String, Long> existingTestCaseIds = new HashMap<>();
+
+		for (Map.Entry<String, ImportSquashTmComparisonItem> entry : squashItems.entrySet()) {
+
+			if (ImportSquashTmComparisonItem.TYPE_TEST_CASE.equals(entry.getValue().getElementType())) {
+				existingTestCaseIds.put(entry.getKey(), entry.getValue().getSquashId());
+			}
+		}
+
 		List<ImportSquashTmComparisonItem> excelOnly = new ArrayList<>();
 
 		// 5. Comparer les clés hiérarchiques.
@@ -1742,10 +1768,313 @@ public class SquashTmImportManager {
 			analysis.addComparisonItem(item);
 		}
 
+		// 8. Comparer les étapes (action + résultat attendu) des cas de test.
+		for (ImportSquashTmComparisonItem item : analysis.getComparisonItems()) {
+
+			// Cas de test dont le renommage est proposé : il existe déjà dans Squash TM.
+			if (ImportSquashTmComparisonItem.TYPE_TEST_CASE.equals(item.getElementType())
+					&& ImportSquashTmComparisonItem.STATUS_RENAME.equals(item.getStatus()) && item.getSquashId() > 0) {
+				existingTestCaseIds.put(item.getComparisonKey(), item.getSquashId());
+			}
+		}
+
+		collectStepComparisonItems(importData, existingTestCaseIds, analysis);
+
 		LOGGER.info("[COMPARAISON] Projet : " + importData.getProjectName());
 		LOGGER.info("[COMPARAISON] Éléments Excel : " + excelItems.size());
 		LOGGER.info("[COMPARAISON] Opérations proposées : " + analysis.getComparisonItems().size());
 		LOGGER.info("[COMPARAISON] Comparaison terminée.");
+	}
+
+	/**
+	 * Construit la clé de comparaison d'une étape (position dans le cas de test).
+	 */
+	private String buildStepKey(String testCasePath, int stepNumber) {
+
+		return buildComparisonKey(ImportSquashTmComparisonItem.TYPE_TEST_STEP,
+				testCasePath + "/" + buildStepName(stepNumber));
+	}
+
+	private String buildStepName(int stepNumber) {
+
+		return "Étape " + stepNumber;
+	}
+
+	/**
+	 * Normalise un texte d'étape pour la comparaison : suppression du HTML (Squash
+	 * TM stocke du texte riche), des entités et des espaces multiples.
+	 */
+	private String normalizeStepText(String text) {
+
+		if (text == null) {
+			return "";
+		}
+
+		String value = text.replaceAll("(?i)<br\\s*/?>", " ").replaceAll("(?i)</p>", " ").replaceAll("<[^>]*>", "");
+
+		value = value.replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"")
+				.replace("&#39;", "'").replace("&amp;", "&");
+
+		value = value.replace(' ', ' ').replaceAll("\\s+", " ").trim();
+
+		return value;
+	}
+
+	private String readStepField(JsonObject step, String field) {
+
+		if (step.has(field) && !step.get(field).isJsonNull()) {
+			return step.get(field).getAsString();
+		}
+
+		return "";
+	}
+
+	/**
+	 * Compare les étapes Excel avec celles de Squash TM et ajoute au résultat : les
+	 * étapes absentes (création) et les étapes dont l'action ou le résultat attendu
+	 * diffère (modification).
+	 */
+	private void collectStepComparisonItems(ImportSquashTmData importData, Map<String, Long> existingTestCaseIds,
+			ImportSquashTmAnalysis analysis) throws IOException {
+
+		if (importData.getModules() == null) {
+			return;
+		}
+
+		String projectName = importData.getProjectName().trim();
+
+		for (ImportSquashTmModule module : importData.getModules()) {
+
+			if (module == null || module.getSubModules() == null) {
+				continue;
+			}
+
+			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
+
+				if (subModule == null || subModule.getViews() == null) {
+					continue;
+				}
+
+				for (ImportSquashTmView view : subModule.getViews()) {
+
+					if (view == null || view.getFeatures() == null) {
+						continue;
+					}
+
+					for (ImportSquashTmFeature feature : view.getFeatures()) {
+
+						if (feature == null || feature.getTestCases() == null) {
+							continue;
+						}
+
+						String featurePath = projectName + "/" + buildFolderPath(module.getName(), subModule.getName(),
+								view.getName(), feature.getName());
+
+						for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
+
+							if (testCase == null || isEmpty(testCase.getName()) || testCase.getSteps() == null
+									|| testCase.getSteps().isEmpty()) {
+								continue;
+							}
+
+							String testCasePath = featurePath + "/" + testCase.getName().trim();
+
+							String testCaseKey = buildComparisonKey(ImportSquashTmComparisonItem.TYPE_TEST_CASE,
+									testCasePath);
+
+							Long testCaseId = existingTestCaseIds.get(testCaseKey);
+
+							List<JsonObject> squashSteps = new ArrayList<>();
+
+							if (testCaseId != null && testCaseId > 0) {
+
+								for (JsonElement element : squashTmService.getTestCaseSteps(testCaseId)) {
+
+									if (element == null || !element.isJsonObject()) {
+										continue;
+									}
+
+									JsonObject squashStep = element.getAsJsonObject();
+
+									// Seules les étapes "action" sont comparées.
+									if (squashStep.has("_type") && !squashStep.get("_type").isJsonNull()
+											&& !"action-step".equals(squashStep.get("_type").getAsString())) {
+										continue;
+									}
+
+									squashSteps.add(squashStep);
+								}
+							}
+
+							List<ImportSquashTmTestStep> excelSteps = testCase.getSteps();
+
+							for (int i = 0; i < excelSteps.size(); i++) {
+
+								ImportSquashTmTestStep excelStep = excelSteps.get(i);
+
+								if (excelStep == null || isEmpty(excelStep.getAction())
+										|| isEmpty(excelStep.getExpectedResult())) {
+									continue;
+								}
+
+								int stepNumber = i + 1;
+
+								String stepName = buildStepName(stepNumber);
+								String stepPath = testCasePath + "/" + stepName;
+								String stepKey = buildStepKey(testCasePath, stepNumber);
+
+								ImportSquashTmComparisonItem item = new ImportSquashTmComparisonItem(stepKey,
+										ImportSquashTmComparisonItem.TYPE_TEST_STEP, stepName, stepPath,
+										ImportSquashTmComparisonItem.STATUS_EXCEL_ONLY, 0);
+
+								item.setParentSquashId(testCaseId != null ? testCaseId : 0);
+
+								if (i < squashSteps.size()) {
+
+									JsonObject squashStep = squashSteps.get(i);
+
+									String squashAction = readStepField(squashStep, "action");
+									String squashExpected = readStepField(squashStep, "expected_result");
+
+									boolean sameAction = normalizeStepText(squashAction)
+											.equals(normalizeStepText(excelStep.getAction()));
+									boolean sameExpected = normalizeStepText(squashExpected)
+											.equals(normalizeStepText(excelStep.getExpectedResult()));
+
+									if (sameAction && sameExpected) {
+										continue;
+									}
+
+									item.setStatus(ImportSquashTmComparisonItem.STATUS_RENAME);
+									item.setOriginalName(stepName);
+									item.setSquashId(squashStep.has("id") && !squashStep.get("id").isJsonNull()
+											? squashStep.get("id").getAsLong()
+											: 0);
+
+									if (item.getSquashId() <= 0) {
+										continue;
+									}
+
+									if (!sameAction) {
+										item.addDifference("Action (Squash TM) : " + normalizeStepText(squashAction));
+										item.addDifference("Action (Excel) : " + excelStep.getAction().trim());
+									}
+
+									if (!sameExpected) {
+										item.addDifference(
+												"Résultat attendu (Squash TM) : " + normalizeStepText(squashExpected));
+										item.addDifference(
+												"Résultat attendu (Excel) : " + excelStep.getExpectedResult().trim());
+									}
+
+								} else {
+
+									item.addDifference("Action : " + excelStep.getAction().trim());
+									item.addDifference("Résultat attendu : " + excelStep.getExpectedResult().trim());
+								}
+
+								analysis.addComparisonItem(item);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Applique les étapes cochées d'un cas de test. Si le cas de test n'existe pas
+	 * encore, ses dossiers puis le cas de test lui-même sont créés d'abord.
+	 *
+	 * @return le nombre d'actions traitées
+	 */
+	private int applySelectedTestSteps(ImportSquashTmTestCase testCase, String testCasePath, String featurePath,
+			long knownTestCaseId, boolean createdWithAllSteps, Map<String, ImportSquashTmComparisonItem> decisions,
+			JsonElement testCaseTree, ImportSquashTmResult result) throws IOException {
+
+		if (testCase.getSteps() == null) {
+			return 0;
+		}
+
+		int done = 0;
+		long testCaseId = knownTestCaseId;
+
+		List<ImportSquashTmTestStep> steps = testCase.getSteps();
+
+		for (int i = 0; i < steps.size(); i++) {
+
+			ImportSquashTmTestStep step = steps.get(i);
+
+			if (step == null) {
+				continue;
+			}
+
+			ImportSquashTmComparisonItem decision = decisions.get(buildStepKey(testCasePath, i + 1));
+
+			if (decision == null) {
+				continue;
+			}
+
+			String action = decision.getSelectedAction();
+
+			if (!ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)
+					&& !ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+				continue;
+			}
+
+			// Déjà créée avec le cas de test.
+			if (createdWithAllSteps) {
+				done++;
+				continue;
+			}
+
+			if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
+
+				if (testCaseId <= 0) {
+					testCaseId = decision.getParentSquashId();
+				}
+
+				if (testCaseId <= 0) {
+
+					// Le cas de test n'existe pas : création de tout le chemin de dossiers puis du
+					// cas de test.
+					long folderId = ensureTargetedFolder(testCaseTree, featurePath, "test-case-folder");
+
+					JsonObject createdTestCase = squashTmService.createTestCase(testCase.getName().trim(), "",
+							folderId);
+
+					if (createdTestCase == null || !createdTestCase.has("id")
+							|| createdTestCase.get("id").isJsonNull()) {
+						throw new IOException(
+								"Impossible de récupérer l'identifiant du cas de test : " + testCase.getName());
+					}
+
+					testCaseId = createdTestCase.get("id").getAsLong();
+
+					result.setTestCaseCount(result.getTestCaseCount() + 1);
+				}
+
+				squashTmService.createTestStep(testCaseId, step.getAction().trim(), step.getExpectedResult().trim());
+
+				result.setTestStepCount(result.getTestStepCount() + 1);
+
+			} else {
+
+				if (decision.getSquashId() <= 0) {
+					throw new IOException("Identifiant Squash TM absent pour la modification de l'étape : "
+							+ decision.getElementPath());
+				}
+
+				squashTmService.updateTestStep(decision.getSquashId(), step.getAction().trim(),
+						step.getExpectedResult().trim());
+
+				result.setTestStepCount(result.getTestStepCount() + 1);
+			}
+
+			done++;
+		}
+
+		return done;
 	}
 
 	/**

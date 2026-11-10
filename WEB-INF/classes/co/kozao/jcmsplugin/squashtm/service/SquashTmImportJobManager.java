@@ -30,6 +30,12 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.PendingImport;
 public class SquashTmImportJobManager {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmImportJobManager.class);
+	
+	/** Message affiché sous le libellé de sélection lorsque rien n'est coché. */
+	public static final String NO_SELECTION_MESSAGE = "Aucun élément sélectionné : cochez au moins un élément à créer ou à renommer.";
+
+	/** Message affiché lorsque le projet Squash TM et le fichier Excel sont identiques. */
+	public static final String ALREADY_UP_TO_DATE_MESSAGE = "Le projet Squash TM est déjà à jour : aucun élément à créer ou à renommer.";
 
 	private static final SquashTmImportJobManager INSTANCE = new SquashTmImportJobManager();
 
@@ -266,7 +272,7 @@ public class SquashTmImportJobManager {
 			if (pending.getAnalysis().isExistingProject()) {
 
 				if (!pending.getAnalysis().hasActionsToPerform()) {
-					throw new IOException("Le projet Squash TM est déjà à jour : aucun élément à créer ou à renommer.");
+					throw new IOException(ALREADY_UP_TO_DATE_MESSAGE);
 				}
 
 				applySelectedComparisonIndexes(pending.getAnalysis(), selectedComparisonIndexes);
@@ -274,8 +280,7 @@ public class SquashTmImportJobManager {
 				validateSelectedActions(pending.getAnalysis());
 
 				if (!hasSelectedAction(pending.getAnalysis())) {
-					throw new IOException(
-							"Aucun élément sélectionné : cochez au moins un élément à créer ou à renommer.");
+					throw new IOException(NO_SELECTION_MESSAGE);
 				}
 			}
 

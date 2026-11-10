@@ -1405,18 +1405,15 @@ public class SquashTmService {
 			JsonObject response = executeGetJson(url,
 					"Impossible de récupérer les étapes du cas de test " + testCaseId);
 
-			// Vérification de _embedded.
+			// Un cas de test sans étape renvoie une réponse sans _embedded.
 			if (!response.has("_embedded") || !response.get("_embedded").isJsonObject()) {
-
-				throw new IOException("Réponse invalide : _embedded absent pour le cas de test " + testCaseId);
+				break;
 			}
 
 			JsonObject embedded = response.getAsJsonObject("_embedded");
 
-			// Vérification du tableau des étapes.
 			if (!embedded.has("steps") || !embedded.get("steps").isJsonArray()) {
-
-				throw new IOException("Réponse invalide : étapes absentes pour le cas de test " + testCaseId);
+				break;
 			}
 
 			JsonArray steps = embedded.getAsJsonArray("steps");
@@ -1425,24 +1422,14 @@ public class SquashTmService {
 				allSteps.add(step);
 			}
 
-			// Vérification de la pagination.
-			if (!response.has("page") || !response.get("page").isJsonObject()) {
-
-				throw new IOException("Informations de pagination absentes pour le cas de test " + testCaseId);
+			// Pagination : si elle est absente, il n'y a qu'une seule page.
+			if (!response.has("page") || !response.get("page").isJsonObject()
+					|| !response.getAsJsonObject("page").has("totalPages")
+					|| response.getAsJsonObject("page").get("totalPages").isJsonNull()) {
+				break;
 			}
 
-			JsonObject pagination = response.getAsJsonObject("page");
-
-			if (!pagination.has("totalPages") || pagination.get("totalPages").isJsonNull()) {
-
-				throw new IOException("Nombre total de pages introuvable pour le cas de test " + testCaseId);
-			}
-
-			totalPages = pagination.get("totalPages").getAsInt();
-
-			if (totalPages < 0) {
-				throw new IOException("Nombre de pages invalide pour le cas de test " + testCaseId);
-			}
+			totalPages = response.getAsJsonObject("page").get("totalPages").getAsInt();
 
 			page++;
 

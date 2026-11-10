@@ -183,9 +183,39 @@
 	color: #d58512;
 }
 
-/* Message lorsqu'aucune incohérence n'est détectée */
-.squashtm-analysis-inconsistencies .alert {
+/* Barres d'information (verte : aucune incohérence / rouge : erreur)
+   Même largeur, même hauteur, même espacement. */
+.squashtm-analysis-inconsistencies .alert,
+.squashtm-analysis-alert {
+	box-sizing: border-box;
+	width: 100%;
+	margin-top: 0;
 	margin-bottom: 0;
+	padding: 15px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+/* Conteneur des erreurs de traitement */
+.squashtm-analysis-errors {
+	margin-bottom: 20px;
+}
+
+.squashtm-analysis-errors .alert+.alert {
+	margin-top: 10px;
+}
+
+/* Erreur de sélection : juste sous le libellé, au-dessus de la liste.
+   Même largeur, padding et hauteur de texte que la barre verte. */
+.squashtm-analysis-comparison .squashtm-analysis-alert,
+.squashtm-comparison-selection-error {
+	box-sizing: border-box;
+	width: 100%;
+	margin-top: 0;
+	margin-bottom: 15px;
+	padding: 15px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
 }
 
 /* ==========================================================
@@ -326,130 +356,369 @@
 
 }
 
-/* Chaque élément comparé */
-
-.squashtm-analysis-comparison .list-group-item {
-	padding: 14px 15px;
-	line-height: 1.5;
-	overflow-wrap: anywhere;
-
-}
-
-/* Informations sur l'élément */
-
-.squashtm-comparison-item {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-
-}
-
-.squashtm-comparison-item>strong {
-	color: #333;
-	font-size: 14px;
-	font-weight: 600;
-
-}
-
-.squashtm-comparison-item>.text-muted {
-	color: #777;
-	font-size: 12px;
-
-}
-
-/* Type de l'élément */
-
-.squashtm-comparison-item>span:not(.text-muted) {
-	color: #666;
-	font-size: 12px;
-
-}
-
-/* Statut de comparaison */
-
-.squashtm-comparison-status {
-	margin-top: 4px;
-
-}
-
-.squashtm-comparison-status .label {
-	display: inline-block;
-	padding: 5px 9px;
-	font-size: 11px;
-	font-weight: 600;
-	line-height: 1.4;
-
-}
-
-/* Détails des différences */
-
-.squashtm-comparison-differences {
-	margin: 8px 0 0;
-	padding-left: 20px;
-	color: #555;
-	font-size: 13px;
-
-}
-
-.squashtm-comparison-differences li {
-	margin-bottom: 4px;
-
-}
-
-.squashtm-comparison-differences li:last-child {
-	margin-bottom: 0;
-
-}
-
 /* ==========================================================
-   SELECTION DES CREATIONS ET RENOMMAGES
+   LISTE DES ELEMENTS COMPARES (affichage compact)
    ========================================================== */
 
+@comparison-status-width: 140px;
+@comparison-gap: 10px;
+
+.squashtm-analysis-comparison .list-group-item {
+	padding: 7px 12px;
+	line-height: 1.4;
+}
+
+.squashtm-comparison-item {
+	display: block;
+}
+
+/* Ligne cliquable : case à cocher + contenu */
 .squashtm-comparison-selection {
 	display: flex;
 	align-items: flex-start;
-	gap: 12px;
+	gap: @comparison-gap;
 	width: 100%;
 	margin: 0;
+	font-weight: normal;
 	cursor: pointer;
 }
 
 .squashtm-comparison-selection>input[type="checkbox"] {
 	flex: 0 0 auto;
-	width: 16px;
-	height: 16px;
-	margin-top: 4px;
+	width: 15px;
+	height: 15px;
+	margin: 3px 0 0;
 	cursor: pointer;
+}
+
+.squashtm-comparison-selection:hover {
+	background-color: #fafafa;
 }
 
 .squashtm-comparison-selection-content {
 	display: flex;
 	flex-direction: column;
-	gap: 7px;
+	gap: 1px;
 	min-width: 0;
 	flex: 1;
 }
 
-.squashtm-comparison-selection-content strong {
+/* Ligne 1 : statut | nom | type */
+.squashtm-comparison-line {
+	display: flex;
+	align-items: center;
+	gap: @comparison-gap;
+	min-width: 0;
+}
+
+/* Badge de statut : largeur fixe pour aligner tous les noms */
+.squashtm-comparison-status {
+	flex: 0 0 @comparison-status-width;
+}
+
+.squashtm-comparison-status .label {
+	display: block;
+	padding: 3px 6px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Nom (ou ancien → nouveau nom) */
+.squashtm-comparison-name {
+	flex: 1;
+	min-width: 0;
 	color: #333;
+	font-size: 13px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.squashtm-comparison-name strong {
 	font-weight: 600;
 }
 
-.squashtm-comparison-selection-content .text-muted {
-	color: #777;
-	font-size: 12px;
-	overflow-wrap: anywhere;
+.squashtm-comparison-old {
+	color: #999;
+	text-decoration: line-through;
 }
 
+.squashtm-comparison-arrow {
+	margin: 0 4px;
+	color: #7b1fa2;
+}
+
+/* Type : pastille alignée à droite */
 .squashtm-comparison-type {
-	color: #666;
+	flex: 0 0 auto;
+	margin-left: auto;
+	padding: 1px 9px;
+	border: 1px solid #ddd;
+	border-radius: 10px;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+.squashtm-comparison-type.comparison-type-requirement {
+	background-color: #337ab7;
+	border-color: #337ab7;
+	color: #fff;
+}
+
+.squashtm-comparison-type.comparison-type-testcase {
+	background-color: #5cb85c;
+	border-color: #5cb85c;
+	color: #fff;
+}
+
+.squashtm-comparison-type.comparison-type-teststep {
+	background-color: #f0ad4e;
+	border-color: #eea236;
+	color: #fff;
+}
+
+/* Ligne 2 : chemin, aligné sous le nom */
+.squashtm-comparison-path {
+	display: block;
+	margin-left: (@comparison-status-width + @comparison-gap);
+	color: #888;
+	font-size: 11px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Différences (étapes de test), alignées sous le nom */
+.squashtm-comparison-differences {
+	display: block;
+	margin: 2px 0 0 (@comparison-status-width + @comparison-gap);
+	color: #555;
 	font-size: 12px;
 }
 
-.squashtm-comparison-status {
-	margin-top: 2px;
+.squashtm-comparison-difference {
+	display: block;
+	line-height: 1.4;
 }
 
-.squashtm-comparison-selection:hover {
+/* Petits écrans : retour à une présentation empilée */
+@media (max-width: 600px) {
+	.squashtm-comparison-line {
+		flex-wrap: wrap;
+	}
+
+	.squashtm-comparison-status {
+		flex: 0 0 auto;
+	}
+
+	.squashtm-comparison-name {
+		flex: 1 1 100%;
+		white-space: normal;
+	}
+
+	.squashtm-comparison-type {
+		margin-left: 0;
+	}
+
+	.squashtm-comparison-path,
+	.squashtm-comparison-differences {
+		margin-left: 0;
+	}
+}
+
+/* ==========================================================
+   FILTRES DE LA LISTE DE COMPARAISON
+   (même structure que la barre de filtres du plugin CarPooling)
+   ========================================================== */
+
+/* Titre + interrupteur « Filtres » juste à côté du titre */
+.squashtm-comparison-header {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	flex-wrap: wrap;
+	gap: 6px 30px;
+	margin: 0 0 8px;
+	padding: 0;
+
+	h3 {
+		margin: 0;
+		padding: 0;
+		line-height: 1.3;
+	}
+
+	.squashtm-filter-toggle {
+		display: flex;
+		align-items: center;
+		margin: 0;
+
+		/* libellé « Filtres » */
+		>:first-child {
+			float: none;
+			width: auto;
+			margin: 0;
+			padding: 0;
+			font-size: 13px;
+			font-weight: 600;
+			transform: translateY(3px);
+		}
+
+		/* interrupteur : espacé du libellé */
+		>:nth-child(2) {
+			float: none;
+			width: auto;
+			padding: 0;
+
+			>:first-child {
+				margin-left: 12px;
+			}
+		}
+	}
+}
+
+.squashtm-comparison-filters {
+	display: grid;
+	grid-template-columns: repeat(2, max-content);
+	justify-content: start;
+	column-gap: 24px;
+	row-gap: 0;
+
+	margin: 8px 0 10px;
+	padding: 8px 12px 2px;
+
 	background-color: #fafafa;
+	border-radius: 1px;
+
+	/* Structure commune des filtres */
+	.squashtm-filter-type,
+	.squashtm-filter-status,
+	.squashtm-filter-select-all {
+		display: flex;
+		align-items: center;
+		gap: 15px;
+
+		margin: 0 0 6px;
+
+		> :first-child {
+			float: none;
+			width: auto;
+			margin: 0;
+			padding: 0;
+
+			line-height: 1.2;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		> :nth-child(2) {
+			float: none;
+			width: auto;
+			min-width: 0;
+			margin: 0;
+			padding: 0;
+		}
+	}
+
+	.squashtm-filter-type,
+	.squashtm-filter-status {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-start;
+
+		gap: 8px;
+		margin: 0 0 6px;
+		padding: 0;
+
+		> :first-child {
+			flex: 0 0 64px;
+			width: 64px;
+			margin: 0;
+			padding: 0;
+		}
+
+		> :nth-child(2) {
+			flex: 0 0 200px;
+			width: 200px;
+			margin: 0;
+			padding: 0;
+		}
+	}
+
+	/* État : alignement identique à Type */
+	.squashtm-filter-status {
+		margin-left: 0;
+
+		> :first-child {
+			flex-basis: 45px;
+			transform: translateY(3px);
+		}
+	}
+
+
+	.squashtm-filter-select-all {
+		grid-column: 1 / -1;
+		margin-left: 0;
+		gap: 8px;
+		align-self: center;
+
+		> :first-child {
+			flex: 0 0 auto;
+			white-space: normal;
+			line-height: 1.2;
+			transform: translateY(3px);
+
+			width: 65px;
+		}
+
+		> :nth-child(2) {
+			flex: 0 0 auto;
+			margin-left: 12px;
+		}
+	}
+}
+
+/* Menu déroulant des filtres : plus petit (ajouté par le JS au menu ouvert) */
+.squashtm-filter-dropdown {
+
+	/* Select2 v4 */
+	.select2-search--dropdown {
+		padding: 4px;
+	}
+
+	.select2-search--dropdown .select2-search__field {
+		height: 26px;
+		padding: 2px 6px;
+		font-size: 12px;
+	}
+
+	.select2-results__option {
+		padding: 4px 10px;
+		font-size: 12px;
+		line-height: 1.3;
+	}
+
+	.select2-results>.select2-results__options {
+		max-height: 150px;
+	}
+
+	/* Select2 v3 */
+	.select2-search input {
+		height: 26px;
+		font-size: 12px;
+	}
+
+	.select2-results .select2-result-label {
+		padding: 3px 8px;
+		font-size: 12px;
+	}
+
+	.select2-results {
+		max-height: 150px;
+	}
 }

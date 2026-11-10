@@ -26,10 +26,7 @@
 	 <%
 	 	ImportSquashTmResult handlerResult = squashTmImportHandler.getImportResult();
 
-	 	if (handlerResult != null
-	 			&& squashTmImportHandler.getImportJobId() == null
-	 			&& handlerResult.getTechnicalErrors() != null
-	 			&& !handlerResult.getTechnicalErrors().isEmpty()) {
+	 if (handlerResult != null && squashTmImportHandler.getImportJobId() == null && squashTmImportHandler.getImportAnalysis() == null && handlerResult.getTechnicalErrors() != null && !handlerResult.getTechnicalErrors().isEmpty()) {
 	 %>
 	 <div class="alert alert-danger squashtm-import-error">
 	 	<ul>

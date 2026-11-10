@@ -1,8 +1,19 @@
  <%@ page import="co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis" %>
+ <%@ page import="co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult" %>
 <%@ page import="co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmComparisonItem" %> 
+
+        <%
+        String selectionError = squashTmImportHandler.getSelectionError();
+        if (selectionError != null && !selectionError.trim().isEmpty()) {
+        	
+        %>
+            <div class="alert alert-danger squashtm-analysis-alert" id="squashTmSelectionError">
+                <%= selectionError.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") %>
+            </div>
+        <% } %>
   
   
- <%-- En-t�te --%>
+ <%-- En-tête --%>
 <div class="squashtm-analysis-header">
     <h2 class="squashtm-analysis-title">
       <span class="jalios-icon icomoon-file-excel"></span>
@@ -50,7 +61,7 @@
 
 </div>
 
-  <%-- Taux de validit� --%>
+  <%-- Taux de validité --%>
   <div class="squashtm-analysis-validity">
     <strong> <%= glp("jcmsplugin.squashtm.app.import.analysis.validity-rate") %> </strong>
 	    <span id="squashTmAnalysisValidityRate">
@@ -58,114 +69,202 @@
 	    </span>
   </div>
   
-  <%-- R�sultat de la comparaison avec Squash TM --%>
+  <%-- Résultat de la comparaison avec Squash TM --%>
 <%
 ImportSquashTmAnalysis analysis = squashTmImportHandler.getImportAnalysis();
 %>
 
-<% if (analysis != null
-        && analysis.isExistingProject()
-        && analysis.hasActionsToPerform()) { %>
+<% if (analysis != null && analysis.isExistingProject() && analysis.hasActionsToPerform()) { %>
+
+		<% String allLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.all");
+		
+		java.util.List<String> rowStatusLabels = new java.util.ArrayList<String>();
+		java.util.List<String> rowTypeLabels = new java.util.ArrayList<String>();
+		
+		java.util.LinkedHashSet<String> statusFilterValues = new java.util.LinkedHashSet<String>();
+		java.util.LinkedHashSet<String> typeFilterValues = new java.util.LinkedHashSet<String>();
+		
+		statusFilterValues.add(allLabel);
+		typeFilterValues.add(allLabel);
+		
+		for (ImportSquashTmComparisonItem candidate : analysis.getComparisonItems()) {
+		
+		    boolean candidateCreation = ImportSquashTmComparisonItem.STATUS_EXCEL_ONLY.equals(candidate.getStatus());
+		    boolean candidateRename = ImportSquashTmComparisonItem.STATUS_RENAME.equals(candidate.getStatus());
+		
+		    if (!candidateCreation && !candidateRename) {
+		        continue;
+		    }
+		
+		    String candidateType = candidate.getElementType();
+		    boolean candidateStep = ImportSquashTmComparisonItem.TYPE_TEST_STEP.equals(candidateType);
+		
+		    String candidateStatusLabel;
+		
+		    if (candidateRename && !candidateStep) {
+		        candidateStatusLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.rename-proposed");
+		    } else if (candidateRename) {
+		        candidateStatusLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.update-proposed");
+		    } else {
+		        candidateStatusLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.creation-proposed");
+		    }
+		
+		    String candidateTypeLabel = "";
+		
+		    if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(candidateType)) {
+		        candidateTypeLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.requirement-folder");
+		    } else if (ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER.equals(candidateType)) {
+		        candidateTypeLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.testcase-folder");
+		    } else if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT.equals(candidateType)) {
+		        candidateTypeLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.requirement");
+		    } else if (ImportSquashTmComparisonItem.TYPE_TEST_CASE.equals(candidateType)) {
+		        candidateTypeLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.testcase");
+		    } else if (candidateStep) {
+		        candidateTypeLabel = glp("jcmsplugin.squashtm.app.import.analysis.comparison.teststep");
+		    }
+		
+		    rowStatusLabels.add(candidateStatusLabel);
+		    rowTypeLabels.add(candidateTypeLabel);
+		
+		    statusFilterValues.add(candidateStatusLabel);
+		
+		    if (!candidateTypeLabel.isEmpty()) {
+		        typeFilterValues.add(candidateTypeLabel);
+		    }
+		}
+		
+		String[] statusFilterOptions = statusFilterValues.toArray(new String[0]);
+		String[] typeFilterOptions = typeFilterValues.toArray(new String[0]); %>
 
     <div class="squashtm-analysis-comparison">
 
-        <h3>
-            <span class="jalios-icon icomoon-compare"></span>
-            <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.title") %>
-        </h3>
+	    <div class="squashtm-comparison-header">
+            <h3> <span class="jalios-icon icomoon-compare"></span>
+                <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.title") %>
+            </h3>
+            
+            <jalios:field name="squashTmFilterToggle" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.toggle") %>' value="false" css="squashtm-filter-toggle">
+                <jalios:control settings='<%= new BooleanSettings() %>' />
+            </jalios:field>
+        </div>
+	
+	        <p class="text-muted">
+	    		<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.selection-description") %>
+			</p>
+				
+		<div id="squashTmComparisonSelectionError" class="alert alert-warning squashtm-comparison-selection-error" role="alert" style="<%= squashTmImportHandler.isComparisonSelectionError() ? "display:block;" : "display:none;" %>">	
+		    <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.selection-required") %>
+		</div>
+		
+		 <div id="squashTmComparisonFilters" class="squashtm-comparison-filters" style="display:none;" data-all-label="<%= allLabel %>">
 
-        <p class="text-muted">
-    		<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.selection-description") %>
-		</p>
+            <%-- Filtre sur les données --%>
+            <jalios:field name="squashTmFilterType" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.data") %>' value='<%= allLabel %>' required="true" css="squashtm-filter-type">
+                <jalios:control settings='<%= new EnumerateSettings().select().enumValues(typeFilterOptions) %>' />
+            </jalios:field>
+
+            <%-- Filtre sur les états --%>
+            <jalios:field name="squashTmFilterStatus" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.state") %>' value='<%= allLabel %>' required="true" css="squashtm-filter-status">
+                <jalios:control settings='<%= new EnumerateSettings().select().enumValues(statusFilterOptions) %>' />
+            </jalios:field>
+
+            <%-- Tout sélectionner (uniquement les éléments affichés) --%>
+            <jalios:field name="squashTmSelectAll" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.select-all") %>'  value="false" css="squashtm-filter-select-all">
+                <jalios:control settings='<%= new BooleanSettings() %>' />
+            </jalios:field>
+
+        </div>
 
         <ul class="list-group">
 
             <%
             int comparisonIndex = 0;
-
+            int rowPosition = 0;
             for (ImportSquashTmComparisonItem item : analysis.getComparisonItems()) {
 
                 int currentIndex = comparisonIndex++;
-
-                boolean isCreation =
-                        ImportSquashTmComparisonItem.STATUS_EXCEL_ONLY.equals(item.getStatus());
-
-                boolean isRename =
-                        ImportSquashTmComparisonItem.STATUS_RENAME.equals(item.getStatus());
+                boolean isCreation = ImportSquashTmComparisonItem.STATUS_EXCEL_ONLY.equals(item.getStatus());
+                boolean isRename = ImportSquashTmComparisonItem.STATUS_RENAME.equals(item.getStatus());
 
                 if (!isCreation && !isRename) {
                     continue;
                 }
+
+                boolean isStep = ImportSquashTmComparisonItem.TYPE_TEST_STEP.equals(item.getElementType());
+                String type = item.getElementType();
+                String rowStatus = rowStatusLabels.get(rowPosition) .replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;");
+                String rowType = rowTypeLabels.get(rowPosition) .replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;");
+                rowPosition++;
             %>
 
-                <li class="list-group-item">
+               <li class="list-group-item squashtm-comparison-row" data-status="<%= rowStatus %>" data-type="<%= rowType %>">
 
                     <div class="squashtm-comparison-item">
 
                         <label class="squashtm-comparison-selection">
-
-                            <input
-                                type="checkbox"
-                                class="squashtm-comparison-select"
-                                value="<%= currentIndex %>"
-                            />
+                            <input type="checkbox" class="squashtm-comparison-select" value="<%= currentIndex %>" />
 
                             <span class="squashtm-comparison-selection-content">
-
-                                <% if (isRename) { %>
-
+                                <span class="squashtm-comparison-line">
                                     <span class="squashtm-comparison-status">
-                                        <span class="label label-warning">
-                                            <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.rename-proposed") %>
+                                        <% if (isRename && !isStep) { %>
+                                            <span class="label label-warning">
+                                                <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.rename-proposed") %>
+                                            </span>
+                                        <% } else { %>
+                                            <span class="label label-info">
+                                                <%= isRename ? glp("jcmsplugin.squashtm.app.import.analysis.comparison.update-proposed") : glp("jcmsplugin.squashtm.app.import.analysis.comparison.creation-proposed") %>
+                                            </span>
+                                        <% } %>
+                                    </span>
+
+                                    <% if (isRename && !isStep) { %>
+                                        <span class="squashtm-comparison-name" itle="<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.original-name") %> : <%= item.getOriginalName() %> → <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.new-name") %> : <%= item.getElementName() %>">
+                                            <span class="squashtm-comparison-old"><%= item.getOriginalName() %></span>
+                                            <span class="squashtm-comparison-arrow">→</span>
+                                            <strong><%= item.getElementName() %></strong>
                                         </span>
-                                    </span>
-
-                                    <span><%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.original-name") %>
-                                        <strong><%= item.getOriginalName() %></strong>
-                                    </span>
-
-                                    <span> <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.new-name") %>
-                                        <strong><%= item.getElementName() %></strong>
-                                    </span>
-
-                                <% } else { %>
-
-                                    <span class="squashtm-comparison-status">
-                                        <span class="label label-info">
-                                            <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.creation-proposed") %>
+                                    <% } else { %>
+                                        <span class="squashtm-comparison-name" title="<%= item.getElementName() %>">
+                                            <strong><%= item.getElementName() %></strong>
                                         </span>
+                                    <% } %>
+
+ 									<span class="squashtm-comparison-type <%= ImportSquashTmComparisonItem.TYPE_REQUIREMENT.equals(type) ? "comparison-type-requirement" :
+    										ImportSquashTmComparisonItem.TYPE_TEST_CASE.equals(type) ? "comparison-type-testcase" : isStep ? "comparison-type-teststep" : "" %>">
+	                                  		 <%
+	
+	                                        if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(type)) {
+	                                            out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.requirement-folder"));
+	
+	                                        } else if (ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER.equals(type)) {
+	                                            out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.testcase-folder"));
+	
+	                                        } else if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT.equals(type)) {
+	                                            out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.requirement"));
+	
+	                                        } else if (ImportSquashTmComparisonItem.TYPE_TEST_CASE.equals(type)) {
+	                                            out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.testcase"));
+	
+	                                        } else if (isStep) {
+	                                            out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.teststep"));
+	                                        }
+	                                        %>
                                     </span>
 
-                                    <strong>
-                                        <%= item.getElementName() %>
-                                    </strong>
+                                </span>
 
-                                <% } %>
-
-                                <span class="text-muted">
+                                <span class="squashtm-comparison-path" title="<%= item.getElementPath() %>">
                                     <%= item.getElementPath() %>
                                 </span>
 
-                                <span class="squashtm-comparison-type">
-
-                                    <%
-                                    String type = item.getElementType();
-
-                                    if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(type)) {
-                                        out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.requirement-folder"));
-
-                                    } else if (ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER.equals(type)) {
-                                        out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.testcase-folder"));
-
-                                    } else if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT.equals(type)) {
-                                        out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.requirement"));
-
-                                    } else if (ImportSquashTmComparisonItem.TYPE_TEST_CASE.equals(type)) {
-                                        out.print(glp("jcmsplugin.squashtm.app.import.analysis.comparison.testcase"));
-                                    }
-                                    %>
-
-                                </span>
+                                <% if (isStep && item.getDifferences() != null && !item.getDifferences().isEmpty()) { %>
+                                    <span class="squashtm-comparison-differences">
+                                        <% for (String difference : item.getDifferences()) { %>
+                                            <span class="squashtm-comparison-difference"><%= difference == null ? "" : difference.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") %></span>
+                                        <% } %>
+                                    </span>
+                                <% } %>
 
                             </span>
 
@@ -175,7 +274,12 @@ ImportSquashTmAnalysis analysis = squashTmImportHandler.getImportAnalysis();
 
                 </li>
 
-            <% } %>
+                 <% } %>
+
+            	<li id="squashTmComparisonEmpty" class="list-group-item squashtm-comparison-empty" style="display:none;">
+                <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.no-result") %>
+
+            </li>
 
         </ul>
 
@@ -183,7 +287,7 @@ ImportSquashTmAnalysis analysis = squashTmImportHandler.getImportAnalysis();
 
 <% } %>
 
-  <%-- Liste des incoh�rences --%>
+  <%-- Liste des incohérences --%>
 <div class="squashtm-analysis-inconsistencies">
     <h3> <%= glp("jcmsplugin.squashtm.app.import.analysis.inconsistencies") %> </h3>
    		 <% if (squashTmImportHandler.getImportAnalysis() != null && !squashTmImportHandler.getImportAnalysis() .getInconsistencies().isEmpty()) { %>
@@ -201,6 +305,24 @@ ImportSquashTmAnalysis analysis = squashTmImportHandler.getImportAnalysis();
       </div>
     <% } %>
 </div>
+
+  <%-- Erreurs de traitement --%>
+<%
+ImportSquashTmResult analysisResult = squashTmImportHandler.getImportResult();
+
+if (analysisResult != null
+        && squashTmImportHandler.getImportJobId() == null
+        && analysisResult.getTechnicalErrors() != null
+        && !analysisResult.getTechnicalErrors().isEmpty()) {
+%>
+<div class="squashtm-analysis-errors">
+    <% for (String analysisError : analysisResult.getTechnicalErrors()) { %>
+        <div class="alert alert-danger squashtm-analysis-alert">
+            <%= analysisError == null ? "" : analysisError.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") %>
+        </div>
+    <% } %>
+</div>
+<% } %>
 
   <%-- Boutons d'action --%>
   <div class="squashtm-analysis-actions">

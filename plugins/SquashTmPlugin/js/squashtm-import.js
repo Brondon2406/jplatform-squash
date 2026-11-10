@@ -232,7 +232,7 @@ document.addEventListener("DOMContentLoaded", function() {
      */
 
     if (confirmImportButton) {
-        confirmImportButton.addEventListener("click", function() {
+        confirmImportButton.addEventListener("click", function(event) {
 
             if (!analysisIdInput || !analysisIdInput.value) {
                 console.error("Identifiant de l'analyse introuvable.");
@@ -253,6 +253,24 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
 
                 selectedComparisonIndexesInput.value = selectedIndexes.join(",");
+
+                var selectionError = document.getElementById("squashTmComparisonSelectionError");
+                var hasCheckboxes = document.querySelectorAll(".squashtm-comparison-select").length > 0;
+
+                if (hasCheckboxes) {
+                    if (selectedIndexes.length === 0) {
+                        event.preventDefault();
+
+                        if (selectionError) {
+                            selectionError.style.display = "block";
+                        }
+                        return;
+                    }
+
+                    if (selectionError) {
+                        selectionError.style.display = "none";
+                    }
+                }
             }
 
             if (importAction) {
@@ -434,5 +452,233 @@ document.addEventListener("DOMContentLoaded", function() {
             window.location.replace(window.location.href);
         });
     }
+
+
+
+
+    // ==========================================================
+    // FILTRES DE LA LISTE DE COMPARAISON
+    // ==========================================================
+
+    !function($) {
+        $(document).ready(function($) {
+
+            // Évite les boucles lorsque le code modifie lui-même un interrupteur.
+            var syncing = false;
+
+            function getPanel() {
+                return $("#squashTmComparisonFilters");
+            }
+
+            function getAllLabel() {
+                return getPanel().attr("data-all-label") || "";
+            }
+
+            function getRows() {
+                return $(".squashtm-comparison-row");
+            }
+
+            function getVisibleRows() {
+                return getRows().filter(function() {
+                    return this.style.display !== "none";
+                });
+            }
+
+            // ------------------------------------------------------
+            // Interrupteurs Jalios (radios Oui/Non ou case à cocher)
+            // ------------------------------------------------------
+
+            function readSwitch(name) {
+                var $inputs = $("input[name='" + name + "']");
+                var $radios = $inputs.filter("[type='radio']");
+
+                if ($radios.length) {
+                    return $radios.filter(":checked").val() === "true";
+                }
+                return $inputs.filter("[type='checkbox']").is(":checked");
+            }
+
+            function setSwitch(name, on) {
+
+                if (readSwitch(name) === on) {
+                    return;
+                }
+
+                var $inputs = $("input[name='" + name + "']");
+                var $radios = $inputs.filter("[type='radio']");
+
+                syncing = true;
+
+                if ($radios.length) {
+                    $radios.filter(function() {
+                        return (this.value === "true") === on;
+                    }).prop("checked", true).trigger("change");
+                } else {
+                    $inputs.filter("[type='checkbox']").prop("checked", on).trigger("change");
+                }
+
+                $(".squashtm-filter-select-all .switch").attr("aria-checked", on ? "true" : "false");
+
+                syncing = false;
+            }
+
+            function setSwitchDisabled(name, disabled) {
+                $("input[name='" + name + "']").prop("disabled", disabled);
+            }
+
+            // « Tout sélectionner » reflète l'état des éléments affichés.
+            function updateSelectAllState() {
+
+                var $boxes = getVisibleRows().find(".squashtm-comparison-select");
+                var allChecked = $boxes.length > 0
+                    && $boxes.filter(":checked").length === $boxes.length;
+
+                setSwitch("squashTmSelectAll", allChecked);
+                setSwitchDisabled("squashTmSelectAll", $boxes.length === 0);
+            }
+
+            // ------------------------------------------------------
+            // Filtrage
+            // ------------------------------------------------------
+
+            function applyFilters() {
+
+                var allLabel = getAllLabel();
+                var type = $("select[name='squashTmFilterType']").val() || allLabel;
+                var status = $("select[name='squashTmFilterStatus']").val() || allLabel;
+                var visibleCount = 0;
+
+                getRows().each(function() {
+
+                    var $row = $(this);
+
+                    var matches = (type === allLabel || $row.attr("data-type") === type)
+                        && (status === allLabel || $row.attr("data-status") === status);
+
+                    $row.css("display", matches ? "" : "none");
+
+                    if (matches) {
+                        visibleCount++;
+                    }
+                });
+
+                $("#squashTmComparisonEmpty").css("display", visibleCount === 0 ? "" : "none");
+
+                updateSelectAllState();
+            }
+
+            function resetFilters() {
+
+                var allLabel = getAllLabel();
+
+                syncing = true;
+                $("select[name='squashTmFilterType']").val(allLabel).trigger("change");
+                $("select[name='squashTmFilterStatus']").val(allLabel).trigger("change");
+                syncing = false;
+            }
+
+            // ------------------------------------------------------
+            // Menu déroulant : même largeur que la liste, plus compact
+            // (compatible Select2 v3 et v4)
+            // ------------------------------------------------------
+
+            function fitDropdown(select) {
+
+                var $select = $(select);
+                var $container = $select.siblings(".select2-container").first();
+
+                if (!$container.length) {
+                    $container = $select.parent().find(".select2-container").first();
+                }
+
+                var width = $container.outerWidth();
+
+                if (!width) {
+                    return;
+                }
+
+                var $dropdown = $(".select2-dropdown:visible, .select2-drop-active:visible").last();
+
+                if (!$dropdown.length) {
+                    return;
+                }
+
+                $dropdown.addClass("squashtm-filter-dropdown");
+
+                [$dropdown[0], $dropdown.parent(".select2-container")[0]].forEach(function(element) {
+                    if (element) {
+                        element.style.setProperty("width", width + "px", "important");
+                        element.style.setProperty("min-width", width + "px", "important");
+                        element.style.setProperty("max-width", width + "px", "important");
+                    }
+                });
+            }
+
+            $(document).on("select2:open select2-open",
+                "select[name='squashTmFilterType'], select[name='squashTmFilterStatus']",
+                function() {
+                    var select = this;
+
+                    // Laisse Select2 afficher son menu avant de l'ajuster.
+                    setTimeout(function() {
+                        fitDropdown(select);
+                    }, 0);
+                });
+
+            // ------------------------------------------------------
+            // Événements
+            // ------------------------------------------------------
+
+            // Interrupteur « Filtres » : affiche / masque le panneau.
+            $(document).on("change", ".squashtm-filter-toggle", function() {
+
+                if (syncing) {
+                    return;
+                }
+
+                var on = readSwitch("squashTmFilterToggle");
+
+                getPanel().css("display", on ? "" : "none");
+
+                if (!on) {
+                    resetFilters();
+                    applyFilters();
+                }
+            });
+
+            // Filtres « Données » et « État ».
+            $(document).on("change", ".squashtm-filter-type, .squashtm-filter-status", function() {
+
+                if (syncing) {
+                    return;
+                }
+
+                applyFilters();
+            });
+
+            // « Tout sélectionner » : coche / décoche uniquement les éléments affichés.
+            $(document).on("change", ".squashtm-filter-select-all", function() {
+
+                if (syncing) {
+                    return;
+                }
+
+                var on = readSwitch("squashTmSelectAll");
+
+                getVisibleRows().find(".squashtm-comparison-select").prop("checked", on);
+            });
+
+            // Une case cochée à la main met à jour « Tout sélectionner ».
+            $(document).on("change", ".squashtm-comparison-select", function() {
+                updateSelectAllState();
+            });
+
+            // État initial.
+            if (getPanel().length) {
+                applyFilters();
+            }
+        });
+    }(window.jQuery);
+
 
 });
