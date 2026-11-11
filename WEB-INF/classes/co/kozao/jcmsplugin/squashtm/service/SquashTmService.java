@@ -463,8 +463,15 @@ public class SquashTmService {
 			try {
 
 				connection.setRequestMethod("GET");
+				connection.setUseCaches(false);
+
 				connection.setRequestProperty("Authorization", authorization);
 				connection.setRequestProperty("Accept", "application/json");
+
+				connection.setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
+				connection.setRequestProperty("Pragma", "no-cache");
+				connection.setRequestProperty("Expires", "0");
+
 				connection.setConnectTimeout(CONNECT_TIMEOUT);
 				connection.setReadTimeout(READ_TIMEOUT);
 

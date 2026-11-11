@@ -455,6 +455,7 @@ public class SquashTmImportJobManager {
 					failedResult.setSuccess(false);
 					failedResult.setProjectName(pending.getProjectName());
 					failedResult.setFileName(pending.getTemporaryFile().getName());
+					failedResult.setExistingProjectReused(true);
 
 					failedResult.addTechnicalError("Une erreur technique est survenue : "
 							+ (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));

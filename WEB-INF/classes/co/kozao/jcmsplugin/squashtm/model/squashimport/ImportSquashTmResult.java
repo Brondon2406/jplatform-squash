@@ -14,7 +14,6 @@ public class ImportSquashTmResult {
 	private boolean success;
 
 	private String projectName;
-	private long projectId;
 	private String fileName;
 
 	private int moduleCount;
@@ -51,14 +50,6 @@ public class ImportSquashTmResult {
 
 	public void setProjectName(String projectName) {
 		this.projectName = projectName;
-	}
-	
-	public long getProjectId() {
-	    return projectId;
-	}
-
-	public void setProjectId(long projectId) {
-	    this.projectId = projectId;
 	}
 	
 	public int getModuleCount() {

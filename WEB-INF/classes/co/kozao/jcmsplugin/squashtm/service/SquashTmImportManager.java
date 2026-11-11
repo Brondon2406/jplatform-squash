@@ -6,9 +6,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -42,6 +44,7 @@ public class SquashTmImportManager {
 	private final ExcelSquashTmImportService excelImportService;
 	private final SquashTmService squashTmService;
 	private int createdFolderCount;
+	private final Set<String> createdFolderPaths = new LinkedHashSet<>();
 
 	/**
 	 * Constructeur utilisé lorsque l'importation est exécutée en arrière-plan.
@@ -317,6 +320,8 @@ public class SquashTmImportManager {
 
 		long parentId = currentParent.get("id").getAsLong();
 		String parentType = "project";
+		int walkedDepth = 0;
+		String walkedPath = "";
 
 		for (String rawName : folderPath.split("/")) {
 
@@ -325,6 +330,9 @@ public class SquashTmImportManager {
 			if (folderName.isEmpty()) {
 				continue;
 			}
+
+			walkedDepth++;
+			walkedPath = walkedPath.isEmpty() ? folderName : walkedPath + "/" + folderName;
 
 			JsonObject targetFolder = findChildFolder(currentParent, folderName);
 
@@ -350,6 +358,7 @@ public class SquashTmImportManager {
 				}
 
 				createdFolderCount++;
+				createdFolderPaths.add(walkedDepth + "|" + walkedPath);
 
 				// Garantit que le dossier pourra être retrouvé par son nom.
 				if (!targetFolder.has("name") || targetFolder.get("name").isJsonNull()) {
@@ -483,6 +492,8 @@ public class SquashTmImportManager {
 		ImportSquashTmResult result = new ImportSquashTmResult();
 
 		result.setProjectName(importData.getProjectName());
+		result.setExistingProjectReused(true);
+		createdFolderPaths.clear();
 		createdFolderCount = 0;
 
 		// Récupération des deux arborescences du projet existant.
@@ -607,32 +618,45 @@ public class SquashTmImportManager {
 
 								String action = decision.getSelectedAction();
 
-								if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
+								try {
 
-									// Crée automatiquement tous les dossiers manquants du chemin.
-									long folderId = ensureTargetedFolder(requirementTree, featurePath,
-											"requirement-folder");
+									if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
 
-									squashTmService.createRequirement(requirement.getName().trim(), "", folderId);
+										// Crée automatiquement tous les dossiers manquants du chemin.
+										long folderId = ensureTargetedFolder(requirementTree, featurePath,
+												"requirement-folder");
 
-									result.setRequirementCount(result.getRequirementCount() + 1);
+										squashTmService.createRequirement(requirement.getName().trim(), "", folderId);
 
-									completedActions++;
+										result.setRequirementCount(result.getRequirementCount() + 1);
 
-									updateExistingImportProgress(progress, completedActions, totalActions);
+										completedActions++;
 
-								} else if (ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+										updateExistingImportProgress(progress, completedActions, totalActions);
 
-									if (decision.getSquashId() <= 0) {
-										throw new IOException(
-												"Identifiant Squash TM absent pour le renommage de l'exigence : "
-														+ requirement.getName());
+									} else if (ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+
+										if (decision.getSquashId() <= 0) {
+											throw new IOException(
+													"Identifiant Squash TM absent pour le renommage de l'exigence : "
+															+ requirement.getName());
+										}
+
+										// Seul le nom est modifié.
+										squashTmService.updateRequirement(decision.getSquashId(),
+												requirement.getName());
+
+										result.setRequirementCount(result.getRequirementCount() + 1);
+
+										completedActions++;
+
+										updateExistingImportProgress(progress, completedActions, totalActions);
 									}
 
-									// Seul le nom est modifié.
-									squashTmService.updateRequirement(decision.getSquashId(), requirement.getName());
+								} catch (IOException | RuntimeException e) {
 
-									result.setRequirementCount(result.getRequirementCount() + 1);
+									recordActionError(result,
+											"Exigence '" + requirement.getName().trim() + "' (" + featurePath + ")", e);
 
 									completedActions++;
 
@@ -663,67 +687,105 @@ public class SquashTmImportManager {
 
 								long testCaseId = 0;
 								boolean createdWithAllSteps = false;
+								boolean testCaseFailed = false;
 
-								if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
+								try {
 
-									// Crée automatiquement tous les dossiers manquants du chemin.
-									long folderId = ensureTargetedFolder(testCaseTree, featurePath, "test-case-folder");
+									if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
 
-									JsonObject createdTestCase = squashTmService
-											.createTestCase(testCase.getName().trim(), "", folderId);
+										// Crée automatiquement tous les dossiers manquants du chemin.
+										long folderId = ensureTargetedFolder(testCaseTree, featurePath,
+												"test-case-folder");
 
-									if (createdTestCase == null || !createdTestCase.has("id")
-											|| createdTestCase.get("id").isJsonNull()) {
-										throw new IOException("Impossible de récupérer l'identifiant du cas de test : "
-												+ testCase.getName());
-									}
+										JsonObject createdTestCase = squashTmService
+												.createTestCase(testCase.getName().trim(), "", folderId);
 
-									testCaseId = createdTestCase.get("id").getAsLong();
-
-									result.setTestCaseCount(result.getTestCaseCount() + 1);
-
-									// Création de toutes les étapes du cas de test.
-									if (testCase.getSteps() != null) {
-
-										for (ImportSquashTmTestStep step : testCase.getSteps()) {
-
-											if (step == null || isEmpty(step.getAction())
-													|| isEmpty(step.getExpectedResult())) {
-												continue;
-											}
-
-											squashTmService.createTestStep(testCaseId, step.getAction().trim(),
-													step.getExpectedResult().trim());
-
-											result.setTestStepCount(result.getTestStepCount() + 1);
+										if (createdTestCase == null || !createdTestCase.has("id")
+												|| createdTestCase.get("id").isJsonNull()) {
+											throw new IOException(
+													"Impossible de récupérer l'identifiant du cas de test : "
+															+ testCase.getName());
 										}
+
+										testCaseId = createdTestCase.get("id").getAsLong();
+
+										result.setTestCaseCount(result.getTestCaseCount() + 1);
+
+										// Création de toutes les étapes : une étape en erreur n'empêche pas les
+										// suivantes.
+										if (testCase.getSteps() != null) {
+
+											int stepPosition = 0;
+
+											for (ImportSquashTmTestStep step : testCase.getSteps()) {
+
+												stepPosition++;
+
+												if (step == null || isEmpty(step.getAction())
+														|| isEmpty(step.getExpectedResult())) {
+													continue;
+												}
+
+												try {
+
+													squashTmService.createTestStep(testCaseId, step.getAction().trim(),
+															step.getExpectedResult().trim());
+
+													result.setTestStepCount(result.getTestStepCount() + 1);
+
+												} catch (IOException | RuntimeException stepError) {
+
+													recordActionError(result,
+															"Étape " + stepPosition + " du cas de test '"
+																	+ testCase.getName().trim() + "' (" + featurePath
+																	+ ")",
+															stepError);
+												}
+											}
+										}
+
+										createdWithAllSteps = true;
+
+										completedActions++;
+
+										updateExistingImportProgress(progress, completedActions, totalActions);
+
+									} else if (ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+
+										if (decision.getSquashId() <= 0) {
+											throw new IOException(
+													"Identifiant Squash TM absent pour le renommage du cas de test : "
+															+ testCase.getName());
+										}
+
+										testCaseId = decision.getSquashId();
+
+										// Seul le nom du cas de test est modifié ici ; les étapes sont traitées
+										// ensuite.
+										squashTmService.updateTestCase(testCaseId, testCase.getName());
+
+										result.setTestCaseCount(result.getTestCaseCount() + 1);
+
+										completedActions++;
+
+										updateExistingImportProgress(progress, completedActions, totalActions);
 									}
 
-									createdWithAllSteps = true;
+								} catch (IOException | RuntimeException e) {
+
+									testCaseFailed = true;
+
+									recordActionError(result,
+											"Cas de test '" + testCase.getName().trim() + "' (" + featurePath + ")", e);
 
 									completedActions++;
 
 									updateExistingImportProgress(progress, completedActions, totalActions);
+								}
 
-								} else if (ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
-
-									if (decision.getSquashId() <= 0) {
-										throw new IOException(
-												"Identifiant Squash TM absent pour le renommage du cas de test : "
-														+ testCase.getName());
-									}
-
-									testCaseId = decision.getSquashId();
-
-									// Seul le nom du cas de test est modifié ici ; les étapes sont traitées
-									// ensuite.
-									squashTmService.updateTestCase(testCaseId, testCase.getName());
-
-									result.setTestCaseCount(result.getTestCaseCount() + 1);
-
-									completedActions++;
-
-									updateExistingImportProgress(progress, completedActions, totalActions);
+								// Cas de test non créé : inutile de tenter ses étapes.
+								if (testCaseFailed && testCaseId <= 0) {
+									continue;
 								}
 
 								// Étapes cochées (création / modification), avec création automatique
@@ -749,10 +811,44 @@ public class SquashTmImportManager {
 		}
 
 		result.setFolderCount(createdFolderCount);
-
+		result.setModuleCount(countCreatedFolders(1));
+		result.setSubModuleCount(countCreatedFolders(2));
+		result.setViewCount(countCreatedFolders(3));
+		result.setFeatureCount(countCreatedFolders(4));
 		result.setSuccess(result.getTechnicalErrors().isEmpty());
 
 		return result;
+	}
+
+	/**
+	 * Enregistre l'échec d'une action dans le rapport sans interrompre les
+	 * suivantes.
+	 */
+	private void recordActionError(ImportSquashTmResult result, String target, Exception e) {
+
+		String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+
+		LOGGER.error("[APPLICATION] Échec : " + target, e);
+
+		result.addTechnicalError(target + " : " + detail);
+	}
+
+	/**
+	 * Nombre de dossiers distincts créés à un niveau donné (1 = module, 2 =
+	 * sous-module, 3 = vue, 4 = fonctionnalité).
+	 */
+	private int countCreatedFolders(int depth) {
+
+		int count = 0;
+		String prefix = depth + "|";
+
+		for (String key : createdFolderPaths) {
+			if (key.startsWith(prefix)) {
+				count++;
+			}
+		}
+
+		return count;
 	}
 
 	private String removeProjectRoot(String path, String projectName) {
@@ -782,7 +878,8 @@ public class SquashTmImportManager {
 	 * @param result     résultat de l'import
 	 * @throws Exception si une erreur technique survient
 	 */
-	private void importToSquashTm(ImportSquashTmData importData, ImportSquashTmResult result, ImportSquashTmProgress progress, int[] totals, int totalFolders) throws Exception {
+	private void importToSquashTm(ImportSquashTmData importData, ImportSquashTmResult result,
+			ImportSquashTmProgress progress, int[] totals, int totalFolders) throws Exception {
 
 		LOGGER.info("========== IMPORT VERS SQUASH TM ==========");
 
@@ -857,7 +954,6 @@ public class SquashTmImportManager {
 			projectId = createdProject.get("id").getAsLong();
 
 			LOGGER.info("Projet Squash TM créé avec succès : " + projectName + " (id=" + projectId + ")");
-			result.setProjectId(projectId);
 		}
 
 		/*
@@ -2028,47 +2124,56 @@ public class SquashTmImportManager {
 				continue;
 			}
 
-			if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
+			try {
 
-				if (testCaseId <= 0) {
-					testCaseId = decision.getParentSquashId();
-				}
+				if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)) {
 
-				if (testCaseId <= 0) {
-
-					// Le cas de test n'existe pas : création de tout le chemin de dossiers puis du
-					// cas de test.
-					long folderId = ensureTargetedFolder(testCaseTree, featurePath, "test-case-folder");
-
-					JsonObject createdTestCase = squashTmService.createTestCase(testCase.getName().trim(), "",
-							folderId);
-
-					if (createdTestCase == null || !createdTestCase.has("id")
-							|| createdTestCase.get("id").isJsonNull()) {
-						throw new IOException(
-								"Impossible de récupérer l'identifiant du cas de test : " + testCase.getName());
+					if (testCaseId <= 0) {
+						testCaseId = decision.getParentSquashId();
 					}
 
-					testCaseId = createdTestCase.get("id").getAsLong();
+					if (testCaseId <= 0) {
 
-					result.setTestCaseCount(result.getTestCaseCount() + 1);
+						// Le cas de test n'existe pas : création de tout le chemin de dossiers puis du
+						// cas de test.
+						long folderId = ensureTargetedFolder(testCaseTree, featurePath, "test-case-folder");
+
+						JsonObject createdTestCase = squashTmService.createTestCase(testCase.getName().trim(), "",
+								folderId);
+
+						if (createdTestCase == null || !createdTestCase.has("id")
+								|| createdTestCase.get("id").isJsonNull()) {
+							throw new IOException(
+									"Impossible de récupérer l'identifiant du cas de test : " + testCase.getName());
+						}
+
+						testCaseId = createdTestCase.get("id").getAsLong();
+
+						result.setTestCaseCount(result.getTestCaseCount() + 1);
+					}
+
+					squashTmService.createTestStep(testCaseId, step.getAction().trim(),
+							step.getExpectedResult().trim());
+
+					result.setTestStepCount(result.getTestStepCount() + 1);
+
+				} else {
+
+					if (decision.getSquashId() <= 0) {
+						throw new IOException("Identifiant Squash TM absent pour la modification de l'étape : "
+								+ decision.getElementPath());
+					}
+
+					squashTmService.updateTestStep(decision.getSquashId(), step.getAction().trim(),
+							step.getExpectedResult().trim());
+
+					result.setTestStepCount(result.getTestStepCount() + 1);
 				}
 
-				squashTmService.createTestStep(testCaseId, step.getAction().trim(), step.getExpectedResult().trim());
+			} catch (IOException | RuntimeException e) {
 
-				result.setTestStepCount(result.getTestStepCount() + 1);
-
-			} else {
-
-				if (decision.getSquashId() <= 0) {
-					throw new IOException("Identifiant Squash TM absent pour la modification de l'étape : "
-							+ decision.getElementPath());
-				}
-
-				squashTmService.updateTestStep(decision.getSquashId(), step.getAction().trim(),
-						step.getExpectedResult().trim());
-
-				result.setTestStepCount(result.getTestStepCount() + 1);
+				recordActionError(result, "Étape " + (i + 1) + " du cas de test '" + testCase.getName().trim() + "' ("
+						+ testCasePath + ")", e);
 			}
 
 			done++;
@@ -2260,12 +2365,36 @@ public class SquashTmImportManager {
 				String elementType = requirementFolder ? ImportSquashTmComparisonItem.TYPE_REQUIREMENT
 						: ImportSquashTmComparisonItem.TYPE_TEST_CASE;
 
-				// Le nom provient du contenu du dossier. Le détail n'est demandé que si
-				// le nom est absent.
 				String elementName = "";
 
-				if (contentObject.has("name") && !contentObject.get("name").isJsonNull()) {
-					elementName = contentObject.get("name").getAsString();
+				if (requirementFolder) {
+
+					elementName = extractRequirementName(contentObject);
+
+				} else {
+
+					// Pour un cas de test, conserver le fonctionnement existant.
+					if (contentObject.has("name") && !contentObject.get("name").isJsonNull()) {
+						elementName = contentObject.get("name").getAsString();
+					}
+				}
+
+				if (isEmpty(elementName)) {
+
+					JsonObject detail = requirementFolder ? squashTmService.getRequirement(elementId)
+							: squashTmService.getTestCase(elementId);
+
+					if (detail != null) {
+
+						if (requirementFolder) {
+
+							elementName = extractRequirementName(detail);
+
+						} else if (detail.has("name") && !detail.get("name").isJsonNull()) {
+
+							elementName = detail.get("name").getAsString();
+						}
+					}
 				}
 
 				if (isEmpty(elementName)) {
@@ -2295,6 +2424,47 @@ public class SquashTmImportManager {
 						ImportSquashTmComparisonItem.STATUS_SQUASH_ONLY, elementId));
 			}
 		}
+	}
+
+	/**
+	 * Extrait le véritable nom d'une exigence Squash TM.
+	 *
+	 * Squash TM expose le nom dans current_version.name. Le champ name à la racine
+	 * est utilisé uniquement en solution de secours.
+	 *
+	 * @param requirement objet JSON de l'exigence
+	 * @return nom de l'exigence ou chaîne vide
+	 */
+	private String extractRequirementName(JsonObject requirement) {
+
+		if (requirement == null) {
+			return "";
+		}
+
+		if (requirement.has("current_version") && requirement.get("current_version").isJsonObject()) {
+
+			JsonObject currentVersion = requirement.getAsJsonObject("current_version");
+
+			if (currentVersion.has("name") && !currentVersion.get("name").isJsonNull()) {
+
+				String name = currentVersion.get("name").getAsString();
+
+				if (!isEmpty(name)) {
+					return name.trim();
+				}
+			}
+		}
+		
+		if (requirement.has("name") && !requirement.get("name").isJsonNull()) {
+
+			String name = requirement.get("name").getAsString();
+
+			if (!isEmpty(name)) {
+				return name.trim();
+			}
+		}
+
+		return "";
 	}
 
 	private String normalizeSquashPath(String path, String projectName) {

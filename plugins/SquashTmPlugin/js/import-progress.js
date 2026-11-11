@@ -31,10 +31,15 @@ document.addEventListener("DOMContentLoaded", function() {
     var reportErrorSection = document.getElementById("squashTmReportErrorSection");
     var reportErrorList = document.getElementById("squashTmReportErrorList");
 
-    // Éviter plusieurs interrogations simultanées.
-    var polling = false;
 
-    // Identifiant du minuteur de suivi.
+    // Éléments du téléchargement de la version à jour du module.
+    var reportDownloadButton = document.getElementById("squashTmReportDownloadButton");
+    var reportDownloadLabel = document.getElementById("squashTmReportDownloadLabel");
+    var reportDownloadError = document.getElementById("squashTmReportDownloadError");
+    var reportDownloadProject = "";
+    var downloading = false;
+
+    var polling = false;
     var pollingTimer = null;
 
     // =============== MISE À JOUR DE L'AFFICHAGE ==============
@@ -50,10 +55,10 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-		var percentage = Math.max(
-		    0,
-		    Math.min(data.completed ? 100 : 100, Number(data.percentage) || 0)
-		);
+        var percentage = Math.max(
+            0,
+            Math.min(data.completed ? 100 : 100, Number(data.percentage) || 0)
+        );
 
         if (progressBar) {
             progressBar.style.width = percentage + "%";
@@ -213,6 +218,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 errors.length > 0 ? "block" : "none";
         }
 
+        // Bouton affiché uniquement pour un projet qui existait déjà dans Squash TM.
+        updateDownloadButton(data.projectName, data.existingProjectReused === true);
+
         // Masquer la progression et afficher le rapport.
         if (progressContainer) {
             progressContainer.style.display = "none";
@@ -221,6 +229,161 @@ document.addEventListener("DOMContentLoaded", function() {
         importReport.style.display = "block";
     }
 
+    // =============== TÉLÉCHARGEMENT DE LA VERSION À JOUR DU MODULE ==============
+
+    function updateDownloadButton(projectName, existingProject) {
+
+        if (!reportDownloadButton) {
+            return;
+        }
+
+        reportDownloadProject = projectName ? String(projectName).trim() : "";
+
+        if (reportDownloadError) {
+            reportDownloadError.textContent = "";
+            reportDownloadError.style.display = "none";
+        }
+
+        reportDownloadButton.style.display =
+            (existingProject === true && reportDownloadProject !== "") ? "" : "none";
+    }
+
+    /**
+     * Extrait le nom du fichier de l'en-tête Content-Disposition.
+     */
+    function getDownloadFileName(contentDisposition, fallbackName) {
+
+        if (!contentDisposition) {
+            return fallbackName;
+        }
+
+        var utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition);
+
+        if (utf8Match && utf8Match[1]) {
+            try {
+                return decodeURIComponent(utf8Match[1]);
+            } catch (e) {
+                // Ignoré : le nom simple est utilisé ci-dessous.
+            }
+        }
+
+        var plainMatch = /filename="?([^";]+)"?/i.exec(contentDisposition);
+
+        return plainMatch && plainMatch[1] ? plainMatch[1] : fallbackName;
+    }
+
+    /**
+     * Télécharge la version à jour du module du projet depuis Squash TM.
+     */
+    function downloadProjectModule() {
+
+        if (downloading || reportDownloadProject === "") {
+            return;
+        }
+
+        downloading = true;
+
+        var originalLabel = reportDownloadLabel ? reportDownloadLabel.textContent : "";
+
+        reportDownloadButton.disabled = true;
+
+        if (reportDownloadLabel) {
+            reportDownloadLabel.textContent =
+                reportDownloadButton.getAttribute("data-loading-label") || originalLabel;
+        }
+
+        if (reportDownloadError) {
+            reportDownloadError.textContent = "";
+            reportDownloadError.style.display = "none";
+        }
+
+        fetch(
+            "plugins/SquashTmPlugin/jsp/export/doSquashTmExportProject.jsp?projectName="
+            + encodeURIComponent(reportDownloadProject),
+            {
+                method: "GET",
+                cache: "no-store",
+                credentials: "same-origin"
+            }
+        )
+            .then(function(response) {
+
+                if (!response.ok) {
+                    return response.text().then(function(text) {
+                        var httpError = new Error(text || "");
+                        httpError.status = response.status;
+                        httpError.body = text || "";
+                        throw httpError;
+                    });
+                }
+                var fileName = getDownloadFileName(
+                    response.headers.get("Content-Disposition"),
+                    "squashtm-export.xlsx"
+                );
+
+                return response.blob().then(function(blob) {
+                    return { blob: blob, fileName: fileName };
+                });
+            })
+            .then(function(result) {
+
+                var url = window.URL.createObjectURL(result.blob);
+                var link = document.createElement("a");
+
+                link.href = url;
+                link.download = result.fileName;
+                link.style.display = "none";
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                window.setTimeout(function() {
+                    window.URL.revokeObjectURL(url);
+                }, 1000);
+            })
+
+            .catch(function(error) {
+
+                // Détail complet dans la console du navigateur (F12).
+                if (window.console && console.error) {
+                    console.error("[SquashTM][EXPORT]", error && error.status, error && error.body, error);
+                }
+
+                if (!reportDownloadError) {
+                    return;
+                }
+
+                var prefix = reportDownloadButton.getAttribute("data-error-label") || "";
+                var detail = error && error.message ? error.message : "";
+
+                // Page HTML ou texte trop long : seul le code HTTP est affiché.
+                if (detail.length > 300 || detail.indexOf("<") !== -1) {
+                    detail = "";
+                }
+
+                if (error && error.status) {
+                    detail = "(HTTP " + error.status + ")" + (detail ? " " + detail : "");
+                }
+
+                reportDownloadError.textContent = detail ? prefix + " " + detail : prefix;
+                reportDownloadError.style.display = "block";
+            })
+
+            .finally(function() {
+
+                downloading = false;
+                reportDownloadButton.disabled = false;
+
+                if (reportDownloadLabel) {
+                    reportDownloadLabel.textContent = originalLabel;
+                }
+            });
+    }
+
+    if (reportDownloadButton) {
+        reportDownloadButton.addEventListener("click", downloadProjectModule);
+    }
     // =============== RÉCUPÉRATION DE LA PROGRESSION ==============
 
     /**
@@ -244,29 +407,23 @@ document.addEventListener("DOMContentLoaded", function() {
             progressResult.style.display = "none";
         }
 
-        fetch(
-            "plugins/SquashTmPlugin/jsp/importProgress/importProgress.jsp?jobId="
-            + encodeURIComponent(jobId),
-            {
-                method: "GET",
-                cache: "no-store",
-                credentials: "same-origin"
-            }
+        fetch("plugins/SquashTmPlugin/jsp/importProgress/importProgress.jsp?jobId=" + encodeURIComponent(jobId), {
+            method: "GET",
+            cache: "no-store",
+            credentials: "same-origin"
+        }
         )
             .then(function(response) {
 
                 if (!response.ok) {
-                    var error = new Error(
-                        "Impossible de récupérer la progression (HTTP "
-                        + response.status + ")."
-                    );
-
+                    var error = new Error("Impossible de récupérer la progression (HTTP " + response.status + ").");
                     error.status = response.status;
                     throw error;
                 }
 
                 return response.json();
             })
+
             .then(function(data) {
 
                 updateImportProgress(data);

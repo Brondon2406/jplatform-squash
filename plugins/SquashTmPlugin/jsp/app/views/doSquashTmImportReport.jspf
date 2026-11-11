@@ -120,9 +120,16 @@
    			</jalios:accordion-panel>
 		</jalios:accordion>
   </div>
+  
+    <%-- Erreur de telechargement --%>
+  <div id="squashTmReportDownloadError" class="alert alert-danger squashtm-report-download-error" style="display: none;"></div>
 
   <%-- Action finale --%>
   <div class="squashtm-report-actions">
+      <button type="button" id="squashTmReportDownloadButton" class="btn btn-default" style="display: none;" data-loading-label="<%= glp("jcmsplugin.squashtm.app.import.report.download.loading") %>" data-error-label="<%= glp("jcmsplugin.squashtm.app.import.report.download.error") %>">
+     	 <span class="jalios-icon icomoon-download"></span>
+      	 <span id="squashTmReportDownloadLabel"><%= glp("jcmsplugin.squashtm.app.import.report.download") %></span>
+    </button>
     <button type="button" id="squashTmReportFinishButton" class="btn btn-primary">
       <span class="jalios-icon icomoon-check"></span>
        <%= glp("jcmsplugin.squashtm.app.import.report.finish") %>

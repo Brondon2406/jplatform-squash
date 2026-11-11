@@ -140,6 +140,9 @@ jcmsplugin.squashtm.app.import.report.error-elements: Éléments en erreur
 jcmsplugin.squashtm.app.import.report.error-description: Éléments qui n'ont pas pu être importés
 jcmsplugin.squashtm.app.import.report.error-details: Détails des erreurs
 jcmsplugin.squashtm.app.import.report.finish: Terminer
+jcmsplugin.squashtm.app.import.report.download: Télécharger la version à jour du module
+jcmsplugin.squashtm.app.import.report.download.loading: Préparation du fichier...
+jcmsplugin.squashtm.app.import.report.download.error: Impossible de télécharger le fichier depuis Squash TM.
 
 
 # Analyse - Comparaison Squash TM
