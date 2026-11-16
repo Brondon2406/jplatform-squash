@@ -23,6 +23,7 @@ jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm-analysis.css");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm-report.css");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-import.js");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/import-progress.js");
+jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-admin.js");
 
 %>
 <%@ include file='/jcore/doHeader.jspf'%>

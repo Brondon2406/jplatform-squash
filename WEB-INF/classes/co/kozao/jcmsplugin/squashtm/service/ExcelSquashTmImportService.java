@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -15,6 +18,9 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
+import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateColumnMapping;
+import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateField;
+import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateMapping;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmData;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmFeature;
@@ -24,6 +30,7 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmRequirement
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestCase;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestStep;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmView;
+import co.kozao.jcmsplugin.squashtm.service.mapping.SquashTmTemplateMappingManager;
 
 /**
  * Service responsable de la lecture du fichier Excel utilisé pour l'import
@@ -37,29 +44,22 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmView;
  */
 public class ExcelSquashTmImportService {
 
-	/**
-	 * Index des colonnes du template Excel.
-	 *
-	 * A : Sous-module (géré par la logique existante) B : Vue C : Fonctionnalité D
-	 * : Libellé de l'exigence et du cas de test E : Action de l'étape F : Résultat
-	 * attendu
-	 */
-	private static final int COLUMN_SUBMODULE = 0;
-	private static final int COLUMN_VIEW = 1;
-	private static final int COLUMN_FEATURE = 2;
-	private static final int COLUMN_ELEMENT = 3;
-	private static final int COLUMN_ACTION = 4;
-	private static final int COLUMN_EXPECTED_RESULT = 5;
+	// Mapping du template Excel.
+	private TemplateMapping mapping;
+
+	// Mapping imposé par l'appelant (tests, simulation). S'il est null, le mapping
+	// actif enregistré par l'administration est lu au début de chaque analyse.
+	private final TemplateMapping injectedMapping;
 
 	private int requirementCounter;
 	private int testCaseCounter;
-	
+
 	private int moduleCount;
 	private int subModuleCount;
 	private int viewCount;
 	private int featureCount;
 	private int testStepCount;
-	
+
 	private int detectedLineCount;
 	private int validLineCount;
 	private int anomalousLineCount;
@@ -94,7 +94,18 @@ public class ExcelSquashTmImportService {
 	private final DataFormatter dataFormatter;
 
 	public ExcelSquashTmImportService() {
+		this(null);
+	}
+
+	/**
+	 * Crée le service avec un mapping imposé.
+	 *
+	 * @param injectedMapping mapping à utiliser, ou null pour utiliser le mapping
+	 *                        actif de l'administration
+	 */
+	public ExcelSquashTmImportService(TemplateMapping injectedMapping) {
 		this.dataFormatter = new DataFormatter();
+		this.injectedMapping = injectedMapping;
 	}
 
 	/**
@@ -246,6 +257,13 @@ public class ExcelSquashTmImportService {
 		}
 
 		/*
+		 * Le mapping du template est relu à chaque import : une modification faite dans
+		 * l'administration est donc prise en compte sans redémarrage.
+		 */
+		mapping = injectedMapping != null ? injectedMapping
+				: SquashTmTemplateMappingManager.getInstance().getActiveMapping();
+
+		/*
 		 * Les compteurs sont réinitialisés pour chaque nouvel import.
 		 */
 		requirementCounter = 0;
@@ -298,7 +316,8 @@ public class ExcelSquashTmImportService {
 	 * @param currentFeature   fonctionnalité courante
 	 * @return clé de comparaison de la ligne
 	 */
-	private String buildDuplicateKey(String subModuleName, String viewName, String featureName, String elementValue, String action, String expectedResult, ImportSquashTmSubModule currentSubModule,
+	private String buildDuplicateKey(String subModuleName, String viewName, String featureName, String elementValue,
+			String action, String expectedResult, ImportSquashTmSubModule currentSubModule,
 			ImportSquashTmView currentView, ImportSquashTmFeature currentFeature) {
 		String subModule = !isEmpty(subModuleName) ? subModuleName.trim()
 				: currentSubModule == null ? "" : currentSubModule.getName();
@@ -326,6 +345,20 @@ public class ExcelSquashTmImportService {
 			return;
 		}
 
+		/*
+		 * Les onglets exclus dans le mapping (légende, instructions...) ne sont pas
+		 * importés.
+		 */
+		if (mapping.isSheetIgnored(moduleName)) {
+			return;
+		}
+
+		Map<TemplateField, Integer> columns = resolveColumns(sheet);
+
+		if (columns == null) {
+			return;
+		}
+
 		ImportSquashTmModule module = new ImportSquashTmModule(moduleName.trim());
 
 		/*
@@ -339,10 +372,7 @@ public class ExcelSquashTmImportService {
 		ImportSquashTmFeature currentFeature = null;
 		ImportSquashTmTestCase currentTestCase = null;
 
-		/*
-		 * La troisième ligne est la ligne d'en-tête.
-		 */
-		int firstDataRow = 3;
+		int firstDataRow = Math.max(0, mapping.getFirstDataRow() - 1);
 
 		for (int rowIndex = firstDataRow; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
 
@@ -354,17 +384,12 @@ public class ExcelSquashTmImportService {
 
 			// Les lignes vides et la ligne d'en-tête ne sont pas comptées.
 
-			String subModuleName = getCellValue(row, COLUMN_SUBMODULE);
-
-			String viewName = getCellValue(row, COLUMN_VIEW);
-
-			String featureName = getCellValue(row, COLUMN_FEATURE);
-
-			String elementValue = getCellValue(row, COLUMN_ELEMENT);
-
-			String action = getCellValue(row, COLUMN_ACTION);
-
-			String expectedResult = getCellValue(row, COLUMN_EXPECTED_RESULT);
+			String subModuleName = getCellValue(row, columns, TemplateField.SUBMODULE);
+			String viewName = getCellValue(row, columns, TemplateField.VIEW);
+			String featureName = getCellValue(row, columns, TemplateField.FEATURE);
+			String elementValue = getCellValue(row, columns, TemplateField.ELEMENT);
+			String action = getCellValue(row, columns, TemplateField.ACTION);
+			String expectedResult = getCellValue(row, columns, TemplateField.EXPECTED_RESULT);
 
 			/*
 			 * Une ligne totalement vide est ignorée.
@@ -392,25 +417,38 @@ public class ExcelSquashTmImportService {
 			}
 
 			/*
-			 * -------------------------------------------------- SOUS-MODULE
-			 * --------------------------------------------------
+			 * ------------------ SOUS-MODULE ----------------
 			 */
-			if (!isEmpty(subModuleName)) {
+			String effectiveSubModuleName = subModuleName;
 
-				currentSubModule = findOrCreateSubModule(module, subModuleName);
+			if (isEmpty(effectiveSubModuleName) && currentSubModule == null
+					&& !columns.containsKey(TemplateField.SUBMODULE)) {
 
-				// Une nouvelle branche de la hiérarchie commence.
+				effectiveSubModuleName = mapping.getDefaultName(TemplateField.SUBMODULE);
+			}
+
+			if (!isEmpty(effectiveSubModuleName)) {
+
+				currentSubModule = findOrCreateSubModule(module, effectiveSubModuleName);
+
 				currentView = null;
 				currentFeature = null;
 				currentTestCase = null;
 			}
 
 			/*
-			 * -------------------------------------------------- VUE
-			 * --------------------------------------------------
+			 * --------------- VUE ---------------------------
 			 */
 
-			if (!isEmpty(viewName)) {
+			String effectiveViewName = viewName;
+
+			if (isEmpty(effectiveViewName) && currentView == null && currentSubModule != null
+					&& !columns.containsKey(TemplateField.VIEW)) {
+
+				effectiveViewName = mapping.getDefaultName(TemplateField.VIEW);
+			}
+
+			if (!isEmpty(effectiveViewName)) {
 
 				if (currentSubModule == null) {
 
@@ -423,23 +461,30 @@ public class ExcelSquashTmImportService {
 					continue;
 				}
 
-				currentView = findOrCreateView(currentSubModule, viewName);
+				currentView = findOrCreateView(currentSubModule, effectiveViewName);
 
 				currentFeature = null;
 				currentTestCase = null;
 			}
 
 			/*
-			 * -------------------------------------------------- FONCTIONNALITÉ
-			 * --------------------------------------------------
+			 * ------------- FONCTIONNALITÉ ------------------
 			 */
-			if (!isEmpty(featureName)) {
+			String effectiveFeatureName = featureName;
+
+			if (isEmpty(effectiveFeatureName) && currentFeature == null && currentView != null
+					&& !columns.containsKey(TemplateField.FEATURE)) {
+
+				effectiveFeatureName = mapping.getDefaultName(TemplateField.FEATURE);
+			}
+
+			if (!isEmpty(effectiveFeatureName)) {
 
 				if (currentView == null) {
 					continue;
 				}
 
-				currentFeature = findOrCreateFeature(currentView, featureName);
+				currentFeature = findOrCreateFeature(currentView, effectiveFeatureName);
 
 				/*
 				 * Une nouvelle fonctionnalité signifie que le cas de test courant est
@@ -449,8 +494,7 @@ public class ExcelSquashTmImportService {
 			}
 
 			/*
-			 * -------------------------------------------------- EXIGENCE ET CAS DE TEST
-			 * --------------------------------------------------
+			 * --------- EXIGENCE ET CAS DE TEST --------------
 			 */
 			if (!isEmpty(elementValue)) {
 
@@ -613,6 +657,130 @@ public class ExcelSquashTmImportService {
 		testCaseCounter++;
 
 		return String.format("TC%03d", testCaseCounter);
+	}
+	
+	/**
+	 * Détermine, pour un onglet, la colonne de chaque élément du mapping.
+	 *
+	 * Une colonne est d'abord recherchée par le texte de son en-tête : si le
+	 * template a été réorganisé, le mapping continue de s'appliquer. À défaut (en-tête
+	 * absent ou modifié), la position enregistrée dans le mapping est utilisée.
+	 *
+	 * @return les colonnes résolues, ou null si l'onglet ne peut pas être lu
+	 */
+	private Map<TemplateField, Integer> resolveColumns(Sheet sheet) {
+
+		Map<TemplateField, Integer> columns = new EnumMap<>(TemplateField.class);
+
+		Row headerRow = mapping.getHeaderRow() > 0 ? sheet.getRow(mapping.getHeaderRow() - 1) : null;
+
+		// Position de chaque en-tête présent dans l'onglet.
+		Map<String, Integer> headerIndexes = new HashMap<>();
+
+		if (headerRow != null) {
+
+			for (int columnIndex = 0; columnIndex < Math.max(headerRow.getLastCellNum(), 0); columnIndex++) {
+
+				String normalizedHeader = TemplateField.normalize(getCellValue(headerRow, columnIndex));
+
+				if (!normalizedHeader.isEmpty() && !headerIndexes.containsKey(normalizedHeader)) {
+					headerIndexes.put(normalizedHeader, columnIndex);
+				}
+			}
+		}
+
+		Set<Integer> usedColumns = new HashSet<>();
+
+		for (TemplateColumnMapping column : mapping.getColumns()) {
+
+			TemplateField field = column.getTemplateField();
+
+			if (field == null) {
+				continue;
+			}
+
+			String expectedLabel = TemplateField.normalize(column.getHeaderLabel());
+
+			Integer index = expectedLabel.isEmpty() ? null : headerIndexes.get(expectedLabel);
+
+			if (index == null && column.getColumnIndex() >= 0) {
+
+				index = column.getColumnIndex();
+
+				checkHeaderConformity(sheet, headerRow, column, expectedLabel, index);
+			}
+
+			if (index == null) {
+				continue;
+			}
+
+			if (!usedColumns.add(index)) {
+
+				addInconsistency("Onglet '" + sheet.getSheetName() + "' : la colonne "
+						+ TemplateColumnMapping.columnLetter(index)
+						+ " est associée à plusieurs éléments du mapping. L'onglet est ignoré. Vérifiez le mapping dans l'administration.");
+
+				return null;
+			}
+
+			columns.put(field, index);
+		}
+
+		for (TemplateField field : TemplateField.values()) {
+
+			if (field.isRequired() && !columns.containsKey(field)) {
+
+				addInconsistency("Onglet '" + sheet.getSheetName() + "' : la colonne « " + field.getDefaultLabel()
+						+ " » est introuvable avec le mapping du template. L'onglet est ignoré.");
+
+				return null;
+			}
+		}
+
+		return columns;
+	}
+
+	/**
+	 * Signale une colonne dont l'en-tête ne correspond pas à celui du mapping.
+	 *
+	 * Cela arrive quand le template a changé sans que le mapping soit mis à jour :
+	 * la colonne lue par position n'est probablement plus la bonne.
+	 */
+	private void checkHeaderConformity(Sheet sheet, Row headerRow, TemplateColumnMapping column, String expectedLabel,
+			int index) {
+
+		if (headerRow == null || expectedLabel.isEmpty()) {
+			return;
+		}
+
+		String foundHeader = getCellValue(headerRow, index);
+		String normalizedFound = TemplateField.normalize(foundHeader);
+
+		if (normalizedFound.isEmpty() || normalizedFound.contains(expectedLabel)
+				|| expectedLabel.contains(normalizedFound)) {
+			return;
+		}
+
+		addInconsistency("Onglet '" + sheet.getSheetName() + "' : l'en-tête de la colonne "
+				+ TemplateColumnMapping.columnLetter(index) + " est « " + foundHeader + " » alors que le mapping attend « "
+				+ column.getHeaderLabel() + " » pour « " + column.getTemplateField().getDefaultLabel()
+				+ " ». Vérifiez le mapping dans l'administration.");
+	}
+
+	/**
+	 * Récupère la valeur de la cellule associée à un élément du mapping.
+	 *
+	 * @return la valeur, ou une chaîne vide si l'élément n'a pas de colonne
+	 */
+	private String getCellValue(Row row, Map<TemplateField, Integer> columns, TemplateField field) {
+
+		Integer columnIndex = columns.get(field);
+
+		if (columnIndex == null) {
+			return "";
+		}
+
+		return getCellValue(row, columnIndex.intValue());
 	}
 
 	/**

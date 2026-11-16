@@ -1247,7 +1247,8 @@ public class SquashTmService {
 
 		String authorization = getAuthorization();
 
-		String url = baseUrl + "/api/rest/latest/requirement-folders/tree/" + projectId;
+		String url = baseUrl + "/api/rest/latest/requirement-folders/tree/" + projectId + "?_t="
+				+ System.currentTimeMillis();
 
 		String response = executeGet(url, authorization);
 		LOGGER.info("Arbre des dossiers d'exigences : " + response);
@@ -1303,15 +1304,16 @@ public class SquashTmService {
 		}
 
 		String url = baseUrl + "/api/rest/latest/requirement-folders/" + folderId + "/content?page=" + page + "&size="
-				+ size;
+				+ size + "&_t=" + System.currentTimeMillis();
 
 		return executeGetJson(url, "Impossible de récupérer le contenu du dossier d'exigences.");
 	}
 
-	/**
-	 * Récupère les détails d'une exigence.
-	 */
 	public JsonObject getRequirement(long requirementId) throws IOException {
+
+		if (requirementId <= 0) {
+			throw new IOException("L'identifiant de l'exigence est invalide.");
+		}
 
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
 

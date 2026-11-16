@@ -1,15 +1,382 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.model.mapping.TemplateAnalysis" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.model.mapping.TemplateColumnMapping" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.model.mapping.TemplateField" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.model.mapping.TemplateMapping" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.util.SquashTmUtils" %><%
+
+%><jsp:useBean id="templateAdminHandler" scope="request" class="co.kozao.jcmsplugin.squashtm.handler.SquashTmTemplateAdminHandler"><%
+%><jsp:setProperty name="templateAdminHandler" property="request"       value="<%= request %>"/><%
+%><jsp:setProperty name="templateAdminHandler" property="response"      value="<%= response %>"/><%
+%><jsp:setProperty name="templateAdminHandler" property="*" /><%
+%></jsp:useBean>
+
+<%
+    if (templateAdminHandler.validate()) {
+        return;
+    }
+
+    boolean canAdministrateTemplate = SquashTmUtils.canAdministrateTemplate();
+    TemplateMapping activeMapping = templateAdminHandler.getActiveMapping();
+    boolean customTemplateActive = templateAdminHandler.isCustomTemplateActive();
+    TemplateAnalysis templateAnalysis = templateAdminHandler.getAnalysis();
+%>
 
 <div class="squashtm-administration-container">
 
+    
+<% if (templateAnalysis == null) { %>
     <div class="squashtm-administration-header">
-
         <h2>
             <%= glp("jcmsplugin.squashtm.app.administration.title") %>
         </h2>
-
         <p>
             <%= glp("jcmsplugin.squashtm.app.administration.description") %>
         </p>
-
     </div>
+<% } %>
+
+
+<% if (!canAdministrateTemplate) { %>
+
+    <div class="alert alert-warning">
+        <%= glp("jcmsplugin.squashtm.app.administration.forbidden") %>
+    </div>
+
+<% } else { %>
+
+    <%-- ============== MESSAGES ============== --%>
+
+    <% if (templateAdminHandler.getSuccessMessage() != null) { %>
+    <div class="alert alert-success">
+        <%= SquashTmUtils.escapeHtml(templateAdminHandler.getSuccessMessage()) %>
+    </div>
+    <% } %>
+
+    <% if (!templateAdminHandler.getErrors().isEmpty()) { %>
+    <div class="alert alert-danger">
+        <ul>
+        <% for (String templateError : templateAdminHandler.getErrors()) { %>
+            <li><%= SquashTmUtils.escapeHtml(templateError) %></li>
+        <% } %>
+        </ul>
+    </div>
+    <% } %>
+
+    <% if (!templateAdminHandler.getWarnings().isEmpty()) { %>
+    <div class="alert alert-warning">
+        <strong><%= glp("jcmsplugin.squashtm.app.administration.warnings") %></strong>
+        <ul>
+        <% for (String templateWarning : templateAdminHandler.getWarnings()) { %>
+            <li><%= SquashTmUtils.escapeHtml(templateWarning) %></li>
+        <% } %>
+        </ul>
+    </div>
+    <% } %>
+
+    <% if (templateAnalysis == null) { %>
+
+    <%-- ============== TEMPLATE ACTIF ============== --%>
+
+    <div class="squashtm-administration-section squashtm-template-active">
+
+        <h3><%= glp("jcmsplugin.squashtm.app.administration.active.title") %></h3>
+
+        <p>
+            <% if (customTemplateActive) { %>
+                <span class="label label-primary"><%= glp("jcmsplugin.squashtm.app.administration.active.custom") %></span>
+                <% if (activeMapping.getUpdatedAt() > 0) { %>
+                    <span class="text-muted">
+                        <%= glp("jcmsplugin.squashtm.app.administration.active.updated-on") %>
+                        <%= new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date(activeMapping.getUpdatedAt())) %>
+                        <% if (!activeMapping.getUpdatedBy().isEmpty()) { %>
+                            <%= glp("jcmsplugin.squashtm.app.administration.active.updated-by") %>
+                            <%= SquashTmUtils.escapeHtml(activeMapping.getUpdatedBy()) %>
+                        <% } %>
+                    </span>
+                <% } %>
+            <% } else { %>
+                <span class="label label-default"><%= glp("jcmsplugin.squashtm.app.administration.active.default") %></span>
+            <% } %>
+        </p>
+
+        <ul class="list-unstyled squashtm-template-rows">
+            <li>
+                <strong><%= glp("jcmsplugin.squashtm.app.administration.active.header-row") %> :</strong>
+                <%= activeMapping.getHeaderRow() > 0 ? String.valueOf(activeMapping.getHeaderRow()) : glp("jcmsplugin.squashtm.app.administration.active.none") %>
+            </li>
+            <li>
+                <strong><%= glp("jcmsplugin.squashtm.app.administration.active.first-data-row") %> :</strong>
+                <%= activeMapping.getFirstDataRow() %>
+            </li>
+            <li>
+                <strong><%= glp("jcmsplugin.squashtm.app.administration.active.ignored-sheets") %> :</strong>
+                <%= activeMapping.getIgnoredSheets().isEmpty() ? glp("jcmsplugin.squashtm.app.administration.active.none") : SquashTmUtils.escapeHtml(activeMapping.getIgnoredSheetsAsText()) %>
+            </li>
+        </ul>
+
+        <table class="table table-condensed squashtm-mapping-table">
+            <thead>
+                <tr>
+                    <th><%= glp("jcmsplugin.squashtm.app.administration.active.table.element") %></th>
+                    <th><%= glp("jcmsplugin.squashtm.app.administration.active.table.column") %></th>
+                    <th><%= glp("jcmsplugin.squashtm.app.administration.active.table.header") %></th>
+                </tr>
+            </thead>
+            <tbody>
+            <% for (TemplateField activeField : TemplateField.values()) {
+                   TemplateColumnMapping activeColumn = activeMapping.getColumn(activeField); %>
+                <tr>
+                    <td>
+                        <%= glp(activeField.getLabelKey()) %>
+                        <% if (activeField.isRequired()) { %><span class="text-danger">*</span><% } %>
+                    </td>
+                    <% if (activeColumn != null) { %>
+                    <td><strong><%= activeColumn.getColumnLetter() %></strong></td>
+                    <td>
+                        <% if (activeColumn.getHeaderLabel().isEmpty()) { %>
+                            <span class="text-muted"><%= glp("jcmsplugin.squashtm.app.administration.mapping.no-header") %></span>
+                        <% } else { %>
+                            <%= SquashTmUtils.escapeHtml(activeColumn.getHeaderLabel()) %>
+                        <% } %>
+                    </td>
+                    <% } else { %>
+                    <td colspan="2" class="text-muted">
+                        <%= glp("jcmsplugin.squashtm.app.administration.active.not-used") %>
+                        <%= SquashTmUtils.escapeHtml(activeMapping.getDefaultName(activeField)) %>
+                    </td>
+                    <% } %>
+                </tr>
+            <% } %>
+            </tbody>
+        </table>
+
+        <div class="squashtm-administration-actions">
+
+            <a class="btn btn-default" href="<%= request.getContextPath() %>/plugins/SquashTmPlugin/jsp/template/downloadTemplate.jsp">
+                <span class="jalios-icon icomoon-download4"></span>
+                <%= glp("jcmsplugin.squashtm.app.administration.active.download") %>
+            </a>
+
+            <% if (customTemplateActive) { %>
+            <form method="post" action="" class="squashtm-inline-form">
+                <input type="hidden" name="view" value="ADMINISTRATION" />
+                <button type="submit" name="opResetMapping" value="true" class="btn btn-default"
+                        data-squashtm-confirm="<%= SquashTmUtils.escapeHtml(glp("jcmsplugin.squashtm.app.administration.active.reset.confirm")) %>">
+                    <span class="jalios-icon icomoon-undo"></span>
+                    <%= glp("jcmsplugin.squashtm.app.administration.active.reset") %>
+                </button>
+            </form>
+            <% } %>
+
+        </div>
+    </div>
+
+    <%-- ============== TELEVERSEMENT DU NOUVEAU TEMPLATE ============== --%>
+	
+	
+    <div class="squashtm-administration-section squashtm-template-upload">
+
+        <h3><%= glp("jcmsplugin.squashtm.app.administration.upload.title") %></h3>
+
+        <p class="text-muted"><%= glp("jcmsplugin.squashtm.app.administration.upload.description") %></p>
+
+        <form method="post" action="" enctype="multipart/form-data" id="squashTmTemplateUploadForm">
+            <input type="hidden" name="view" value="ADMINISTRATION" />
+
+            <div class="form-group">
+                <label for="squashTmTemplateFile" class="btn btn-default">
+                    <span class="jalios-icon icomoon-folder-open"></span>
+                    <%= glp("jcmsplugin.squashtm.app.administration.upload.select") %>
+                </label>
+                <input type="file" id="squashTmTemplateFile" name="templateFile" accept=".xlsx,.xls" style="display:none;" />
+                <span id="squashTmTemplateFileName" class="text-muted"></span>
+                <p id="squashTmTemplateFileError" class="text-danger" style="display:none;">
+                    <%= glp("jcmsplugin.squashtm.app.administration.upload.invalid") %>
+                </p>
+            </div>
+			
+			<div class="squashtm-administration-actions squashtm-upload-actions">
+	            <button type="submit" id="squashTmTemplateAnalyzeButton" name="opAnalyzeTemplate" value="true" class="btn btn-primary" disabled>
+	                <span class="jalios-icon icomoon-upload"></span>
+	                <%= glp("jcmsplugin.squashtm.app.administration.upload.analyze") %>
+	            </button>
+	         </div>  
+        </form>
+    </div>
+
+    <% } %>
+
+    <%-- ============== CORRESPONDANCE DES COLONNES ============== --%>
+
+    <% if (templateAnalysis != null) {
+
+           String headerRowValue = templateAdminHandler.getHeaderRow() != null
+                   ? templateAdminHandler.getHeaderRow() : String.valueOf(templateAnalysis.getHeaderRow());
+
+           String firstDataRowValue = templateAdminHandler.getFirstDataRow() != null
+                   ? templateAdminHandler.getFirstDataRow() : String.valueOf(templateAnalysis.getFirstDataRow());
+
+           String ignoredSheetsValue = templateAdminHandler.getIgnoredSheets() != null
+                   ? templateAdminHandler.getIgnoredSheets() : activeMapping.getIgnoredSheetsAsText();
+
+           String subModuleDefaultValue = templateAdminHandler.getDefaultSubModuleName() != null
+                   ? templateAdminHandler.getDefaultSubModuleName() : activeMapping.getDefaultName(TemplateField.SUBMODULE);
+
+           String viewDefaultValue = templateAdminHandler.getDefaultViewName() != null
+                   ? templateAdminHandler.getDefaultViewName() : activeMapping.getDefaultName(TemplateField.VIEW);
+
+           String featureDefaultValue = templateAdminHandler.getDefaultFeatureName() != null
+                   ? templateAdminHandler.getDefaultFeatureName() : activeMapping.getDefaultName(TemplateField.FEATURE);
+    %>
+
+	<div class="ajax-refresh-div" id="squashTmTemplateMappingRefresh">
+
+    <div class="squashtm-administration-section squashtm-template-mapping">
+
+        <h2><%= glp("jcmsplugin.squashtm.app.administration.mapping.title") %></h2>
+
+        <p class="text-muted"><%= glp("jcmsplugin.squashtm.app.administration.mapping.description") %></p>
+
+        <% for (String analysisWarning : templateAnalysis.getWarnings()) { %>
+        <div class="alert alert-info"><%= SquashTmUtils.escapeHtml(analysisWarning) %></div>
+        <% } %>
+
+        <form method="post" action="" id="squashTmTemplateMappingForm">
+            <input type="hidden" name="view" value="ADMINISTRATION" />
+            <input type="hidden" name="templateToken" value="<%= SquashTmUtils.escapeHtml(templateAdminHandler.getTemplateToken()) %>" />
+
+            <div class="squashtm-mapping-rows squashtm-mapping-rows-inline form-horizontal">
+
+                <div class="squashtm-mapping-row-pair">
+                    <jalios:field name="headerRow" label='<%= glp("jcmsplugin.squashtm.app.administration.mapping.header-row") %>'
+                                  value="<%= headerRowValue %>">
+                        <jalios:control type="<%= ControlType.NUMBER %>" />
+                    </jalios:field>
+
+                    <jalios:field name="firstDataRow" label='<%= glp("jcmsplugin.squashtm.app.administration.mapping.first-data-row") %>'
+                                  value="<%= firstDataRowValue %>">
+                        <jalios:control type="<%= ControlType.NUMBER %>" />
+                    </jalios:field>
+                </div>
+
+                <div class="alert alert-warning squashtm-mapping-help">
+   					 <span class="jalios-icon icomoon-warning"></span>
+    					<%= glp("jcmsplugin.squashtm.app.administration.mapping.header-row.help") %>
+				</div>
+
+            </div>
+
+            <table class="table table-bordered squashtm-mapping-table">
+                <thead>
+                    <tr>
+                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.column") %></th>
+                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.header") %></th>
+                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.samples") %></th>
+                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.element") %></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <%
+	                String[] columnFieldValues = new String[TemplateField.values().length + 1];
+	                String[] fieldLabels = new String[TemplateField.values().length + 1];
+	
+	                columnFieldValues[0] = "";
+	                fieldLabels[0] = glp("jcmsplugin.squashtm.app.administration.mapping.unused");
+	
+	                for (int f = 0; f < TemplateField.values().length; f++) {
+	                    TemplateField choice = TemplateField.values()[f];
+	
+	                    columnFieldValues[f + 1] = choice.name();
+	                    fieldLabels[f + 1] = glp(choice.getLabelKey())
+	                            + (choice.isRequired() ? " *" : "");
+	                }
+                %>
+                <% for (TemplateAnalysis.Column templateColumn : templateAnalysis.getColumns()) {
+                       String selectedField = templateAdminHandler.getSelectedField(templateColumn); %>
+                    <tr>
+                        <td><strong><%= templateColumn.getLetter() %></strong></td>
+                        <td>
+                            <% if (templateColumn.getHeader().isEmpty()) { %>
+                                <span class="text-muted"><%= glp("jcmsplugin.squashtm.app.administration.mapping.no-header") %></span>
+                            <% } else { %>
+                                <%= SquashTmUtils.escapeHtml(templateColumn.getHeader()) %>
+                            <% } %>
+                        </td>
+                        <td>
+                            <ul class="list-unstyled squashtm-mapping-samples">
+                            <% for (String sample : templateColumn.getSamples()) { %>
+                                <li><%= SquashTmUtils.escapeHtml(sample) %></li>
+                            <% } %>
+                            </ul>
+                        </td>
+                        <td>
+                            <jalios:field name="columnFields" value="<%= selectedField %>">
+                               <%--  <jalios:control settings="<%= new EnumerateSettings().select().enumLabels(fieldLabels).enumValues(columnFieldValues) %>" />  --%>
+                                   	 <jalios:control settings="<%= new EnumerateSettings().select().enumValues(enumerateValues) %>" />
+                            </jalios:field>
+                        </td>
+                    </tr>
+                <% } %>
+                </tbody>
+            </table>
+
+            <div class="squashtm-mapping-rows squashtm-mapping-rows-full">
+
+                <jalios:field name="ignoredSheets" label='<%= glp("jcmsplugin.squashtm.app.administration.mapping.ignored-sheets") %>'
+                              description='<%= glp("jcmsplugin.squashtm.app.administration.mapping.ignored-sheets.help") + " " + String.join(", ", templateAnalysis.getSheetNames()) %>'
+                              value="<%= ignoredSheetsValue %>">
+                    <jalios:control type="<%= ControlType.TEXTFIELD %>" />
+                </jalios:field>
+
+            </div>
+
+            <div class="squashtm-mapping-defaults">
+
+                <h4><%= glp("jcmsplugin.squashtm.app.administration.mapping.defaults.title") %></h4>
+                <p class="text-muted"><%= glp("jcmsplugin.squashtm.app.administration.mapping.defaults.help") %></p>
+
+                <div class="squashtm-mapping-defaults-fields">
+                    <jalios:field name="defaultSubModuleName" label='<%= glp("jcmsplugin.squashtm.app.administration.field.submodule") %>' value="<%= subModuleDefaultValue %>">
+                        <jalios:control type="<%= ControlType.TEXTFIELD %>" />
+                    </jalios:field>
+
+                    <jalios:field name="defaultViewName" label='<%= glp("jcmsplugin.squashtm.app.administration.field.view") %>' value="<%= viewDefaultValue %>">
+                        <jalios:control type="<%= ControlType.TEXTFIELD %>" />
+                    </jalios:field>
+
+                    <jalios:field name="defaultFeatureName" label='<%= glp("jcmsplugin.squashtm.app.administration.field.feature") %>' value="<%= featureDefaultValue %>">
+                        <jalios:control type="<%= ControlType.TEXTFIELD %>" />
+                    </jalios:field>
+                </div>
+
+            </div>
+
+            <div class="squashtm-administration-actions">
+                <button type="submit" name="opRefreshTemplate" value="true" class="btn btn-default" data-jalios-action="ajax-refresh">
+                    <span class="jalios-icon icomoon-refresh"></span>
+                    <%= glp("jcmsplugin.squashtm.app.administration.mapping.refresh") %>
+                </button>
+
+                <button type="submit" name="opCancelTemplate" value="true" class="btn btn-default">
+                    <span class="jalios-icon icomoon-close"></span>
+                    <%= glp("jcmsplugin.squashtm.app.administration.mapping.cancel") %>
+                </button>
+
+                <button type="submit" name="opSaveMapping" value="true" class="btn btn-primary">
+                    <span class="jalios-icon icomoon-save"></span>
+                    <%= glp("jcmsplugin.squashtm.app.administration.mapping.save") %>
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <% } %>
+
+<% } %>
+
+</div>

@@ -20,16 +20,18 @@ public final class SquashTmConstants {
 	}
 
 	/*
-	 * ============================================================ NOM DU PLUGIN====================================================
+	 * ============================================================ NOM DU
+	 * PLUGIN====================================================
 	 */
 
 	public static final String PLUGIN_NAME = "SquashTmPlugin";
 
 	/*
-	 * ============================================== PROPRIETES DUPLUGIN ============================================================
+	 * ============================================== PROPRIETES DUPLUGIN
+	 * ============================================================
 	 */
-	
-	 public static final String SQUASHTM_CACHE_ENABLED = "jcmsplugin.squashtm.cache.enabled";
+
+	public static final String SQUASHTM_CACHE_ENABLED = "jcmsplugin.squashtm.cache.enabled";
 
 	/**
 	 * URL du serveur Squash TM.
@@ -41,8 +43,16 @@ public final class SquashTmConstants {
 	 */
 	public static final String SQUASHTM_API_AUTHENTICATION_MODE = "jcmsplugin.squashtm.provider.authentication-mode";
 
+	/**
+	 * Répertoire de stockage du template personnalisé et de son mapping
+	 * (optionnel). Par défaut : WEB-INF/data/squashtm.
+	 */
+	public static final String SQUASHTM_TEMPLATE_STORAGE_DIR = "jcmsplugin.squashtm.template.storage-dir";
+
 	/*
-	 * ============================================================ VALEURS DES MODES D'AUTHENTIFICATION=========================================================
+	 * ============================================================ VALEURS DES
+	 * MODES
+	 * D'AUTHENTIFICATION=========================================================
 	 */
 
 	public static final String SQUASHTM_API_AUTHENTICATION_MODE_TOKEN = "TOKEN";
@@ -50,7 +60,8 @@ public final class SquashTmConstants {
 	public static final String SQUASHTM_API_AUTHENTICATION_MODE_BASIC = "BASIC";
 
 	/*
-	 * ============================================================ PREFERENCES JCMS MEMBER ============================================================
+	 * ============================================================ PREFERENCES JCMS
+	 * MEMBER ============================================================
 	 */
 
 	/**
@@ -72,7 +83,7 @@ public final class SquashTmConstants {
 	 * Informations de l'utilisateur Squash TM connecté.
 	 */
 	public static final String SQUASHTM_REMOTE_APP_USER_INFO = "squashtm.remote.user.info";
-	
+
 	/**
 	 * Icon App Sidebar Property
 	 */

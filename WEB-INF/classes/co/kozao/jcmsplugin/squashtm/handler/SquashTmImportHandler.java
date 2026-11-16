@@ -2,9 +2,12 @@ package co.kozao.jcmsplugin.squashtm.handler;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Base64;
 import java.nio.charset.StandardCharsets;
+
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 
@@ -15,6 +18,7 @@ import co.kozao.jcmsplugin.squashtm.model.AuthentificationMode;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult;
+import co.kozao.jcmsplugin.squashtm.service.SquashTmExportService;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmImportJobManager;
 
 /**
@@ -28,6 +32,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 	private boolean opAnalyze;
 	private boolean opImport;
 	private boolean opCancelAnalysis;
+	private boolean opDownloadReport;
 	private String analysisId;
 	private String importJobId;
 	private String selectedComparisonIndexes;
@@ -83,6 +88,14 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		this.opCancelAnalysis = opCancelAnalysis;
 	}
 
+	public boolean isOpDownloadReport() {
+		return opDownloadReport;
+	}
+
+	public void setOpDownloadReport(boolean opDownloadReport) {
+		this.opDownloadReport = opDownloadReport;
+	}
+
 	public String getAnalysisId() {
 		return analysisId;
 	}
@@ -117,6 +130,30 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		importResult = new ImportSquashTmResult();
 		importResult.setProjectName(projectName);
 		importResult.addTechnicalError(message);
+	}
+
+	/**
+	 * Construit un message d'erreur lisible pour l'échec du téléchargement de la
+	 * version à jour du module (notamment les HTTP 404).
+	 */
+	private String buildDownloadErrorMessage(Throwable e) {
+
+		if (e == null) {
+			return "Impossible de télécharger le fichier depuis Squash TM. (erreur inconnue)";
+		}
+
+		String detail = e.getMessage();
+		if (detail == null || detail.trim().isEmpty()) {
+			detail = e.getClass().getSimpleName();
+		}
+
+		// Cas fréquent : endpoint Squash TM introuvable ou projet inaccessible
+		String lower = detail.toLowerCase();
+		if (lower.contains("404") || lower.contains("not found") || lower.contains("introuvable")) {
+			return "Impossible de télécharger le fichier depuis Squash TM. (HTTP 404 — projet ou ressource introuvable)";
+		}
+
+		return "Impossible de télécharger le fichier depuis Squash TM. (" + detail + ")";
 	}
 
 	public String getSelectionError() {
@@ -243,6 +280,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		LOGGER.info("[HANDLER 2] opAnalyze = " + opAnalyze);
 		LOGGER.info("[HANDLER 3] opImport = " + opImport);
 		LOGGER.info("[HANDLER 4] opCancelAnalysis = " + opCancelAnalysis);
+		LOGGER.info("[HANDLER 4b] opDownloadReport = " + opDownloadReport);
 		LOGGER.info("[HANDLER 5] projectName = " + projectName);
 		LOGGER.info("[HANDLER 6] analysisId = " + analysisId);
 
@@ -272,7 +310,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 					LOGGER.warn("[HANDLER 11] Arrêt : aucun fichier reçu.");
 
-					//setImportError("Aucun fichier Excel n'a été reçu.");
+					// setImportError("Aucun fichier Excel n'a été reçu.");
 
 					return false;
 				}
@@ -340,6 +378,67 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 				return false;
 			}
 
+			if (opDownloadReport) {
+
+				LOGGER.info("[HANDLER][DOWNLOAD] Action détectée : TÉLÉCHARGEMENT VERSION À JOUR.");
+
+				if (projectName == null || projectName.trim().isEmpty()) {
+					LOGGER.warn("[HANDLER][DOWNLOAD] Arrêt : nom du projet vide.");
+					setImportError("Le nom du projet Squash TM est obligatoire pour le téléchargement.");
+					return false;
+				}
+
+				String cleanProjectName = projectName.trim();
+				LOGGER.info("[HANDLER][DOWNLOAD] Projet : " + cleanProjectName);
+
+				try {
+					String authorizationHeader = prepareAuthorizationHeader();
+					SquashTmExportService exportService = new SquashTmExportService(authorizationHeader);
+
+					// Génération complète avant d'écrire la réponse HTTP
+					byte[] content = exportService.exportProject(cleanProjectName);
+
+					if (content == null || content.length == 0) {
+						LOGGER.error("[HANDLER][DOWNLOAD] Contenu généré vide pour le projet : " + cleanProjectName);
+						setImportError("Impossible de télécharger le fichier depuis Squash TM. (fichier vide)");
+						return false;
+					}
+
+					String fileName = SquashTmExportService.buildFileName(cleanProjectName);
+
+					HttpServletResponse response = getResponse();
+					response.reset();
+					response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+					response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+					response.setContentLength(content.length);
+					response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+					response.setHeader("Pragma", "no-cache");
+					response.setDateHeader("Expires", 0);
+
+					try (OutputStream out = response.getOutputStream()) {
+						out.write(content);
+						out.flush();
+					}
+
+					LOGGER.info(
+							"[HANDLER][DOWNLOAD] Fichier envoyé : " + fileName + " (" + content.length + " octets)");
+					return true; // réponse déjà écrite, ne pas rediriger / re-rendre la page
+
+				} catch (IOException e) {
+					LOGGER.error("[HANDLER][DOWNLOAD] Échec I/O du téléchargement depuis Squash TM.", e);
+					setImportError(buildDownloadErrorMessage(e));
+					return false;
+				} catch (RuntimeException e) {
+					LOGGER.error("[HANDLER][DOWNLOAD] Erreur runtime pendant le téléchargement.", e);
+					setImportError(buildDownloadErrorMessage(e));
+					return false;
+				} catch (Exception e) {
+					LOGGER.error("[HANDLER][DOWNLOAD] Erreur inattendue pendant le téléchargement.", e);
+					setImportError(buildDownloadErrorMessage(e));
+					return false;
+				}
+			}
+
 			if (opImport) {
 
 				LOGGER.info("[HANDLER 24] Action détectée : CONFIRMATION.");
@@ -386,15 +485,23 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 			if (analysisId != null && !analysisId.trim().isEmpty()) {
 
-				importAnalysis = importJobManager.getAnalysis(analysisId);
-
-				if (importAnalysis == null) {
+				try {
+					importAnalysis = importJobManager.getAnalysis(analysisId);
+					if (importAnalysis == null) {
+						analysisId = null;
+					}
+				} catch (Exception recoveryEx) {
+					LOGGER.warn("[HANDLER] Impossible de récupérer l'analyse après erreur.", recoveryEx);
 					analysisId = null;
+					importAnalysis = null;
 				}
 			}
 
-			setImportError(e.getMessage() != null ? e.getMessage()
-					: "Une erreur technique est survenue : " + e.getClass().getSimpleName());
+			String message = e.getMessage();
+			if (message == null || message.trim().isEmpty()) {
+				message = "Une erreur technique est survenue : " + e.getClass().getSimpleName();
+			}
+			setImportError(message);
 
 			return false;
 

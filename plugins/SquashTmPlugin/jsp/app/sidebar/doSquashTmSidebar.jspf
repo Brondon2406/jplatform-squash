@@ -26,13 +26,16 @@ String iconApp = SquashTmUtils.getAppSidebarIcon();
                		 </a>
             </li>
             
-             <%-- ADMINISTRATION --%>
+             <%-- ADMINISTRATION (réservée aux administrateurs) --%>
+            <% if (SquashTmUtils.canAdministrateTemplate()) { %>
             <li class="sidebar-item <%= appHandler.showAdministration() ? " active is-checked" : "" %>">
                 <% String administrationTitleView = glp("jcmsplugin.squashtm.app.sidebar.administration.label"); %>
                		 <a href="<%= appHandler.getAdministrationUrl() %>">
                    		 <%= administrationTitleView %>
                		 </a>
             </li>
+            <% } %>
+            
         </ul>
     </jalios:appSidebarSection>
 <% if (loggedUserInfo != null && sqTmManager.canConnectToSquashTm(loggedMember)) {

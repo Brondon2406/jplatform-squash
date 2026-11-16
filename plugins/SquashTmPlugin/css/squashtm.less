@@ -301,40 +301,302 @@
 }
 
 .squashtm-administration-container {
-  padding: 24px;
+	padding: 24px;
 
-  .squashtm-administration-header {
-    margin-bottom: 24px;
+	.squashtm-administration-header,
+	.squashtm-template-mapping {
+		margin-bottom: 24px;
 
-    h2 {
-      color: @app-color-squashtm;
-      margin-bottom: 8px;
-    }
+		h2 {
+			color: @app-color-squashtm;
+			margin-bottom: 8px;
+		}
 
-    p {
-      color: #666;
-    }
-  }
+		p {
+			color: #666;
+		}
+	}
 
-  .squashtm-administration-section {
-    background: #fff;
-    border: 1px solid #e5e5e5;
-    border-radius: 6px;
-    padding: 20px;
-    max-width: 760px;
+	.squashtm-administration-section {
+		padding: 20px;
+		max-width: none;
 
-    h3 {
-      color: @app-color-squashtm;
-      margin-top: 0;
-    }
+		h2 {
+			color: @app-color-squashtm;
+			margin-top: 0;
+		}
 
-    .form-group {
-      margin: 18px 0;
-    }
+		.form-group {
+			margin: 18px 0;
+		}
 
-    select {
-      max-width: 560px;
-    }
-  }
+		select {
+			max-width: 560px;
+		}
+	}
+
+	/* ---------- Administration du template Excel ---------- */
+
+	.alert {
+		max-width: none;
+	}
+
+	.squashtm-administration-section {
+		max-width: none;
+		margin-bottom: 20px;
+	}
+
+	.squashtm-administration-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px;
+		margin-top: 16px;
+	}
+
+	.squashtm-upload-actions,
+	.squashtm-template-active .squashtm-administration-actions,
+	.squashtm-template-mapping .squashtm-administration-actions {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-top: 20px;
+	}
+
+	.squashtm-template-active,
+	.squashtm-template-upload {
+		background: #fff;
+		border: 1px solid #e5e5e5;
+		border-radius: 6px;
+
+	}
+
+	.squashtm-inline-form {
+		display: inline-block;
+		margin: 0;
+	}
+
+	.squashtm-template-rows {
+		margin: 0 0 12px 0;
+
+		li {
+			margin-bottom: 4px;
+		}
+	}
+
+	.squashtm-mapping-rows {
+		margin-bottom: 16px;
+	}
+
+	/* Ligne d'en-tête + Première ligne de données : chaque libellé + champ sur une ligne, les deux blocs côte à côte */
+	.squashtm-mapping-rows-inline {
+		max-width: none;
+
+		.squashtm-mapping-row-pair {
+			display: flex !important;
+			flex-direction: row !important;
+			flex-wrap: nowrap !important;
+			gap: 48px;
+			align-items: center;
+
+			>.jalios-field,
+			>.form-group,
+			>.widget {
+				display: flex !important;
+				flex-direction: row !important;
+				flex-wrap: nowrap !important;
+				align-items: center !important;
+				gap: 12px;
+				flex: 0 1 auto;
+				min-width: 0;
+				max-width: none;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+
+			label,
+			.control-label,
+			.widget-label,
+			.jalios-label {
+				display: inline-block !important;
+				float: none !important;
+				width: auto !important;
+				min-width: 0;
+				max-width: none;
+				margin: 0 10px 0 0 !important;
+				padding: 0 !important;
+				white-space: nowrap !important;
+				line-height: 32px;
+			}
+
+			.controls,
+			.widget-container,
+			.widget-content,
+			.field-value {
+				display: inline-block !important;
+				float: none !important;
+				width: auto !important;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+
+			//input[type="text"],
+			//input[type="number"],
+			.form-control {
+				display: inline-block !important;
+				width: 90px !important;
+				max-width: 100px !important;
+				margin: 0 !important;
+				vertical-align: middle;
+			}
+
+		}
+
+	}
+
+	/* Onglets à ignorer : pleine largeur */
+	.squashtm-mapping-rows-full {
+		max-width: none;
+
+		.jalios-field,
+		.form-group {
+			max-width: none;
+			width: 100%;
+		}
+
+		//input[type="text"],
+		.form-control {
+			width: 100%;
+			max-width: none;
+		}
+	}
+
+	/* Sous-module / Vue / Fonctionnalité : chaque libellé + champ sur une ligne, les 3 côte à côte */
+	.squashtm-mapping-defaults {
+		margin-top: 12px;
+		margin-bottom: 8px;
+		padding-top: 8px;
+
+		h4 {
+			margin-top: 0;
+			margin-bottom: 6px;
+			color: @app-color-squashtm;
+		}
+
+		.squashtm-mapping-defaults-fields {
+			display: flex !important;
+			flex-direction: row !important;
+			flex-wrap: nowrap !important;
+			gap: 32px;
+			align-items: center;
+
+			>.jalios-field,
+			>.form-group,
+			>.widget {
+				display: flex !important;
+				flex-direction: row !important;
+				flex-wrap: nowrap !important;
+				align-items: center !important;
+				gap: 10px;
+				flex: 0 1 auto;
+				min-width: 0;
+				max-width: none;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+
+			label,
+			.control-label,
+			.widget-label,
+			.jalios-label {
+				display: inline-block !important;
+				float: none !important;
+				width: auto !important;
+				margin: 0 8px 0 0 !important;
+				padding: 0 !important;
+				white-space: nowrap !important;
+				line-height: 32px;
+			}
+
+			.controls,
+			.widget-container,
+			.widget-content,
+			.field-value {
+				display: inline-block !important;
+				float: none !important;
+				width: auto !important;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+
+			.form-control {
+				display: inline-block !important;
+				width: 130% !important;
+				max-width: 160px !important;
+				margin: 0 !important;
+				vertical-align: middle;
+			}
+		}
+	}
+
+	.squashtm-mapping-table {
+		margin-top: 12px;
+		width: 100%;
+
+		th {
+			background: #f7f7f9;
+			color: @app-color-squashtm;
+		}
+
+		td {
+			vertical-align: middle !important;
+		}
+
+		select {
+			max-width: 100%;
+		}
+	}
+
+	.squashtm-mapping-samples {
+		margin: 0;
+		font-size: 12px;
+		color: #666;
+
+		li {
+			max-width: 280px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+	}
+
+	.squashtm-mapping-field-reset {
+		border-color: #f0ad4e;
+		box-shadow: 0 0 0 2px rgba(240, 173, 78, 0.35);
+	}
+
+	/* Agrandir le grand rectangle de la section mapping */
+	.squashtm-template-mapping.squashtm-administration-section {
+		padding: 24px 28px 28px;
+		max-width: none;
+	}
+
 }
 
+.squashtm-administration-container .squashtm-template-mapping .alert.alert-warning.squashtm-mapping-help {
+
+	display: table !important;
+	width: auto !important;
+	max-width: 450px !important;
+
+	padding: 4px 8px !important;
+	margin: 5px 0 0 5px !important;
+
+	font-size: 11px !important;
+	line-height: 1.2 !important;
+
+	border-radius: 4px;
+	box-sizing: border-box !important;
+}

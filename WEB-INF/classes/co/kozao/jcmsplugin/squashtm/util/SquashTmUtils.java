@@ -27,8 +27,7 @@ public final class SquashTmUtils {
 	}
 
 	/*
-	 * ============================================================ SERVEUR SQUASH
-	 * TM ============================================================
+	 * =========================== SERVEUR SQUASH =====================
 	 */
 
 	public static String getSquashTmServerUrl() {
@@ -52,8 +51,7 @@ public final class SquashTmUtils {
 	}
 
 	/*
-	 * ============================================================ MODE
-	 * AUTHENTIFICATION ============================================================
+	 * =================== MODE AUTHENTIFICATION ===============
 	 */
 
 	public static AuthentificationMode getAuthentificationMode() {
@@ -73,8 +71,7 @@ public final class SquashTmUtils {
 	}
 
 	/*
-	 * ============================================================ TOKEN
-	 * ============================================================
+	 * ================ TOKEN ======================
 	 */
 
 	public static String getSquashTmApiToken(Member member) {
@@ -105,8 +102,7 @@ public final class SquashTmUtils {
 	}
 
 	/*
-	 * ============================================================ BASIC USERNAME
-	 * ============================================================
+	 * ============= BASIC USERNAME ====================
 	 */
 
 	public static String getSquashTmUsername(Member member) {
@@ -137,8 +133,7 @@ public final class SquashTmUtils {
 	}
 
 	/*
-	 * ============================================================ BASIC PASSWORD
-	 * ============================================================
+	 * =========== BASIC PASSWORD =========================
 	 */
 
 	public static String getSquashTmPassword(Member member) {
@@ -169,8 +164,7 @@ public final class SquashTmUtils {
 	}
 
 	/*
-	 * ============================================================ UTILISATEUR
-	 * SQUASH TM ============================================================
+	 * ===================== UTILISATEUR SQUASH TM =============================
 	 */
 
 	public static LoggedUserInfo getSquashTmRemoteUserInfos(Member member) {
@@ -217,8 +211,39 @@ public final class SquashTmUtils {
 	}
 
 	/*
-	 * ============================================================ DATE
-	 * ================================================
+	 * ============== ADMINISTRATION DU TEMPLATE =====================
+	 */
+
+	/**
+	 * Indique si le membre connecté peut modifier le template et son mapping.
+	 *
+	 * Seuls les administrateurs JCMS y sont autorisés.
+	 */
+	public static boolean canAdministrateTemplate() {
+		Member member = channel.getCurrentLoggedMember();
+
+		return member != null && member.isAdmin();
+	}
+
+	/*
+	 * ================ AFFICHAGE =================
+	 */
+
+	/**
+	 * Échappe un texte pour l'afficher dans une page HTML.
+	 */
+	public static String escapeHtml(String value) {
+
+		if (value == null) {
+			return "";
+		}
+
+		return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+				.replace("'", "&#39;");
+	}
+
+	/*
+	 * =================== DATE ====================
 	 */
 
 	public static Date getStandardStringToDate(String value) {

@@ -170,3 +170,63 @@ jcmsplugin.squashtm.app.import.analysis.comparison.filter.data: Données
 jcmsplugin.squashtm.app.import.analysis.comparison.filter.state: État
 jcmsplugin.squashtm.app.import.analysis.comparison.filter.all: Tous
 jcmsplugin.squashtm.app.import.analysis.comparison.filter.select-all: Tout Sélectionner
+
+# ADMINISTRATION - TEMPLATE EXCEL ET MAPPING
+jcmsplugin.squashtm.app.administration.title: Administration du template Excel
+jcmsplugin.squashtm.app.administration.description: Mettez à jour le template d'import et indiquez au module quelle colonne correspond à quel élément (sous-module, vue, fonctionnalité, exigence, cas de test, étape). Le code du module n'a pas besoin d'être modifié.
+jcmsplugin.squashtm.app.administration.forbidden: Cette section est réservée aux administrateurs.
+jcmsplugin.squashtm.app.administration.warnings: Points d'attention
+
+# Template actif
+jcmsplugin.squashtm.app.administration.active.title: Template actif
+jcmsplugin.squashtm.app.administration.active.default: Template par défaut du module
+jcmsplugin.squashtm.app.administration.active.custom: Template personnalisé
+jcmsplugin.squashtm.app.administration.active.updated-on: Mis à jour le
+jcmsplugin.squashtm.app.administration.active.updated-by: par
+jcmsplugin.squashtm.app.administration.active.header-row: Ligne d'en-tête
+jcmsplugin.squashtm.app.administration.active.first-data-row: Première ligne de données
+jcmsplugin.squashtm.app.administration.active.ignored-sheets: Onglets ignorés
+jcmsplugin.squashtm.app.administration.active.none: Aucun
+jcmsplugin.squashtm.app.administration.active.table.element: Élément
+jcmsplugin.squashtm.app.administration.active.table.column: Colonne
+jcmsplugin.squashtm.app.administration.active.table.header: En-tête attendu
+jcmsplugin.squashtm.app.administration.active.not-used: Pas de colonne. Nom utilisé :
+jcmsplugin.squashtm.app.administration.active.download: Télécharger le template actif
+jcmsplugin.squashtm.app.administration.active.reset: Revenir au template par défaut
+jcmsplugin.squashtm.app.administration.active.reset.confirm: Revenir au template par défaut ? Le template personnalisé et son mapping seront supprimés.
+
+# Téléversement
+jcmsplugin.squashtm.app.administration.upload.title: Mettre à jour le template
+jcmsplugin.squashtm.app.administration.upload.description: Téléversez le nouveau template Excel. Le module détecte ses colonnes, puis vous confirmez à quel élément chacune correspond.
+jcmsplugin.squashtm.app.administration.upload.select: Sélectionner le nouveau template
+jcmsplugin.squashtm.app.administration.upload.invalid: Veuillez sélectionner un fichier Excel (.xlsx ou .xls).
+jcmsplugin.squashtm.app.administration.upload.analyze: Analyser le template
+
+# Correspondance des colonnes
+jcmsplugin.squashtm.app.administration.mapping.title: Correspondance des colonnes
+jcmsplugin.squashtm.app.administration.mapping.description: Pour chaque colonne du nouveau template, choisissez l'élément du module qui lui correspond. Les éléments marqués d'un astérisque (*) sont obligatoires.
+jcmsplugin.squashtm.app.administration.mapping.header-row: Ligne d'en-tête
+jcmsplugin.squashtm.app.administration.mapping.header-row.help: Le numéro de la ligne qui contient les titres des colonnes (0 s'il n'y en a pas).
+jcmsplugin.squashtm.app.administration.mapping.first-data-row: Première ligne de données
+jcmsplugin.squashtm.app.administration.mapping.refresh: Actualiser l'aperçu
+jcmsplugin.squashtm.app.administration.mapping.column: Colonne
+jcmsplugin.squashtm.app.administration.mapping.header: En-tête détecté
+jcmsplugin.squashtm.app.administration.mapping.samples: Exemples
+jcmsplugin.squashtm.app.administration.mapping.element: Élément correspondant
+jcmsplugin.squashtm.app.administration.mapping.unused: Colonne non utilisée
+jcmsplugin.squashtm.app.administration.mapping.no-header: (sans en-tête)
+jcmsplugin.squashtm.app.administration.mapping.ignored-sheets: Onglets à ignorer
+jcmsplugin.squashtm.app.administration.mapping.ignored-sheets.help: Noms des onglets à ne pas importer, séparés par des virgules. Onglets du fichier :
+jcmsplugin.squashtm.app.administration.mapping.defaults.title: Niveaux absents du template
+jcmsplugin.squashtm.app.administration.mapping.defaults.help: Si le template n'a pas de colonne pour un niveau de dossier, un dossier portant le nom indiqué ci-dessous est créé à sa place.
+jcmsplugin.squashtm.app.administration.mapping.cancel: Annuler
+jcmsplugin.squashtm.app.administration.mapping.save: Enregistrer
+
+# Éléments du module
+jcmsplugin.squashtm.app.administration.field.submodule: Sous-module
+jcmsplugin.squashtm.app.administration.field.view: Vue
+jcmsplugin.squashtm.app.administration.field.feature: Fonctionnalité
+jcmsplugin.squashtm.app.administration.field.element: Libellé de l'exigence et du cas de test
+jcmsplugin.squashtm.app.administration.field.action: Action de l'étape
+jcmsplugin.squashtm.app.administration.field.expected-result: Résultat attendu
+

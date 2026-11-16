@@ -42,7 +42,7 @@
 	</div>
 	  
 	<div id="squashTmTemplateDownload" class="squashtm-template-download">		
-		 <a href="<%= request.getContextPath() %>/plugins/SquashTmPlugin/docs/template/Modele_Import_SquashTM.xlsx" class="btn btn-default" download>
+		 <a href="<%= request.getContextPath() %>/plugins/SquashTmPlugin/jsp/template/downloadTemplate.jsp" class="btn btn-default" download>
 		     <span class="jalios-icon icomoon-download4"></span> <%= glp("jcmsplugin.squashtm.app.import.template.download") %>
 		 </a>		
 	</div>

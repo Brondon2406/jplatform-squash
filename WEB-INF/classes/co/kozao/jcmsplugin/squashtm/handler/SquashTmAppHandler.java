@@ -23,9 +23,12 @@ public class SquashTmAppHandler extends JcmsFormHandler {
 	public String getAppTitle() {
 		if (showImportFiles()) {
 			return glp("jcmsplugin.squashtm.app.importfiles.title");
+
 		} else if (showDashboard()) {
 			return glp("jcmsplugin.squashtm.app.dashboard.title");
 
+		} else if (showAdministration()) {
+			return glp("jcmsplugin.squashtm.app.sidebar.administration.label");
 		}
 		return glp("jcmsplugin.squashtm.app.label.title");
 	}
