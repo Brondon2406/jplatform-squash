@@ -390,7 +390,6 @@
 		margin-bottom: 16px;
 	}
 
-	/* Ligne d'en-tête + Première ligne de données : chaque libellé + champ sur une ligne, les deux blocs côte à côte */
 	.squashtm-mapping-rows-inline {
 		max-width: none;
 
@@ -442,8 +441,6 @@
 				padding: 0 !important;
 			}
 
-			//input[type="text"],
-			//input[type="number"],
 			.form-control {
 				display: inline-block !important;
 				width: 90px !important;
@@ -456,7 +453,6 @@
 
 	}
 
-	/* Onglets à ignorer : pleine largeur */
 	.squashtm-mapping-rows-full {
 		max-width: none;
 
@@ -466,16 +462,14 @@
 			width: 100%;
 		}
 
-		//input[type="text"],
 		.form-control {
 			width: 100%;
 			max-width: none;
 		}
 	}
 
-	/* Sous-module / Vue / Fonctionnalité : chaque libellé + champ sur une ligne, les 3 côte à côte */
 	.squashtm-mapping-defaults {
-		margin-top: 12px;
+		margin-top: 20px;
 		margin-bottom: 8px;
 		padding-top: 8px;
 
@@ -577,10 +571,66 @@
 		box-shadow: 0 0 0 2px rgba(240, 173, 78, 0.35);
 	}
 
-	/* Agrandir le grand rectangle de la section mapping */
 	.squashtm-template-mapping.squashtm-administration-section {
 		padding: 24px 28px 28px;
 		max-width: none;
+	}
+
+	.squashtm-template-columns-table {
+		width: 100% !important;
+		table-layout: fixed !important;
+		border-collapse: collapse;
+
+		th,
+		td {
+			box-sizing: border-box;
+			vertical-align: middle !important;
+			overflow-wrap: break-word;
+		}
+
+		th {
+			white-space: normal;
+		}
+
+		th:nth-child(1),
+		td:nth-child(1) {
+			width: 8%;
+			text-align: center;
+		}
+
+		th:nth-child(2),
+		td:nth-child(2) {
+			width: 24%;
+		}
+
+		th:nth-child(3),
+		td:nth-child(3) {
+			width: 30%;
+		}
+
+		.squashtm-mapping-samples {
+			max-width: 100%;
+			overflow: hidden;
+
+			li {
+				max-width: 100%;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+		}
+
+		th:nth-child(4),
+		td:nth-child(4) {
+			width: 38%;
+
+			select,
+			.form-control {
+				width: 100%;
+				max-width: 100%;
+				box-sizing: border-box;
+			}
+		}
 	}
 
 }

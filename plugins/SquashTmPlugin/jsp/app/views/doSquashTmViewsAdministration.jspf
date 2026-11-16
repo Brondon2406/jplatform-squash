@@ -233,8 +233,6 @@
                    ? templateAdminHandler.getDefaultFeatureName() : activeMapping.getDefaultName(TemplateField.FEATURE);
     %>
 
-	<div class="ajax-refresh-div" id="squashTmTemplateMappingRefresh">
-
     <div class="squashtm-administration-section squashtm-template-mapping">
 
         <h2><%= glp("jcmsplugin.squashtm.app.administration.mapping.title") %></h2>
@@ -270,15 +268,16 @@
 
             </div>
 
-            <table class="table table-bordered squashtm-mapping-table">
-                <thead>
-                    <tr>
-                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.column") %></th>
-                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.header") %></th>
-                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.samples") %></th>
-                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.element") %></th>
-                    </tr>
-                </thead>
+            <table class="table table-bordered squashtm-mapping-table squashtm-template-columns-table">
+			    <thead>
+	                <thead>
+	                    <tr>
+	                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.column") %></th>
+	                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.header") %></th>
+	                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.samples") %></th>
+	                        <th><%= glp("jcmsplugin.squashtm.app.administration.mapping.element") %></th>
+	                    </tr>
+	                </thead>
                 <tbody>
                 <%
 	                String[] columnFieldValues = new String[TemplateField.values().length + 1];
@@ -315,8 +314,7 @@
                         </td>
                         <td>
                             <jalios:field name="columnFields" value="<%= selectedField %>">
-                               <%--  <jalios:control settings="<%= new EnumerateSettings().select().enumLabels(fieldLabels).enumValues(columnFieldValues) %>" />  --%>
-                                   	 <jalios:control settings="<%= new EnumerateSettings().select().enumValues(enumerateValues) %>" />
+                               <jalios:control settings="<%= new EnumerateSettings().select().enumLabels(fieldLabels).enumValues(columnFieldValues) %>" /> 
                             </jalios:field>
                         </td>
                     </tr>
@@ -356,7 +354,7 @@
             </div>
 
             <div class="squashtm-administration-actions">
-                <button type="submit" name="opRefreshTemplate" value="true" class="btn btn-default" data-jalios-action="ajax-refresh">
+                <button type="submit" name="opRefreshTemplate" value="true" class="btn btn-default">
                     <span class="jalios-icon icomoon-refresh"></span>
                     <%= glp("jcmsplugin.squashtm.app.administration.mapping.refresh") %>
                 </button>
