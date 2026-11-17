@@ -158,7 +158,7 @@ jcmsplugin.squashtm.app.import.analysis.comparison.different: Différent
 jcmsplugin.squashtm.app.import.analysis.comparison.squash-only: Présent uniquement dans Squash TM
 
 # Comparaison avec Squash TM
-jcmsplugin.squashtm.app.import.analysis.comparison.selection-description: Sélectionnez uniquement les créations et les renommages que vous souhaitez appliquer.
+jcmsplugin.squashtm.app.import.analysis.comparison.selection-description: Vérifiez les modifications proposées avant de lancer l'importation. Cochez les créations et les modifications que vous souhaitez appliquer dans Squash TM.
 jcmsplugin.squashtm.app.import.analysis.comparison.selection-required: Aucun élément sélectionné : cochez au moins un élément à créer ou à renommer.
 jcmsplugin.squashtm.app.import.analysis.comparison.rename-proposed: Modification proposé
 jcmsplugin.squashtm.app.import.analysis.comparison.creation-proposed: Création proposée

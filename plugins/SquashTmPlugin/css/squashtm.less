@@ -211,49 +211,6 @@
 				font-size: 12px;
 			}
 
-			.squashtm-progress-container {
-				margin-bottom: 24px;
-				padding: 16px;
-				border: 1px solid #e5e7eb;
-				border-radius: 8px;
-				background: #ffffff;
-			}
-
-			.squashtm-progress-header,
-			.squashtm-progress-footer {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				gap: 12px;
-			}
-
-			.squashtm-progress-header {
-				margin-bottom: 10px;
-				font-weight: 600;
-			}
-
-			.squashtm-progress-track {
-				width: 100%;
-				height: 10px;
-				overflow: hidden;
-				border-radius: 6px;
-				background: #e5e7eb;
-			}
-
-			.squashtm-progress-bar {
-				width: 0%;
-				height: 100%;
-				border-radius: inherit;
-				background: #33446B;
-				transition: width 0.4s ease;
-			}
-
-			.squashtm-progress-footer {
-				margin-top: 8px;
-				color: #6b7280;
-				font-size: 12px;
-			}
-
 		}
 	}
 }
@@ -320,6 +277,7 @@
 	.squashtm-administration-section {
 		padding: 20px;
 		max-width: none;
+		margin-bottom: 20px;
 
 		h2 {
 			color: @app-color-squashtm;
@@ -335,15 +293,8 @@
 		}
 	}
 
-	/* ---------- Administration du template Excel ---------- */
-
 	.alert {
 		max-width: none;
-	}
-
-	.squashtm-administration-section {
-		max-width: none;
-		margin-bottom: 20px;
 	}
 
 	.squashtm-administration-actions {
@@ -351,10 +302,19 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 10px;
-		margin-top: 16px;
+		position: relative;
+		top: 30px;
+	}
+
+	.squashtm-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px;
 	}
 
 	.squashtm-upload-actions,
+	.squashtm-actions,
 	.squashtm-template-active .squashtm-administration-actions,
 	.squashtm-template-mapping .squashtm-administration-actions {
 		display: flex;
@@ -394,6 +354,7 @@
 		max-width: none;
 
 		.squashtm-mapping-row-pair {
+			margin-top: 10px;
 			display: flex !important;
 			flex-direction: row !important;
 			flex-wrap: nowrap !important;
@@ -462,16 +423,32 @@
 			width: 100%;
 		}
 
+		label,
+		.control-label,
+		.jalios-label {
+			transform: translateY(3px);
+		}
+
 		.form-control {
-			width: 100%;
+			width: 119%;
 			max-width: none;
+			margin-left: -17%;
+		}
+
+		.jalios-field-description,
+		.field-description,
+		.help-block {
+			position: relative;
+			left: -17%;
 		}
 	}
 
 	.squashtm-mapping-defaults {
-		margin-top: 20px;
+		position: relative;
+		top: 30px;
 		margin-bottom: 8px;
 		padding-top: 8px;
+
 
 		h4 {
 			margin-top: 0;
@@ -594,13 +571,13 @@
 
 		th:nth-child(1),
 		td:nth-child(1) {
-			width: 8%;
+			width: 7%;
 			text-align: center;
 		}
 
 		th:nth-child(2),
 		td:nth-child(2) {
-			width: 24%;
+			width: 23%;
 		}
 
 		th:nth-child(3),
@@ -622,7 +599,7 @@
 
 		th:nth-child(4),
 		td:nth-child(4) {
-			width: 38%;
+			width: 45%;
 
 			select,
 			.form-control {

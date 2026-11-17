@@ -142,38 +142,39 @@ ImportSquashTmAnalysis analysis = squashTmImportHandler.getImportAnalysis();
             <h3> <span class="jalios-icon icomoon-compare"></span>
                 <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.title") %>
             </h3>
-            
-            <jalios:field name="squashTmFilterToggle" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.toggle") %>' value="false" css="squashtm-filter-toggle">
-                <jalios:control settings='<%= new BooleanSettings() %>' />
-            </jalios:field>
         </div>
 	
-	        <p class="text-muted">
-	    		<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.selection-description") %>
-			</p>
+	    <div class="alert alert-warning squashtm-comparison-instructions" role="alert">
+    		<span class="jalios-icon icomoon-warning"></span>
+   			 <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.selection-description") %>
+		</div>
 				
 		<div id="squashTmComparisonSelectionError" class="alert alert-warning squashtm-comparison-selection-error" role="alert" style="<%= squashTmImportHandler.isComparisonSelectionError() ? "display:block;" : "display:none;" %>">	
 		    <%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.selection-required") %>
 		</div>
 		
-		 <div id="squashTmComparisonFilters" class="squashtm-comparison-filters" style="display:none;" data-all-label="<%= allLabel %>">
+		<div id="squashTmComparisonFilters" class="squashtm-comparison-filters" data-all-label="<%= allLabel %>">
 
-            <%-- Filtre sur les données --%>
-            <jalios:field name="squashTmFilterType" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.data") %>' value='<%= allLabel %>' required="true" css="squashtm-filter-type">
-                <jalios:control settings='<%= new EnumerateSettings().select().enumValues(typeFilterOptions) %>' />
-            </jalios:field>
-
-            <%-- Filtre sur les états --%>
-            <jalios:field name="squashTmFilterStatus" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.state") %>' value='<%= allLabel %>' required="true" css="squashtm-filter-status">
-                <jalios:control settings='<%= new EnumerateSettings().select().enumValues(statusFilterOptions) %>' />
-            </jalios:field>
-
-            <%-- Tout sélectionner (uniquement les éléments affichés) --%>
-            <jalios:field name="squashTmSelectAll" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.select-all") %>'  value="false" css="squashtm-filter-select-all">
-                <jalios:control settings='<%= new BooleanSettings() %>' />
-            </jalios:field>
-
-        </div>
+			    <jalios:field name="squashTmSelectAll" value="false" css="squashtm-filter-select-all">
+			        <jalios:control settings='<%= new EnumerateSettings().checkbox().enumValues("true").enumLabels(glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.select-all")) %>' />
+			    </jalios:field>
+			
+			    <jalios:field name="squashTmFilterToggle" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.toggle") %>' value="false" css="squashtm-filter-toggle">		
+			        <jalios:control settings='<%= new BooleanSettings() %>' />
+			    </jalios:field>
+	
+			    <div id="squashTmFilters" class="squashtm-filters" style="display:none;">
+			
+			        <jalios:field name="squashTmFilterType" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.data") %>' value='<%= allLabel %>' required="true" css="squashtm-filter-type">		
+			            <jalios:control settings='<%= new EnumerateSettings().select().enumValues(typeFilterOptions) %>' />
+			        </jalios:field>
+			
+			        <jalios:field name="squashTmFilterStatus" label='<%= glp("jcmsplugin.squashtm.app.import.analysis.comparison.filter.state") %>' value='<%= allLabel %>' required="true" css="squashtm-filter-status">		
+			            <jalios:control settings='<%= new EnumerateSettings().select().enumValues(statusFilterOptions) %>' />
+			        </jalios:field>
+			
+			    </div>
+		 </div>
 
         <ul class="list-group">
 

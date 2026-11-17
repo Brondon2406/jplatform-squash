@@ -1,14 +1,5 @@
-// Include variables and mixins
-@import "../../../css/jalios/core/init-mixins.less"; // Use init-mixins.less if more mixins are required
-
-// -------------------------------------------------------------------
-// PLUGINS LESS VARIABLES
-// -------------------------------------------------------------------
-
-
-// Hook for JCMS
+@import "../../../css/jalios/core/init-mixins.less";
 @import "../../../css/plugin.less";
-
 
 
 /* ==========================================================
@@ -21,7 +12,6 @@
 	margin: 0 auto;
 	padding-bottom: 25px;
 
-	/* Animation d'apparition de la synthèse */
 	&.analysis-animated {
 		animation: squashTmAnalysisAppear 0.35s ease-out both;
 	}
@@ -157,7 +147,6 @@
 	font-weight: 600;
 }
 
-/* Zone de consultation des incohérences */
 .squashtm-analysis-inconsistencies .list-group {
 	max-height: 350px;
 	overflow-y: auto;
@@ -170,21 +159,18 @@
 	background-color: #fff;
 }
 
-/* Chaque incohérence */
 .squashtm-analysis-inconsistencies .list-group-item {
 	padding: 12px 15px;
 	line-height: 1.5;
 	overflow-wrap: anywhere;
 }
 
-/* Icônes des incohérences */
 .squashtm-analysis-inconsistencies .jalios-icon {
 	margin-right: 8px;
 	color: #d58512;
 }
 
-/* Barres d'information (verte : aucune incohérence / rouge : erreur)
-   Même largeur, même hauteur, même espacement. */
+
 .squashtm-analysis-inconsistencies .alert,
 .squashtm-analysis-alert {
 	box-sizing: border-box;
@@ -196,7 +182,6 @@
 	overflow-wrap: anywhere;
 }
 
-/* Conteneur des erreurs de traitement */
 .squashtm-analysis-errors {
 	margin-bottom: 20px;
 }
@@ -205,8 +190,6 @@
 	margin-top: 10px;
 }
 
-/* Erreur de sélection : juste sous le libellé, au-dessus de la liste.
-   Même largeur, padding et hauteur de texte que la barre verte. */
 .squashtm-analysis-comparison .squashtm-analysis-alert,
 .squashtm-comparison-selection-error {
 	box-sizing: border-box;
@@ -216,6 +199,19 @@
 	padding: 15px;
 	line-height: 1.5;
 	overflow-wrap: anywhere;
+}
+
+.squashtm-comparison-instructions {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0 0 15px;
+    padding: 15px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+
+    .jalios-icon {
+        margin-right: 8px;
+    }
 }
 
 /* ==========================================================
@@ -342,8 +338,6 @@
 
 }
 
-/* Zone de consultation des éléments comparés */
-
 .squashtm-analysis-comparison .list-group {
 
 	max-height: 400px;
@@ -372,7 +366,6 @@
 	display: block;
 }
 
-/* Ligne cliquable : case à cocher + contenu */
 .squashtm-comparison-selection {
 	display: flex;
 	align-items: flex-start;
@@ -403,7 +396,6 @@
 	flex: 1;
 }
 
-/* Ligne 1 : statut | nom | type */
 .squashtm-comparison-line {
 	display: flex;
 	align-items: center;
@@ -411,7 +403,6 @@
 	min-width: 0;
 }
 
-/* Badge de statut : largeur fixe pour aligner tous les noms */
 .squashtm-comparison-status {
 	flex: 0 0 @comparison-status-width;
 }
@@ -428,7 +419,6 @@
 	text-overflow: ellipsis;
 }
 
-/* Nom (ou ancien → nouveau nom) */
 .squashtm-comparison-name {
 	flex: 1;
 	min-width: 0;
@@ -453,7 +443,6 @@
 	color: #7b1fa2;
 }
 
-/* Type : pastille alignée à droite */
 .squashtm-comparison-type {
 	flex: 0 0 auto;
 	margin-left: auto;
@@ -482,7 +471,6 @@
 	color: #fff;
 }
 
-/* Ligne 2 : chemin, aligné sous le nom */
 .squashtm-comparison-path {
 	display: block;
 	margin-left: (@comparison-status-width + @comparison-gap);
@@ -493,7 +481,6 @@
 	text-overflow: ellipsis;
 }
 
-/* Différences (étapes de test), alignées sous le nom */
 .squashtm-comparison-differences {
 	display: block;
 	margin: 2px 0 0 (@comparison-status-width + @comparison-gap);
@@ -506,7 +493,6 @@
 	line-height: 1.4;
 }
 
-/* Petits écrans : retour à une présentation empilée */
 @media (max-width: 600px) {
 	.squashtm-comparison-line {
 		flex-wrap: wrap;
@@ -536,7 +522,6 @@
    (même structure que la barre de filtres du plugin CarPooling)
    ========================================================== */
 
-/* Titre + interrupteur « Filtres » juste à côté du titre */
 .squashtm-comparison-header {
 	display: flex;
 	align-items: center;
@@ -557,7 +542,6 @@
 		align-items: center;
 		margin: 0;
 
-		/* libellé « Filtres » */
 		>:first-child {
 			float: none;
 			width: auto;
@@ -568,7 +552,6 @@
 			transform: translateY(3px);
 		}
 
-		/* interrupteur : espacé du libellé */
 		>:nth-child(2) {
 			float: none;
 			width: auto;
@@ -582,37 +565,40 @@
 }
 
 .squashtm-comparison-filters {
-	display: grid;
-	grid-template-columns: repeat(2, max-content);
-	justify-content: start;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: flex-start;
 	column-gap: 24px;
-	row-gap: 0;
+	row-gap: 8px;
 
 	margin: 8px 0 10px;
 	padding: 8px 12px 2px;
-
 	background-color: #fafafa;
 	border-radius: 1px;
 
-	/* Structure commune des filtres */
+	.squashtm-filter-select-all,
+	.squashtm-filter-toggle,
 	.squashtm-filter-type,
-	.squashtm-filter-status,
-	.squashtm-filter-select-all {
+	.squashtm-filter-status {
 		display: flex;
+		flex-direction: row;
 		align-items: center;
-		gap: 15px;
-
-		margin: 0 0 6px;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		width: auto;
+		min-width: 0;
 
 		> :first-child {
 			float: none;
 			width: auto;
 			margin: 0;
 			padding: 0;
-
-			line-height: 1.2;
 			font-size: 13px;
 			font-weight: 600;
+			line-height: 1.2;
 		}
 
 		> :nth-child(2) {
@@ -624,69 +610,62 @@
 		}
 	}
 
-	.squashtm-filter-type,
-	.squashtm-filter-status {
+	.squashtm-filter-select-all {
+		margin-left: -4px !important;
+		flex: 0 0 auto;
+		white-space: nowrap;
+	}
+
+	.squashtm-filter-toggle {
+		flex: 0 0 auto;
+	
+		> :nth-child(2) {
+			margin-left: 5px;
+		}
+	}
+
+	.squashtm-filters {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		justify-content: flex-start;
-
-		gap: 8px;
-		margin: 0 0 6px;
+		flex-wrap: wrap;
+		gap: 24px;
+		margin: 0;
 		padding: 0;
 
-		> :first-child {
-			flex: 0 0 64px;
-			width: 64px;
-			margin: 0;
-			padding: 0;
-		}
+		.squashtm-filter-type,
+		.squashtm-filter-status {
+			gap: 8px;
 
-		> :nth-child(2) {
-			flex: 0 0 200px;
-			width: 200px;
-			margin: 0;
-			padding: 0;
-		}
-	}
+			> :first-child {
+				flex: 0 0 auto;
+				width: auto;
+			}
 
-	/* État : alignement identique à Type */
-	.squashtm-filter-status {
-		margin-left: 0;
-
-		> :first-child {
-			flex-basis: 45px;
-			transform: translateY(3px);
-		}
-	}
-
-
-	.squashtm-filter-select-all {
-		grid-column: 1 / -1;
-		margin-left: 0;
-		gap: 8px;
-		align-self: center;
-
-		> :first-child {
-			flex: 0 0 auto;
-			white-space: normal;
-			line-height: 1.2;
-			transform: translateY(3px);
-
-			width: 65px;
-		}
-
-		> :nth-child(2) {
-			flex: 0 0 auto;
-			margin-left: 12px;
+			> :nth-child(2) {
+				flex: 0 0 200px;
+				width: 200px;
+			}
 		}
 	}
 }
 
-/* Menu déroulant des filtres : plus petit (ajouté par le JS au menu ouvert) */
+@media (max-width: 700px) {
+	.squashtm-comparison-filters {
+		align-items: flex-start;
+		gap: 12px;
+
+		.squashtm-filters {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 10px;
+		}
+	}
+}
+
+
 .squashtm-filter-dropdown {
 
-	/* Select2 v4 */
 	.select2-search--dropdown {
 		padding: 4px;
 	}
@@ -707,7 +686,6 @@
 		max-height: 150px;
 	}
 
-	/* Select2 v3 */
 	.select2-search input {
 		height: 26px;
 		font-size: 12px;

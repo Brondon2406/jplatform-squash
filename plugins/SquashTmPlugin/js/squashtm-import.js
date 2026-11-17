@@ -466,13 +466,13 @@ document.addEventListener("DOMContentLoaded", function() {
             // Évite les boucles lorsque le code modifie lui-même un interrupteur.
             var syncing = false;
 
-            function getPanel() {
-                return $("#squashTmComparisonFilters");
-            }
+			function getPanel() {
+			    return $("#squashTmFilters");
+			}
 
-            function getAllLabel() {
-                return getPanel().attr("data-all-label") || "";
-            }
+			function getAllLabel() {
+			    return $("#squashTmComparisonFilters").attr("data-all-label") || "";
+			}
 
             function getRows() {
                 return $(".squashtm-comparison-row");
@@ -630,22 +630,23 @@ document.addEventListener("DOMContentLoaded", function() {
             // ------------------------------------------------------
 
             // Interrupteur « Filtres » : affiche / masque le panneau.
-            $(document).on("change", ".squashtm-filter-toggle", function() {
+			$(document).on("change", ".squashtm-filter-toggle", function() {
 
-                if (syncing) {
-                    return;
-                }
+			    if (syncing) {
+			        return;
+			    }
 
-                var on = readSwitch("squashTmFilterToggle");
+			    var on = readSwitch("squashTmFilterToggle");
 
-                getPanel().css("display", on ? "" : "none");
+			    // Afficher ou masquer uniquement les deux filtres.
+			    getPanel().css("display", on ? "flex" : "none");
 
-                if (!on) {
-                    resetFilters();
-                    applyFilters();
-                }
-            });
+			    if (!on) {
+			        resetFilters();
+			        applyFilters();
+			    }
 
+			});
             // Filtres « Données » et « État ».
             $(document).on("change", ".squashtm-filter-type, .squashtm-filter-status", function() {
 

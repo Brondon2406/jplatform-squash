@@ -154,7 +154,7 @@
             </tbody>
         </table>
 
-        <div class="squashtm-administration-actions">
+        <div class="squashtm-actions">
 
             <a class="btn btn-default" href="<%= request.getContextPath() %>/plugins/SquashTmPlugin/jsp/template/downloadTemplate.jsp">
                 <span class="jalios-icon icomoon-download4"></span>
@@ -199,7 +199,7 @@
                 </p>
             </div>
 			
-			<div class="squashtm-administration-actions squashtm-upload-actions">
+			<div class="squashtm-actions squashtm-upload-actions">
 	            <button type="submit" id="squashTmTemplateAnalyzeButton" name="opAnalyzeTemplate" value="true" class="btn btn-primary" disabled>
 	                <span class="jalios-icon icomoon-upload"></span>
 	                <%= glp("jcmsplugin.squashtm.app.administration.upload.analyze") %>
@@ -248,6 +248,11 @@
             <input type="hidden" name="templateToken" value="<%= SquashTmUtils.escapeHtml(templateAdminHandler.getTemplateToken()) %>" />
 
             <div class="squashtm-mapping-rows squashtm-mapping-rows-inline form-horizontal">
+            
+           		 <div class="alert alert-warning squashtm-mapping-help">
+   					 <span class="jalios-icon icomoon-warning"></span>
+    					<%= glp("jcmsplugin.squashtm.app.administration.mapping.header-row.help") %>
+				</div>
 
                 <div class="squashtm-mapping-row-pair">
                     <jalios:field name="headerRow" label='<%= glp("jcmsplugin.squashtm.app.administration.mapping.header-row") %>'
@@ -260,11 +265,6 @@
                         <jalios:control type="<%= ControlType.NUMBER %>" />
                     </jalios:field>
                 </div>
-
-                <div class="alert alert-warning squashtm-mapping-help">
-   					 <span class="jalios-icon icomoon-warning"></span>
-    					<%= glp("jcmsplugin.squashtm.app.administration.mapping.header-row.help") %>
-				</div>
 
             </div>
 
