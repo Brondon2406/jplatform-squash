@@ -18,6 +18,7 @@
 	 <input type="hidden" id="opAnalyze" name="opAnalyze" value="false" />
 	 <input type="hidden" id="opImport" name="opImport" value="false" />
 	 <input type="hidden" id="opCancelAnalysis" name="opCancelAnalysis" value="false" />
+	 <input type="hidden" id="opLoadAnalysis" name="opLoadAnalysis" value="false" />
 	 <input type="hidden" id="analysisId" name="analysisId" value="<%= squashTmImportHandler.getAnalysisId() != null ? squashTmImportHandler.getAnalysisId() : "" %>" />
 	 <input type="hidden" id="selectedComparisonIndexes" name="selectedComparisonIndexes" value="" />
 	

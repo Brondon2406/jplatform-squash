@@ -25,6 +25,7 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmData;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmFeature;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmModule;
+import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmProgress;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmSubModule;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmRequirement;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestCase;
@@ -243,6 +244,11 @@ public class ExcelSquashTmImportService {
 	 * @throws IOException si le fichier ne peut pas être lu
 	 */
 	public ImportSquashTmData parse(File excelFile, String projectName) throws IOException {
+		return parse(excelFile, projectName, null);
+	}
+
+	public ImportSquashTmData parse(File excelFile, String projectName, ImportSquashTmProgress progress)
+			throws IOException {
 
 		if (excelFile == null) {
 			throw new IllegalArgumentException("Le fichier Excel est obligatoire.");
@@ -289,11 +295,20 @@ public class ExcelSquashTmImportService {
 		try (FileInputStream inputStream = new FileInputStream(excelFile);
 				Workbook workbook = WorkbookFactory.create(inputStream)) {
 
-			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+			int sheetCount = workbook.getNumberOfSheets();
+
+			for (int sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++) {
 
 				Sheet sheet = workbook.getSheetAt(sheetIndex);
 
+				if (progress != null) {
+					progress.update(10 + (30 * sheetIndex) / Math.max(1, sheetCount), "ANALYSE_FICHIER",
+							"Analyse de l'onglet " + (sheetIndex + 1) + "/" + sheetCount + " : "
+									+ sheet.getSheetName());
+				}
+
 				parseSheet(sheet, importData);
+
 			}
 		}
 		// Une ligne valide est une ligne détectée sans anomalie.
@@ -658,13 +673,14 @@ public class ExcelSquashTmImportService {
 
 		return String.format("TC%03d", testCaseCounter);
 	}
-	
+
 	/**
 	 * Détermine, pour un onglet, la colonne de chaque élément du mapping.
 	 *
 	 * Une colonne est d'abord recherchée par le texte de son en-tête : si le
-	 * template a été réorganisé, le mapping continue de s'appliquer. À défaut (en-tête
-	 * absent ou modifié), la position enregistrée dans le mapping est utilisée.
+	 * template a été réorganisé, le mapping continue de s'appliquer. À défaut
+	 * (en-tête absent ou modifié), la position enregistrée dans le mapping est
+	 * utilisée.
 	 *
 	 * @return les colonnes résolues, ou null si l'onglet ne peut pas être lu
 	 */
@@ -762,9 +778,9 @@ public class ExcelSquashTmImportService {
 		}
 
 		addInconsistency("Onglet '" + sheet.getSheetName() + "' : l'en-tête de la colonne "
-				+ TemplateColumnMapping.columnLetter(index) + " est « " + foundHeader + " » alors que le mapping attend « "
-				+ column.getHeaderLabel() + " » pour « " + column.getTemplateField().getDefaultLabel()
-				+ " ». Vérifiez le mapping dans l'administration.");
+				+ TemplateColumnMapping.columnLetter(index) + " est « " + foundHeader
+				+ " » alors que le mapping attend « " + column.getHeaderLabel() + " » pour « "
+				+ column.getTemplateField().getDefaultLabel() + " ». Vérifiez le mapping dans l'administration.");
 	}
 
 	/**

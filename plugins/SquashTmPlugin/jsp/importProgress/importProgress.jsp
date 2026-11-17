@@ -51,6 +51,16 @@
     json.addProperty("success", progress.isSuccess());
     json.addProperty("elapsedTime", progress.getElapsedTime());
     
+    String jobAnalysisId = jobManager.getJobAnalysisId(jobId);
+    if (jobAnalysisId != null) {
+        json.addProperty("analysisId", jobAnalysisId);
+    }
+
+    String jobError = jobManager.getJobError(jobId);
+    if (jobError != null) {
+        json.addProperty("analysisError", jobError);
+    }
+    
  // Ajouter les statistiques lorsque le résultat est disponible.
     ImportSquashTmResult result = jobManager.getResult(jobId);
 

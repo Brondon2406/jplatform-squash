@@ -30,11 +30,9 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.PendingImport;
 public class SquashTmImportJobManager {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmImportJobManager.class);
-	
-	/** Message affiché sous le libellé de sélection lorsque rien n'est coché. */
+
 	public static final String NO_SELECTION_MESSAGE = "Aucun élément sélectionné : cochez au moins un élément à créer ou à renommer.";
 
-	/** Message affiché lorsque le projet Squash TM et le fichier Excel sont identiques. */
 	public static final String ALREADY_UP_TO_DATE_MESSAGE = "Le projet Squash TM est déjà à jour : aucun élément à créer ou à renommer.";
 
 	private static final SquashTmImportJobManager INSTANCE = new SquashTmImportJobManager();
@@ -172,39 +170,7 @@ public class SquashTmImportJobManager {
 		try {
 			Files.copy(uploadedFile.toPath(), temporaryFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-			ExcelSquashTmImportService analysisService = new ExcelSquashTmImportService();
-
-			ImportSquashTmData importData = analysisService.parse(temporaryFile, projectName.trim());
-
-			ImportSquashTmAnalysis analysis = analysisService.buildAnalysis(projectName.trim());
-
-			SquashTmImportManager importManager = new SquashTmImportManager(authorizationHeader);
-
-			// Comparaison du contenu Excel avec Squash TM.
-			importManager.compareExistingProject(importData, analysis);
-
-			// Vérification de la cohérence des résultats.
-			if (analysis.isExistingProject() && analysis.getExistingProjectId() <= 0) {
-				throw new IOException("Le projet existe, mais son identifiant est introuvable.");
-			}
-
-			if (analysis.getComparisonItems() == null) {
-				throw new IOException("La comparaison n'a produit aucun résultat exploitable.");
-			}
-
-			String analysisId = UUID.randomUUID().toString();
-
-			PendingImport pendingImport = new PendingImport(temporaryFile, projectName.trim(), analysis, importData);
-
-			pendingImports.put(analysisId, pendingImport);
-
-			LOGGER.info("[IMPORT ANALYSIS] Projet existant : " + analysis.isExistingProject());
-
-			LOGGER.info("[IMPORT ANALYSIS] Nombre d'éléments comparés : " + analysis.getComparisonItems().size());
-
-			LOGGER.info("[IMPORT ANALYSIS] Analyse terminée : " + analysisId);
-
-			return analysisId;
+			return runAnalysis(temporaryFile, projectName.trim(), authorizationHeader, null);
 
 		} catch (Exception e) {
 
@@ -216,6 +182,140 @@ public class SquashTmImportJobManager {
 
 			throw new IOException("Impossible d'analyser le fichier Excel.", e);
 		}
+	}
+
+	/**
+	 * Exécute l'analyse (lecture du fichier puis comparaison avec Squash TM). La
+	 * progression est facultative.
+	 */
+	private String runAnalysis(File temporaryFile, String projectName, String authorizationHeader,
+			ImportSquashTmProgress progress) throws IOException {
+
+		ExcelSquashTmImportService analysisService = new ExcelSquashTmImportService();
+
+		if (progress != null) {
+			progress.update(10, "ANALYSE_FICHIER", "Lecture du fichier Excel...");
+		}
+
+		ImportSquashTmData importData = analysisService.parse(temporaryFile, projectName, progress);
+
+		if (progress != null) {
+			progress.update(40, "ANALYSE_FICHIER", "Fichier Excel analysé.");
+		}
+
+		ImportSquashTmAnalysis analysis = analysisService.buildAnalysis(projectName);
+
+		SquashTmImportManager importManager = new SquashTmImportManager(authorizationHeader);
+
+		importManager.compareExistingProject(importData, analysis, progress);
+
+		if (analysis.isExistingProject() && analysis.getExistingProjectId() <= 0) {
+			throw new IOException("Le projet existe, mais son identifiant est introuvable.");
+		}
+
+		if (analysis.getComparisonItems() == null) {
+			throw new IOException("La comparaison n'a produit aucun résultat exploitable.");
+		}
+
+		if (progress != null) {
+			progress.update(95, "SYNTHESE", "Préparation de la synthèse...");
+		}
+
+		String analysisId = UUID.randomUUID().toString();
+
+		pendingImports.put(analysisId, new PendingImport(temporaryFile, projectName, analysis, importData));
+
+		LOGGER.info("[IMPORT ANALYSIS] Projet existant : " + analysis.isExistingProject());
+		LOGGER.info("[IMPORT ANALYSIS] Nombre d'éléments comparés : " + analysis.getComparisonItems().size());
+		LOGGER.info("[IMPORT ANALYSIS] Analyse terminée : " + analysisId);
+
+		return analysisId;
+	}
+
+	/**
+	 * Démarre l'analyse en arrière-plan. Le fichier est copié avant le retour de la
+	 * méthode, car le fichier du formulaire disparaît à la fin de la requête.
+	 *
+	 * @return identifiant du travail, à utiliser avec getProgress()
+	 */
+	public String startAnalysis(File uploadedFile, String projectName, String authorizationHeader) throws IOException {
+
+		if (uploadedFile == null || !uploadedFile.isFile()) {
+			throw new IOException("Le fichier Excel est introuvable.");
+		}
+
+		if (projectName == null || projectName.trim().isEmpty()) {
+			throw new IOException("Le nom du projet est obligatoire.");
+		}
+
+		if (authorizationHeader == null || authorizationHeader.trim().isEmpty()) {
+			throw new IOException("Les informations d'authentification Squash TM sont absentes.");
+		}
+
+		final String cleanProjectName = projectName.trim();
+
+		final File temporaryFile = Files.createTempFile("squashtm-pending-", ".xlsx").toFile();
+
+		try {
+			Files.copy(uploadedFile.toPath(), temporaryFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		} catch (IOException e) {
+			temporaryFile.delete();
+			throw e;
+		}
+
+		final String jobId = UUID.randomUUID().toString();
+		final ImportJob job = new ImportJob();
+
+		jobs.put(jobId, job);
+
+		job.progress.update(5, "PREPARATION", "Fichier reçu, préparation de l'analyse...");
+
+		try {
+			executor.submit(() -> {
+				try {
+					// L'identifiant est publié avant la fin de la progression.
+					job.analysisId = runAnalysis(temporaryFile, cleanProjectName, authorizationHeader, job.progress);
+
+					job.progress.finish(true, "Analyse terminée.");
+
+				} catch (Exception e) {
+
+					LOGGER.error("[IMPORT ANALYSIS] Erreur pendant l'analyse : " + jobId, e);
+
+					try {
+						Files.deleteIfExists(temporaryFile.toPath());
+					} catch (IOException deleteException) {
+						LOGGER.warn("Impossible de supprimer le fichier temporaire.", deleteException);
+					}
+
+					job.errorMessage = e.getMessage() != null ? e.getMessage()
+							: "Une erreur technique est survenue pendant l'analyse.";
+
+					job.progress.finish(false, "L'analyse a échoué.");
+				}
+			});
+		} catch (RuntimeException e) {
+			jobs.remove(jobId);
+			Files.deleteIfExists(temporaryFile.toPath());
+			throw new IOException("Impossible de démarrer l'analyse.", e);
+		}
+
+		return jobId;
+	}
+
+	/**
+	 * Identifiant de l'analyse produite par un travail (null tant qu'elle n'est pas
+	 * prête).
+	 */
+	public String getJobAnalysisId(String jobId) {
+		ImportJob job = jobs.get(jobId);
+		return job == null ? null : job.analysisId;
+	}
+
+	/** Message d'erreur d'un travail d'analyse échoué (null sinon). */
+	public String getJobError(String jobId) {
+		ImportJob job = jobs.get(jobId);
+		return job == null ? null : job.errorMessage;
 	}
 
 	/**
@@ -617,6 +717,9 @@ public class SquashTmImportJobManager {
 		private final ImportSquashTmProgress progress = new ImportSquashTmProgress();
 
 		private volatile ImportSquashTmResult result;
-	}
 
+		private volatile String analysisId;
+
+		private volatile String errorMessage;
+	}
 }

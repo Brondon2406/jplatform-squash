@@ -104,7 +104,7 @@
     <div class="panel-heading">
       <h3 class="squashtm-progress-title">
         <span class="jalios-icon icomoon-upload"></span>
-        <%= glp("jcmsplugin.squashtm.app.import.progress.title") %>
+        <span id="squashTmProgressTitleText"><%= glp("jcmsplugin.squashtm.app.import.progress.title") %></span>
       </h3>
     </div>
 

@@ -27,6 +27,15 @@ document.addEventListener("DOMContentLoaded", function() {
     var analysisContainer = document.getElementById("squashTmAnalysisContainer");
     var confirmImportButton = document.getElementById("squashTmConfirmImportButton");
     var cancelAnalysisButton = document.getElementById("squashTmCancelAnalysisButton");
+    var loadAnalysisAction = document.getElementById("opLoadAnalysis");
+
+    var progressBar = document.getElementById("squashTmProgressBar");
+    var progressPercentage = document.getElementById("squashTmProgressPercentage");
+    var progressMessage = document.getElementById("squashTmProgressMessage");
+    var progressStage = document.getElementById("squashTmProgressStage");
+    var progressElapsed = document.getElementById("squashTmProgressElapsed");
+    var progressResult = document.getElementById("squashTmProgressResult");
+    var progressTitleText = document.getElementById("squashTmProgressTitleText");
 
     if (!importForm || !fileInput || !dropZone || !projectName) {
         return;
@@ -35,7 +44,6 @@ document.addEventListener("DOMContentLoaded", function() {
     /*   
      * ============== SELECTION DU FICHIER =================
      */
-
 
     if (fileInput) {
         fileInput.addEventListener("change", function() {
@@ -98,7 +106,6 @@ document.addEventListener("DOMContentLoaded", function() {
         displaySelectedFile(selectedFileObject);
     });
 
-
     /*
      * ===========  AFFICHAGE DU FICHIER SELECTIONNE ============
      */
@@ -156,9 +163,10 @@ document.addEventListener("DOMContentLoaded", function() {
     if (importForm) {
         importForm.addEventListener("submit", function(event) {
 
+            // Confirmation, annulation et affichage de la synthèse : envoi classique.
             if ((importAction && importAction.value === "true")
-                || (cancelAnalysisAction
-                    && cancelAnalysisAction.value === "true")) {
+                || (cancelAnalysisAction && cancelAnalysisAction.value === "true")
+                || (loadAnalysisAction && loadAnalysisAction.value === "true")) {
                 return;
             }
 
@@ -185,18 +193,284 @@ document.addEventListener("DOMContentLoaded", function() {
                 return;
             }
 
-            if (analyzeAction) {
-                analyzeAction.value = "true";
+            event.preventDefault();
+
+            if (analysisRunning) {
+                return;
             }
 
-            if (importAction) {
-                importAction.value = "false";
-            }
-
-            if (cancelAnalysisAction) {
-                cancelAnalysisAction.value = "false";
-            }
+            startAnalysis();
         });
+    }
+
+    /*
+     * ============== ANALYSE EN ARRIERE-PLAN + BARRE DE PROGRESSION ==============
+     */
+
+    var analysisRunning = false;
+    var analysisTimer = null;
+    var elapsedTimer = null;
+    var analysisStartedAt = 0;
+
+    var ANALYSIS_STAGES = {
+        PREPARATION: "Préparation",
+        ANALYSE_FICHIER: "Analyse du fichier",
+        COMPARAISON: "Correspondance avec Squash TM",
+        SYNTHESE: "Préparation de la synthèse",
+        TERMINE: "Terminé",
+        TERMINE_AVEC_ERREURS: "Terminé avec erreurs"
+    };
+
+    function setAnalysisBusy(busy) {
+        analysisRunning = busy;
+
+        if (cancelButton) {
+            cancelButton.disabled = busy;
+        }
+
+        if (busy) {
+            importButton.disabled = true;
+        } else {
+            validateForm();
+        }
+    }
+
+    function renderAnalysisProgress(percentage, stage, message) {
+
+        var value = Math.max(0, Math.min(100, Number(percentage) || 0));
+
+        if (progressBar) {
+            progressBar.style.width = value + "%";
+            progressBar.setAttribute("aria-valuenow", value);
+        }
+
+        if (progressPercentage) {
+            progressPercentage.textContent = value + " %";
+        }
+
+        if (progressMessage && message) {
+            progressMessage.textContent = message;
+        }
+
+        if (progressStage && stage) {
+            progressStage.textContent = ANALYSIS_STAGES[stage] || stage;
+        }
+    }
+
+    function renderElapsed() {
+        if (progressElapsed) {
+            progressElapsed.textContent = Math.floor((Date.now() - analysisStartedAt) / 1000) + " s";
+        }
+    }
+
+    function stopAnalysisTimers() {
+        window.clearTimeout(analysisTimer);
+        window.clearInterval(elapsedTimer);
+    }
+
+    function showAnalysisProgress() {
+
+        var previousError = document.getElementById("squashTmAnalysisError");
+
+        if (previousError && previousError.parentNode) {
+            previousError.parentNode.removeChild(previousError);
+        }
+
+        if (importHeader) {
+            importHeader.style.display = "none";
+        }
+
+        if (importPanel) {
+            importPanel.style.display = "none";
+        }
+
+        if (progressContainer) {
+            progressContainer.style.display = "block";
+        }
+
+        if (progressResult) {
+            progressResult.style.display = "none";
+        }
+
+        if (progressBar) {
+            progressBar.className = "progress-bar progress-bar-striped active";
+        }
+
+        if (progressTitleText) {
+            progressTitleText.textContent = "Analyse du fichier";
+        }
+
+        renderAnalysisProgress(0, "PREPARATION", "Envoi du fichier au serveur...");
+        renderElapsed();
+
+        elapsedTimer = window.setInterval(renderElapsed, 1000);
+    }
+
+    function startAnalysis() {
+
+        var formData = new FormData(importForm);
+
+        formData.set("opAnalyze", "false");
+        formData.set("opAnalyzeAsync", "true");
+        formData.set("opImport", "false");
+        formData.set("opCancelAnalysis", "false");
+        formData.set("opLoadAnalysis", "false");
+
+        analysisStartedAt = Date.now();
+
+        setAnalysisBusy(true);
+        showAnalysisProgress();
+
+        var startUrl = (importForm.getAttribute("data-progress-url")
+            || "plugins/SquashTmPlugin/jsp/importProgress/importProgress.jsp")
+            .replace("importProgress.jsp", "startAnalysis.jsp");
+
+        fetch(startUrl, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+            cache: "no-store"
+        })
+            .then(function(response) {
+
+                return response.text().then(function(text) {
+
+                    var data = null;
+
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        data = null;
+                    }
+
+                    if (!response.ok || !data || !data.jobId) {
+                        throw new Error((data && data.error)
+                            || "Impossible de démarrer l'analyse (HTTP " + response.status + ").");
+                    }
+
+                    return data.jobId;
+                });
+            })
+            .then(function(jobId) {
+                renderAnalysisProgress(5, "PREPARATION", "Fichier reçu, préparation de l'analyse...");
+                pollAnalysis(jobId);
+            })
+            .catch(function(error) {
+                showAnalysisError(error.message);
+            });
+    }
+
+    function pollAnalysis(jobId) {
+
+        var progressUrl = importForm.getAttribute("data-progress-url")
+            || "plugins/SquashTmPlugin/jsp/importProgress/importProgress.jsp";
+
+        fetch(progressUrl + "?jobId=" + encodeURIComponent(jobId), {
+            method: "GET",
+            cache: "no-store",
+            credentials: "same-origin"
+        })
+            .then(function(response) {
+
+                if (!response.ok) {
+                    var error = new Error("Impossible de récupérer la progression (HTTP " + response.status + ").");
+                    error.status = response.status;
+                    throw error;
+                }
+
+                return response.json();
+            })
+            .then(function(data) {
+
+                renderAnalysisProgress(data.percentage, data.stage, data.message);
+
+                if (!data.completed) {
+                    analysisTimer = window.setTimeout(function() {
+                        pollAnalysis(jobId);
+                    }, 700);
+                    return;
+                }
+
+                if (data.success && data.analysisId) {
+                    finishAnalysis(data.analysisId);
+                } else {
+                    showAnalysisError(data.analysisError || data.message);
+                }
+            })
+            .catch(function(error) {
+
+                if (error.status === 400 || error.status === 403 || error.status === 404) {
+                    showAnalysisError(error.message);
+                    return;
+                }
+
+                analysisTimer = window.setTimeout(function() {
+                    pollAnalysis(jobId);
+                }, 2000);
+            });
+    }
+
+    function finishAnalysis(analysisId) {
+
+        stopAnalysisTimers();
+        renderAnalysisProgress(100, "TERMINE", "Analyse terminée, affichage de la synthèse...");
+
+        if (analysisIdInput) {
+            analysisIdInput.value = analysisId;
+        }
+
+        if (analyzeAction) {
+            analyzeAction.value = "false";
+        }
+
+        if (importAction) {
+            importAction.value = "false";
+        }
+
+        if (cancelAnalysisAction) {
+            cancelAnalysisAction.value = "false";
+        }
+
+        if (loadAnalysisAction) {
+            loadAnalysisAction.value = "true";
+        }
+
+        fileInput.value = "";
+
+        importForm.submit();
+    }
+
+    function showAnalysisError(message) {
+
+        stopAnalysisTimers();
+
+        if (progressContainer) {
+            progressContainer.style.display = "none";
+        }
+
+        if (importHeader) {
+            importHeader.style.display = "";
+        }
+
+        if (importPanel) {
+            importPanel.style.display = "";
+        }
+
+        var errorBox = document.getElementById("squashTmAnalysisError");
+
+        if (!errorBox) {
+            errorBox = document.createElement("div");
+            errorBox.id = "squashTmAnalysisError";
+            errorBox.className = "alert alert-danger squashtm-import-error";
+
+            if (importPanel && importPanel.parentNode) {
+                importPanel.parentNode.insertBefore(errorBox, importPanel);
+            }
+        }
+
+        errorBox.textContent = message || "L'analyse a échoué.";
+
+        setAnalysisBusy(false);
     }
 
     /*
@@ -239,7 +513,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 return;
             }
 
-            // Récupérer les opérations sélectionnées.
             if (selectedComparisonIndexesInput) {
 
                 var selectedCheckboxes = document.querySelectorAll(
@@ -412,7 +685,6 @@ document.addEventListener("DOMContentLoaded", function() {
         importHeader.style.display = "none";
         importPanel.style.display = "none";
 
-        // Afficher uniquement le suivi de l'importation
         progressContainer.style.display = "block";
     }
 
@@ -423,25 +695,20 @@ document.addEventListener("DOMContentLoaded", function() {
     if (finishButton) {
         finishButton.addEventListener("click", function() {
 
-            // Masquer le rapport final
             if (importReport) {
                 importReport.style.display = "none";
             }
-
-            // Réinitialiser le formulaire
+			
             resetImportForm();
 
-            // Masquer la progression
             if (progressContainer) {
                 progressContainer.style.display = "none";
             }
 
-            // Masquer la synthèse de l'analyse
             if (analysisContainer) {
                 analysisContainer.style.display = "none";
             }
 
-            // Réafficher le formulaire initial
             if (importHeader) {
                 importHeader.style.display = "";
             }
@@ -463,16 +730,15 @@ document.addEventListener("DOMContentLoaded", function() {
     !function($) {
         $(document).ready(function($) {
 
-            // Évite les boucles lorsque le code modifie lui-même un interrupteur.
             var syncing = false;
 
-			function getPanel() {
-			    return $("#squashTmFilters");
-			}
+            function getPanel() {
+                return $("#squashTmFilters");
+            }
 
-			function getAllLabel() {
-			    return $("#squashTmComparisonFilters").attr("data-all-label") || "";
-			}
+            function getAllLabel() {
+                return $("#squashTmComparisonFilters").attr("data-all-label") || "";
+            }
 
             function getRows() {
                 return $(".squashtm-comparison-row");
@@ -526,7 +792,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 $("input[name='" + name + "']").prop("disabled", disabled);
             }
 
-            // « Tout sélectionner » reflète l'état des éléments affichés.
             function updateSelectAllState() {
 
                 var $boxes = getVisibleRows().find(".squashtm-comparison-select");
@@ -619,7 +884,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 function() {
                     var select = this;
 
-                    // Laisse Select2 afficher son menu avant de l'ajuster.
                     setTimeout(function() {
                         fitDropdown(select);
                     }, 0);
@@ -629,25 +893,21 @@ document.addEventListener("DOMContentLoaded", function() {
             // Événements
             // ------------------------------------------------------
 
-            // Interrupteur « Filtres » : affiche / masque le panneau.
-			$(document).on("change", ".squashtm-filter-toggle", function() {
+            $(document).on("change", ".squashtm-filter-toggle", function() {
 
-			    if (syncing) {
-			        return;
-			    }
+                if (syncing) {
+                    return;
+                }
 
-			    var on = readSwitch("squashTmFilterToggle");
+                var on = readSwitch("squashTmFilterToggle");
+                getPanel().css("display", on ? "flex" : "none");
 
-			    // Afficher ou masquer uniquement les deux filtres.
-			    getPanel().css("display", on ? "flex" : "none");
+                if (!on) {
+                    resetFilters();
+                    applyFilters();
+                }
 
-			    if (!on) {
-			        resetFilters();
-			        applyFilters();
-			    }
-
-			});
-            // Filtres « Données » et « État ».
+            });
             $(document).on("change", ".squashtm-filter-type, .squashtm-filter-status", function() {
 
                 if (syncing) {
@@ -657,7 +917,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 applyFilters();
             });
 
-            // « Tout sélectionner » : coche / décoche uniquement les éléments affichés.
             $(document).on("change", ".squashtm-filter-select-all", function() {
 
                 if (syncing) {
@@ -669,12 +928,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 getVisibleRows().find(".squashtm-comparison-select").prop("checked", on);
             });
 
-            // Une case cochée à la main met à jour « Tout sélectionner ».
             $(document).on("change", ".squashtm-comparison-select", function() {
                 updateSelectAllState();
             });
 
-            // État initial.
             if (getPanel().length) {
                 applyFilters();
             }

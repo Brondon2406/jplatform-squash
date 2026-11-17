@@ -1683,9 +1683,18 @@ public class SquashTmImportManager {
 	 */
 	public void compareExistingProject(ImportSquashTmData importData, ImportSquashTmAnalysis analysis)
 			throws IOException {
+		compareExistingProject(importData, analysis, null);
+	}
+
+	public void compareExistingProject(ImportSquashTmData importData, ImportSquashTmAnalysis analysis,
+			ImportSquashTmProgress progress) throws IOException {
 
 		if (importData == null || analysis == null) {
 			throw new IOException("Les données nécessaires à la comparaison sont absentes.");
+		}
+		
+		if (progress != null) {
+			progress.update(45, "COMPARAISON", "Recherche du projet dans Squash TM...");
 		}
 
 		JsonObject existingProjectData = inspectExistingProject(importData.getProjectName());
@@ -1705,6 +1714,10 @@ public class SquashTmImportManager {
 
 		analysis.setExistingProject(true);
 		analysis.setExistingProjectId(projectId);
+		
+		if (progress != null) {
+			progress.update(60, "COMPARAISON", "Projet trouvé, lecture des arborescences...");
+		}
 
 		Map<String, ImportSquashTmComparisonItem> excelItems = new LinkedHashMap<>();
 		Map<String, ImportSquashTmComparisonItem> squashItems = new LinkedHashMap<>();
@@ -1724,6 +1737,10 @@ public class SquashTmImportManager {
 
 		collectSquashContentItems(existingProjectData.getAsJsonArray("testCaseFolders"), false,
 				importData.getProjectName(), squashItems);
+		
+		if (progress != null) {
+			progress.update(75, "COMPARAISON", "Comparaison du fichier avec Squash TM...");
+		}
 
 		LOGGER.error("========== DEBUT DIAGNOSTIC COMPARAISON ==========");
 
@@ -1796,6 +1813,10 @@ public class SquashTmImportManager {
 		}
 
 		collectStepComparisonItems(importData, existingTestCaseIds, analysis);
+		
+		if (progress != null) {
+			progress.update(90, "COMPARAISON", "Comparaison des étapes terminée.");
+		}
 
 		LOGGER.info("[COMPARAISON] Projet : " + importData.getProjectName());
 		LOGGER.info("[COMPARAISON] Éléments Excel : " + excelItems.size());

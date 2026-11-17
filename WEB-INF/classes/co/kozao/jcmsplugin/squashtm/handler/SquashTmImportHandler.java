@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.JsonObject;
 import com.jalios.jcms.handler.JcmsFormHandler;
 import com.jalios.jcms.upload.DocUploadInfo;
 
@@ -40,6 +41,8 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 	private ImportSquashTmResult importResult;
 	private String selectionError;
 	private boolean comparisonSelectionError;
+	private boolean opAnalyzeAsync;
+	private boolean opLoadAnalysis;
 
 	private final SquashTmImportJobManager importJobManager = SquashTmImportJobManager.getInstance();
 	private static final Logger LOGGER = Logger.getLogger(SquashTmImportHandler.class);
@@ -78,6 +81,22 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 	public void setOpAnalyze(boolean opAnalyze) {
 		this.opAnalyze = opAnalyze;
+	}
+
+	public boolean isOpAnalyzeAsync() {
+		return opAnalyzeAsync;
+	}
+
+	public void setOpAnalyzeAsync(boolean opAnalyzeAsync) {
+		this.opAnalyzeAsync = opAnalyzeAsync;
+	}
+
+	public boolean isOpLoadAnalysis() {
+		return opLoadAnalysis;
+	}
+
+	public void setOpLoadAnalysis(boolean opLoadAnalysis) {
+		this.opLoadAnalysis = opLoadAnalysis;
 	}
 
 	public boolean isOpCancelAnalysis() {
@@ -120,8 +139,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 		comparisonSelectionError = false;
 
-		// Aucune case cochée : message affiché sous le libellé de sélection,
-		// et non dans la barre d'erreur générale.
 		if (SquashTmImportJobManager.NO_SELECTION_MESSAGE.equals(message)) {
 			comparisonSelectionError = true;
 			return;
@@ -147,7 +164,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 			detail = e.getClass().getSimpleName();
 		}
 
-		// Cas fréquent : endpoint Squash TM introuvable ou projet inaccessible
 		String lower = detail.toLowerCase();
 		if (lower.contains("404") || lower.contains("not found") || lower.contains("introuvable")) {
 			return "Impossible de télécharger le fichier depuis Squash TM. (HTTP 404 — projet ou ressource introuvable)";
@@ -271,6 +287,43 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		}
 	}
 
+	/**
+	 * Démarre l'analyse en arrière-plan et retourne le résultat sous forme JSON
+	 * (jobId ou error). Appelée par startAnalysis.jsp.
+	 */
+	public JsonObject startAsyncAnalysis() {
+
+		JsonObject json = new JsonObject();
+
+		try {
+			if (projectName == null || projectName.trim().isEmpty()) {
+				json.addProperty("error", "Le nom du projet Squash TM est obligatoire.");
+				return json;
+			}
+
+			List<DocUploadInfo> files = getUploadedFiles("excelFile");
+
+			File file = (files == null || files.isEmpty()) ? null : files.get(0).getFile();
+
+			if (file == null || !file.isFile()) {
+				json.addProperty("error", "Aucun fichier Excel n'a été reçu.");
+				return json;
+			}
+
+			String jobId = importJobManager.startAnalysis(file, projectName.trim(), prepareAuthorizationHeader());
+
+			json.addProperty("jobId", jobId);
+
+		} catch (IOException | RuntimeException e) {
+
+			LOGGER.error("[HANDLER][ASYNC] Impossible de démarrer l'analyse.", e);
+
+			json.addProperty("error", e.getMessage() != null ? e.getMessage() : "Impossible de démarrer l'analyse.");
+		}
+
+		return json;
+	}
+
 	@Override
 	public boolean processAction() throws IOException {
 
@@ -285,6 +338,23 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		LOGGER.info("[HANDLER 6] analysisId = " + analysisId);
 
 		try {
+
+			if (opLoadAnalysis) {
+
+				if (analysisId == null || analysisId.trim().isEmpty()) {
+					setImportError("Aucune analyse à afficher.");
+					return false;
+				}
+
+				importAnalysis = importJobManager.getAnalysis(analysisId);
+
+				if (importAnalysis == null) {
+					analysisId = null;
+					setImportError("Cette analyse n'existe plus ou a expiré. Relancez l'import.");
+				}
+
+				return false;
+			}
 
 			if (opAnalyze) {
 
@@ -309,8 +379,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 				if (uploadedFiles == null || uploadedFiles.isEmpty()) {
 
 					LOGGER.warn("[HANDLER 11] Arrêt : aucun fichier reçu.");
-
-					// setImportError("Aucun fichier Excel n'a été reçu.");
 
 					return false;
 				}
