@@ -20,6 +20,7 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmComparisonItem;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmData;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.PendingImport;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
  * Gère les importations Squash TM exécutées en arrière-plan.
@@ -30,10 +31,6 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.PendingImport;
 public class SquashTmImportJobManager {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmImportJobManager.class);
-
-	public static final String NO_SELECTION_MESSAGE = "Aucun élément sélectionné : cochez au moins un élément à créer ou à renommer.";
-
-	public static final String ALREADY_UP_TO_DATE_MESSAGE = "Le projet Squash TM est déjà à jour : aucun élément à créer ou à renommer.";
 
 	private static final SquashTmImportJobManager INSTANCE = new SquashTmImportJobManager();
 
@@ -372,7 +369,7 @@ public class SquashTmImportJobManager {
 			if (pending.getAnalysis().isExistingProject()) {
 
 				if (!pending.getAnalysis().hasActionsToPerform()) {
-					throw new IOException(ALREADY_UP_TO_DATE_MESSAGE);
+					throw new IOException(SquashTmConstants.ALREADY_UP_TO_DATE_MESSAGE);
 				}
 
 				applySelectedComparisonIndexes(pending.getAnalysis(), selectedComparisonIndexes);
@@ -380,7 +377,7 @@ public class SquashTmImportJobManager {
 				validateSelectedActions(pending.getAnalysis());
 
 				if (!hasSelectedAction(pending.getAnalysis())) {
-					throw new IOException(NO_SELECTION_MESSAGE);
+					throw new IOException(SquashTmConstants.NO_SELECTION_MESSAGE);
 				}
 			}
 

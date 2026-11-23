@@ -42,9 +42,9 @@ public final class SquashTmUtils {
 	}
 
 	public static String getAppSidebarIcon() {
-		String iconApp = channel.getProperty(SquashTmConstants.SQUASHTM_ICON_SIDEBAR_APP);
+		String iconApp = channel.getProperty(SquashTmConstants.SQUASHTM_ICON_CHOOSER_IMAGE_SIDEBAR_APP);
 		if (Util.isEmpty(iconApp)) {
-			iconApp = channel.getProperty("icon.jcmsplugin.box.box-app-sidebar");
+			iconApp = channel.getProperty(SquashTmConstants.SQUASHTM_ICON_SIDEBAR_APP);
 		}
 
 		return iconApp;

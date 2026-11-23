@@ -8,6 +8,7 @@ import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
  * Description complète de la façon dont le module doit lire le template Excel.
@@ -17,14 +18,13 @@ public class TemplateMapping {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	public static final int DEFAULT_HEADER_ROW = 3;
 	public static final int DEFAULT_FIRST_DATA_ROW = 4;
-	public static final String DEFAULT_LEVEL_NAME = "Général";
 	private int headerRow = DEFAULT_HEADER_ROW;
 	private int firstDataRow = DEFAULT_FIRST_DATA_ROW;
 	private List<String> ignoredSheets = new ArrayList<>();
 	private List<TemplateColumnMapping> columns = new ArrayList<>();
-	private String defaultSubModuleName = DEFAULT_LEVEL_NAME;
-	private String defaultViewName = DEFAULT_LEVEL_NAME;
-	private String defaultFeatureName = DEFAULT_LEVEL_NAME;
+	private String defaultSubModuleName = SquashTmConstants.DEFAULT_LEVEL_NAME;
+	private String defaultViewName = SquashTmConstants.DEFAULT_LEVEL_NAME;
+	private String defaultFeatureName = SquashTmConstants.DEFAULT_LEVEL_NAME;
 	private String updatedBy = "";
 	private long updatedAt;
 
@@ -221,7 +221,7 @@ public class TemplateMapping {
 			name = defaultFeatureName;
 		}
 
-		return name == null || name.trim().isEmpty() ? DEFAULT_LEVEL_NAME : name.trim();
+		return name == null || name.trim().isEmpty() ? SquashTmConstants.DEFAULT_LEVEL_NAME : name.trim();
 	}
 
 	/*
