@@ -441,8 +441,7 @@ public class SquashTmImportManager {
 
 				ImportSquashTmComparisonItem decision = decisions.get(key);
 
-				if (decision == null
-						|| !ImportSquashTmComparisonItem.ACTION_CREATE.equals(decision.getSelectedAction())) {
+				if (decision == null || !ImportSquashTmComparisonItem.ACTION_CREATE.equals(decision.getSelectedAction())) {
 
 					throw new IOException("Création impossible : le dossier parent '" + currentPath
 							+ "' n'existe pas et n'a pas été sélectionné.");
@@ -506,8 +505,7 @@ public class SquashTmImportManager {
 
 			String action = item.getSelectedAction();
 
-			if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)
-					|| ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+			if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action) || ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
 
 				totalActions++;
 			}
@@ -531,8 +529,8 @@ public class SquashTmImportManager {
 
 				String folderPath = removeProjectRoot(item.getElementPath(), importData.getProjectName());
 
-				validateSelectedFolderParents(requirementTree, folderPath,
-						ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER, importData.getProjectName(), decisions);
+				validateSelectedFolderParents(requirementTree, folderPath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER,
+						importData.getProjectName(), decisions);
 
 				ensureTargetedFolder(requirementTree, folderPath, "requirement-folder");
 
@@ -540,8 +538,8 @@ public class SquashTmImportManager {
 
 				String folderPath = removeProjectRoot(item.getElementPath(), importData.getProjectName());
 
-				validateSelectedFolderParents(testCaseTree, folderPath,
-						ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER, importData.getProjectName(), decisions);
+				validateSelectedFolderParents(testCaseTree, folderPath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER,
+						importData.getProjectName(), decisions);
 
 				ensureTargetedFolder(testCaseTree, folderPath, "test-case-folder");
 
@@ -1692,7 +1690,7 @@ public class SquashTmImportManager {
 		if (importData == null || analysis == null) {
 			throw new IOException("Les données nécessaires à la comparaison sont absentes.");
 		}
-		
+
 		if (progress != null) {
 			progress.update(45, "COMPARAISON", "Recherche du projet dans Squash TM...");
 		}
@@ -1714,7 +1712,7 @@ public class SquashTmImportManager {
 
 		analysis.setExistingProject(true);
 		analysis.setExistingProjectId(projectId);
-		
+
 		if (progress != null) {
 			progress.update(60, "COMPARAISON", "Projet trouvé, lecture des arborescences...");
 		}
@@ -1737,7 +1735,7 @@ public class SquashTmImportManager {
 
 		collectSquashContentItems(existingProjectData.getAsJsonArray("testCaseFolders"), false,
 				importData.getProjectName(), squashItems);
-		
+
 		if (progress != null) {
 			progress.update(75, "COMPARAISON", "Comparaison du fichier avec Squash TM...");
 		}
@@ -1813,7 +1811,7 @@ public class SquashTmImportManager {
 		}
 
 		collectStepComparisonItems(importData, existingTestCaseIds, analysis);
-		
+
 		if (progress != null) {
 			progress.update(90, "COMPARAISON", "Comparaison des étapes terminée.");
 		}

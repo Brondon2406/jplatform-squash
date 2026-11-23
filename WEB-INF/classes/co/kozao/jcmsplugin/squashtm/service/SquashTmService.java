@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -33,7 +34,9 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 public class SquashTmService {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmService.class);
-
+	
+	private static final int DASHBOARD_PAGE_SIZE = 200;
+	private static final int DASHBOARD_MAX_PAGES = 500;
 	private static final int CONNECT_TIMEOUT = 5000;
 	private static final int READ_TIMEOUT = 30000;
 	private final String authorizationHeader;
@@ -1959,4 +1962,84 @@ public class SquashTmService {
 		LOGGER.info("Étapes Squash TM supprimées : " + ids);
 	}
 
+	/**
+	 * Retourne l'en-tête Authorization du membre JCMS courant.
+	 *
+	 */
+	public String resolveAuthorization() throws IOException {
+		return getAuthorization();
+	}
+
+	private String buildApiUrl(String apiPath) throws IOException {
+
+		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
+
+		if (Util.isEmpty(baseUrl)) {
+			throw new IOException("L'URL du serveur Squash TM n'est pas configurée.");
+		}
+
+		return baseUrl + "/api/rest/latest" + apiPath;
+	}
+
+	/**
+	 * Lit une ressource Squash TM (objet JSON) à partir de son chemin API.
+	 *
+	 * @param apiPath chemin relatif à /api/rest/latest, par exemple
+	 *                /requirements/12
+	 */
+	public JsonObject getResource(String apiPath) throws IOException {
+		return executeGetJson(buildApiUrl(apiPath), "Impossible de récupérer " + apiPath);
+	}
+
+	/**
+	 * Lit toutes les pages d'une ressource paginée et retourne les éléments
+	 * regroupés dans un seul tableau.
+	 *
+	 * @param apiPath chemin relatif à /api/rest/latest, avec éventuellement des
+	 *                paramètres (fields, include...), par exemple /test-cases
+	 */
+	public JsonArray getAllPaged(String apiPath) throws IOException {
+
+		JsonArray all = new JsonArray();
+		String separator = apiPath.indexOf('?') >= 0 ? "&" : "?";
+		int page = 0;
+		int totalPages = 1;
+
+		do {
+
+			String url = buildApiUrl(apiPath + separator + "page=" + page + "&size=" + DASHBOARD_PAGE_SIZE);
+			JsonObject response = executeGetJson(url, "Impossible de récupérer " + apiPath);
+
+			if (!response.has("_embedded") || !response.get("_embedded").isJsonObject()) {
+				break;
+			}
+
+			JsonArray items = null;
+
+			for (Map.Entry<String, JsonElement> entry : response.getAsJsonObject("_embedded").entrySet()) {
+				if (entry.getValue().isJsonArray()) {
+					items = entry.getValue().getAsJsonArray();
+					break;
+				}
+			}
+
+			if (items == null) {
+				break;
+			}
+
+			for (JsonElement item : items) {
+				all.add(item);
+			}
+
+			if (response.has("page") && response.get("page").isJsonObject()
+					&& response.getAsJsonObject("page").has("totalPages")) {
+				totalPages = response.getAsJsonObject("page").get("totalPages").getAsInt();
+			}
+
+			page++;
+
+		} while (page < totalPages && page < DASHBOARD_MAX_PAGES);
+
+		return all;
+	}
 }

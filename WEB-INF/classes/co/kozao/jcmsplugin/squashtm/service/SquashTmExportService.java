@@ -1,10 +1,17 @@
 package co.kozao.jcmsplugin.squashtm.service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,19 +21,31 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jalios.jcms.Channel;
+
+import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateColumnMapping;
+import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateField;
+import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateMapping;
+import co.kozao.jcmsplugin.squashtm.service.mapping.SquashTmTemplateMappingManager;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
  * Reconstruit, à partir de Squash TM, la version à jour des modules d'un projet
- * sous la forme d'un fichier Excel au format du gabarit d'import.
+ * sous la forme d'un fichier Excel à l'image du modèle (template) actif :
+ * le fichier du modèle est ouvert, son onglet type est dupliqué pour chaque
+ * module, et les colonnes sont placées selon le mapping actif.
  *
  * Ce service ne crée, ne modifie et ne supprime aucune donnée dans Squash TM.
  */
@@ -42,17 +61,8 @@ public class SquashTmExportService {
 	private static final int MAX_SHEET_NAME_LENGTH = 31;
 	private static final int MAX_CELL_LENGTH = 32000;
 
-	/** Mêmes index de colonnes que ExcelSquashTmImportService. */
-	private static final int COLUMN_SUBMODULE = 0;
-	private static final int COLUMN_VIEW = 1;
-	private static final int COLUMN_FEATURE = 2;
-	private static final int COLUMN_ELEMENT = 3;
-	private static final int COLUMN_ACTION = 4;
-	private static final int COLUMN_EXPECTED_RESULT = 5;
-
-	private static final int TITLE_ROW = 0;
-	private static final int HEADER_ROW = 2;
-	private static final int FIRST_DATA_ROW = 3;
+	private static final TemplateField[] RUN_LEVELS = { TemplateField.SUBMODULE, TemplateField.VIEW,
+			TemplateField.FEATURE, TemplateField.ELEMENT };
 
 	private final SquashTmService squashTmService;
 
@@ -396,7 +406,13 @@ public class SquashTmExportService {
 
 	private byte[] buildWorkbook(Node root, String projectName) throws IOException {
 
-		try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+		// Le mapping actif décrit le modèle : lignes d'en-tête / de données, colonnes, onglets ignorés.
+		TemplateMapping mapping = SquashTmTemplateMappingManager.getInstance().getActiveMapping();
+
+		int headerIndex = Math.max(0, mapping.getHeaderRow() - 1);
+		int firstDataIndex = Math.max(headerIndex + 1, mapping.getFirstDataRow() - 1);
+
+		try (Workbook workbook = openModelWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 
 			Font boldFont = workbook.createFont();
 			boldFont.setBold(true);
@@ -408,16 +424,102 @@ public class SquashTmExportService {
 			CellStyle textStyle = workbook.createCellStyle();
 			textStyle.setWrapText(true);
 
+			// Ordre des onglets du modèle, pour reproduire son ordre dans l'export.
+			List<String> templateOrder = new ArrayList<>();
+
+			for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+				templateOrder.add(workbook.getSheetName(i).trim().toLowerCase());
+			}
+
+			// Onglet type = premier onglet non ignoré du modèle.
+			int modelIndex = -1;
+
+			for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+				if (!mapping.isSheetIgnored(workbook.getSheetName(i))) {
+					modelIndex = i;
+					break;
+				}
+			}
+
+			Sheet modelSheet;
+
+			if (modelIndex < 0) {
+				modelSheet = createFallbackModelSheet(workbook, mapping, headerIndex, headerStyle);
+			} else {
+				modelSheet = workbook.getSheetAt(modelIndex);
+			}
+
+			// Les autres onglets non ignorés sont des exemples : ils sont retirés.
+			for (int i = workbook.getNumberOfSheets() - 1; i >= 0; i--) {
+
+				Sheet sheet = workbook.getSheetAt(i);
+
+				if (sheet != modelSheet && !mapping.isSheetIgnored(sheet.getSheetName())) {
+					workbook.removeSheetAt(i);
+				}
+			}
+
+			workbook.setSheetName(workbook.getSheetIndex(modelSheet), SquashTmConstants.MODEL_SHEET_NAME);
+
+			// Onglets ignorés (légende, instructions...) : conservés, avec leur position relative.
 			Set<String> usedNames = new HashSet<>();
+			List<String> sheetsAfterModel = new ArrayList<>();
+			boolean afterModel = false;
+
+			for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+
+				Sheet sheet = workbook.getSheetAt(i);
+
+				if (sheet == modelSheet) {
+					afterModel = true;
+					continue;
+				}
+
+				usedNames.add(sheet.getSheetName().toLowerCase());
+
+				if (afterModel) {
+					sheetsAfterModel.add(sheet.getSheetName());
+				}
+			}
+
+			// Si l'onglet type n'a pas d'en-tête, il est reconstruit à partir du mapping.
+			if (modelSheet.getRow(headerIndex) == null) {
+				createFallbackHeader(modelSheet, mapping, headerIndex, headerStyle);
+			}
+
+			Map<TemplateField, Integer> columns = resolveColumns(modelSheet, mapping, headerIndex);
+
+			// Styles de la première ligne de données du modèle, par rôle.
+			Map<TemplateField, CellStyle> columnStyles = readColumnStyles(modelSheet, columns, firstDataIndex);
+
+			// Le modèle est vidé de ses lignes d'exemple, mais garde en-tête, largeurs et mise en forme.
+			clearDataRows(modelSheet, firstDataIndex);
 
 			String title = "Export Squash TM - Projet : " + projectName + " - "
 					+ new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date());
 
-			for (Node module : root.children.values()) {
+			writeTitle(modelSheet, headerIndex, title, headerStyle);
 
-				Sheet sheet = workbook.createSheet(uniqueSheetName(module.name, usedNames));
+			List<Node> modules = new ArrayList<>(root.children.values());
 
-				writeSheet(sheet, module, title, headerStyle, textStyle);
+			Collections.sort(modules, moduleComparator(templateOrder));
+
+			int modelPosition = workbook.getSheetIndex(modelSheet);
+
+			for (Node module : modules) {
+
+				Sheet sheet = workbook.cloneSheet(modelPosition);
+
+				workbook.setSheetName(workbook.getSheetIndex(sheet), uniqueSheetName(module.name, usedNames));
+
+				writeSheet(sheet, module, columns, columnStyles, textStyle, firstDataIndex);
+			}
+
+			workbook.removeSheetAt(workbook.getSheetIndex(modelSheet));
+
+			// Les onglets ignorés placés après l'onglet type dans le modèle restent à la fin.
+			for (String name : sheetsAfterModel) {
+				workbook.setSheetOrder(name, workbook.getNumberOfSheets() - 1);
 			}
 
 			workbook.write(output);
@@ -426,28 +528,224 @@ public class SquashTmExportService {
 		}
 	}
 
-	private void writeSheet(Sheet sheet, Node module, String title, CellStyle headerStyle, CellStyle textStyle) {
+	/**
+	 * Ouvre le modèle actif : le modèle personnalisé s'il existe, sinon le modèle
+	 * historique du plugin. En dernier recours, un classeur vide est utilisé.
+	 */
+	private Workbook openModelWorkbook() {
 
-		sheet.setColumnWidth(COLUMN_SUBMODULE, 22 * 256);
-		sheet.setColumnWidth(COLUMN_VIEW, 26 * 256);
-		sheet.setColumnWidth(COLUMN_FEATURE, 32 * 256);
-		sheet.setColumnWidth(COLUMN_ELEMENT, 45 * 256);
-		sheet.setColumnWidth(COLUMN_ACTION, 45 * 256);
-		sheet.setColumnWidth(COLUMN_EXPECTED_RESULT, 45 * 256);
+		File templateFile = SquashTmTemplateMappingManager.getInstance().getCustomTemplateFile();
 
-		// Les lignes 1 et 2 ne sont pas lues par l'import.
-		Row titleRow = sheet.createRow(TITLE_ROW);
-		setCell(titleRow, COLUMN_SUBMODULE, title, headerStyle);
+		if (templateFile == null) {
 
-		Row headerRow = sheet.createRow(HEADER_ROW);
-		setCell(headerRow, COLUMN_SUBMODULE, "Sous-modules", headerStyle);
-		setCell(headerRow, COLUMN_VIEW, "Vues", headerStyle);
-		setCell(headerRow, COLUMN_FEATURE, "Les fonctionnalités", headerStyle);
-		setCell(headerRow, COLUMN_ELEMENT, "Libellé de l'exigence et du Cas de test", headerStyle);
-		setCell(headerRow, COLUMN_ACTION, "Actions", headerStyle);
-		setCell(headerRow, COLUMN_EXPECTED_RESULT, "Résultats attendus", headerStyle);
+			String path = Channel.getChannel().getRealPath(SquashTmConstants.DEFAULT_TEMPLATE_PATH);
 
-		SheetWriter writer = new SheetWriter(sheet, textStyle);
+			if (!isEmpty(path) && new File(path).isFile()) {
+				templateFile = new File(path);
+			}
+		}
+
+		if (templateFile == null) {
+			LOGGER.warn("[EXPORT] Modèle introuvable : export avec un classeur vierge.");
+			return new XSSFWorkbook();
+		}
+
+		try (InputStream input = new FileInputStream(templateFile)) {
+
+			return WorkbookFactory.create(input);
+
+		} catch (IOException | RuntimeException e) {
+
+			LOGGER.warn("[EXPORT] Modèle illisible (" + templateFile.getAbsolutePath()
+					+ ") : export avec un classeur vierge.", e);
+
+			return new XSSFWorkbook();
+		}
+	}
+
+	private Sheet createFallbackModelSheet(Workbook workbook, TemplateMapping mapping, int headerIndex,
+			CellStyle headerStyle) {
+
+		Sheet sheet = workbook.createSheet(SquashTmConstants.MODEL_SHEET_NAME);
+
+		createFallbackHeader(sheet, mapping, headerIndex, headerStyle);
+
+		return sheet;
+	}
+
+	private void createFallbackHeader(Sheet sheet, TemplateMapping mapping, int headerIndex, CellStyle headerStyle) {
+
+		Row headerRow = sheet.createRow(headerIndex);
+
+		for (TemplateColumnMapping column : mapping.getColumns()) {
+
+			TemplateField field = column.getTemplateField();
+
+			if (field == null || column.getColumnIndex() < 0) {
+				continue;
+			}
+
+			String label = isEmpty(column.getHeaderLabel()) ? field.getDefaultLabel() : column.getHeaderLabel();
+
+			setCell(headerRow, column.getColumnIndex(), label, headerStyle);
+
+			sheet.setColumnWidth(column.getColumnIndex(), 40 * 256);
+		}
+	}
+
+	/**
+	 * Trouve la colonne de chaque rôle dans l'onglet type, comme le fait l'import :
+	 * d'abord par le libellé de l'en-tête, sinon par l'index enregistré dans le mapping.
+	 */
+	private Map<TemplateField, Integer> resolveColumns(Sheet sheet, TemplateMapping mapping, int headerIndex) {
+
+		Map<TemplateField, Integer> columns = new EnumMap<>(TemplateField.class);
+
+		Map<String, Integer> headerIndexes = new HashMap<>();
+		DataFormatter formatter = new DataFormatter();
+
+		Row headerRow = sheet.getRow(headerIndex);
+
+		if (headerRow != null) {
+
+			for (int index = 0; index < Math.max(headerRow.getLastCellNum(), 0); index++) {
+
+				Cell cell = headerRow.getCell(index);
+
+				String normalized = cell == null ? "" : TemplateField.normalize(formatter.formatCellValue(cell));
+
+				if (!normalized.isEmpty() && !headerIndexes.containsKey(normalized)) {
+					headerIndexes.put(normalized, index);
+				}
+			}
+		}
+
+		Set<Integer> usedColumns = new HashSet<>();
+
+		for (TemplateColumnMapping column : mapping.getColumns()) {
+
+			TemplateField field = column.getTemplateField();
+
+			if (field == null) {
+				continue;
+			}
+
+			String expectedLabel = TemplateField.normalize(column.getHeaderLabel());
+
+			Integer index = expectedLabel.isEmpty() ? null : headerIndexes.get(expectedLabel);
+
+			if (index == null && column.getColumnIndex() >= 0) {
+				index = column.getColumnIndex();
+			}
+
+			if (index != null && usedColumns.add(index)) {
+				columns.put(field, index);
+			}
+		}
+
+		return columns;
+	}
+
+	private Map<TemplateField, CellStyle> readColumnStyles(Sheet sheet, Map<TemplateField, Integer> columns,
+			int firstDataIndex) {
+
+		Map<TemplateField, CellStyle> styles = new EnumMap<>(TemplateField.class);
+
+		Row row = sheet.getRow(firstDataIndex);
+
+		if (row == null) {
+			return styles;
+		}
+
+		for (Map.Entry<TemplateField, Integer> entry : columns.entrySet()) {
+
+			Cell cell = row.getCell(entry.getValue());
+
+			if (cell != null && cell.getCellStyle() != null) {
+				styles.put(entry.getKey(), cell.getCellStyle());
+			}
+		}
+
+		return styles;
+	}
+
+	/** Supprime les lignes de données (et leurs fusions) de l'onglet type. */
+	private void clearDataRows(Sheet sheet, int firstDataIndex) {
+
+		for (int i = sheet.getNumMergedRegions() - 1; i >= 0; i--) {
+			if (sheet.getMergedRegion(i).getLastRow() >= firstDataIndex) {
+				sheet.removeMergedRegion(i);
+			}
+		}
+
+		for (int rowIndex = sheet.getLastRowNum(); rowIndex >= firstDataIndex; rowIndex--) {
+
+			Row row = sheet.getRow(rowIndex);
+
+			if (row != null) {
+				sheet.removeRow(row);
+			}
+		}
+	}
+
+	/** Écrit le titre dans la première ligne libre située au-dessus de l'en-tête. */
+	private void writeTitle(Sheet sheet, int headerIndex, String title, CellStyle style) {
+
+		DataFormatter formatter = new DataFormatter();
+
+		for (int rowIndex = 0; rowIndex < headerIndex; rowIndex++) {
+
+			Row row = sheet.getRow(rowIndex);
+
+			if (row == null) {
+				row = sheet.createRow(rowIndex);
+			}
+
+			Cell cell = row.getCell(0);
+
+			if (cell == null || formatter.formatCellValue(cell).trim().isEmpty()) {
+				setCell(row, 0, title, style);
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Ordre des onglets : d'abord les modules qui portent le nom d'un onglet du
+	 * modèle (dans l'ordre du modèle), puis les autres par ordre alphabétique.
+	 * L'ordre ne dépend donc plus de l'ordre renvoyé par l'API Squash TM.
+	 */
+	private Comparator<Node> moduleComparator(final List<String> templateOrder) {
+
+		return new Comparator<Node>() {
+
+			@Override
+			public int compare(Node first, Node second) {
+
+				int firstRank = templateOrder.indexOf(first.name.trim().toLowerCase());
+				int secondRank = templateOrder.indexOf(second.name.trim().toLowerCase());
+
+				if (firstRank < 0) {
+					firstRank = Integer.MAX_VALUE;
+				}
+
+				if (secondRank < 0) {
+					secondRank = Integer.MAX_VALUE;
+				}
+
+				if (firstRank != secondRank) {
+					return firstRank < secondRank ? -1 : 1;
+				}
+
+				return String.CASE_INSENSITIVE_ORDER.compare(first.name, second.name);
+			}
+		};
+	}
+
+	private void writeSheet(Sheet sheet, Node module, Map<TemplateField, Integer> columns,
+			Map<TemplateField, CellStyle> columnStyles, CellStyle defaultStyle, int firstDataIndex) {
+
+		SheetWriter writer = new SheetWriter(sheet, columns, columnStyles, defaultStyle, firstDataIndex);
 
 		for (Node subModule : module.children.values()) {
 
@@ -496,6 +794,8 @@ public class SquashTmExportService {
 				}
 			}
 		}
+
+		writer.finish();
 	}
 
 	private String uniqueSheetName(String rawName, Set<String> usedNames) {
@@ -526,6 +826,7 @@ public class SquashTmExportService {
 		return candidate;
 	}
 
+	/** Écrit une valeur de l'en-tête ou du titre (cellule créée seulement si la valeur est renseignée). */
 	private static void setCell(Row row, int column, String value, CellStyle style) {
 
 		if (isEmpty(value)) {
@@ -535,6 +836,18 @@ public class SquashTmExportService {
 		Cell cell = row.createCell(column);
 
 		cell.setCellValue(value.length() > MAX_CELL_LENGTH ? value.substring(0, MAX_CELL_LENGTH) : value);
+		cell.setCellStyle(style);
+	}
+
+	/** Écrit une cellule de données : la cellule est toujours créée pour conserver la mise en forme du modèle. */
+	private static void setDataCell(Row row, int column, String value, CellStyle style) {
+
+		Cell cell = row.createCell(column);
+
+		if (!isEmpty(value)) {
+			cell.setCellValue(value.length() > MAX_CELL_LENGTH ? value.substring(0, MAX_CELL_LENGTH) : value);
+		}
+
 		cell.setCellStyle(style);
 	}
 
@@ -603,37 +916,110 @@ public class SquashTmExportService {
 
 	/**
 	 * Écrit les lignes d'un onglet. Sous-module, vue et fonctionnalité ne sont
-	 * renseignés qu'à la première ligne où ils apparaissent, comme dans le gabarit.
+	 * renseignés qu'à la première ligne où ils apparaissent, comme dans le modèle,
+	 * et leurs cellules sont fusionnées sur toutes les lignes qu'ils couvrent.
 	 */
 	private static class SheetWriter {
 
 		private final Sheet sheet;
-		private final CellStyle style;
-		private int rowIndex = FIRST_DATA_ROW;
+		private final Map<TemplateField, Integer> columns;
+		private final Map<TemplateField, CellStyle> columnStyles;
+		private final CellStyle defaultStyle;
+		private final Map<TemplateField, Integer> runStarts = new EnumMap<>(TemplateField.class);
+		private int rowIndex;
 
 		private String pendingSubModule;
 		private String pendingView;
 		private String pendingFeature;
 
-		private SheetWriter(Sheet sheet, CellStyle style) {
+		private SheetWriter(Sheet sheet, Map<TemplateField, Integer> columns,
+				Map<TemplateField, CellStyle> columnStyles, CellStyle defaultStyle, int firstDataIndex) {
 			this.sheet = sheet;
-			this.style = style;
+			this.columns = columns;
+			this.columnStyles = columnStyles;
+			this.defaultStyle = defaultStyle;
+			this.rowIndex = firstDataIndex;
 		}
 
 		private void writeRow(String element, String action, String expectedResult) {
 
-			Row row = sheet.createRow(rowIndex++);
+			int currentIndex = rowIndex++;
 
-			setCell(row, COLUMN_SUBMODULE, pendingSubModule, style);
-			setCell(row, COLUMN_VIEW, pendingView, style);
-			setCell(row, COLUMN_FEATURE, pendingFeature, style);
-			setCell(row, COLUMN_ELEMENT, element, style);
-			setCell(row, COLUMN_ACTION, action, style);
-			setCell(row, COLUMN_EXPECTED_RESULT, expectedResult, style);
+			Row row = sheet.createRow(currentIndex);
+
+			if (pendingSubModule != null) {
+				startRun(TemplateField.SUBMODULE, currentIndex);
+			}
+
+			if (pendingView != null) {
+				startRun(TemplateField.VIEW, currentIndex);
+			}
+
+			if (pendingFeature != null) {
+				startRun(TemplateField.FEATURE, currentIndex);
+			}
+
+			if (element != null) {
+				startRun(TemplateField.ELEMENT, currentIndex);
+			}
+
+			writeCell(row, TemplateField.SUBMODULE, pendingSubModule);
+			writeCell(row, TemplateField.VIEW, pendingView);
+			writeCell(row, TemplateField.FEATURE, pendingFeature);
+			writeCell(row, TemplateField.ELEMENT, element);
+			writeCell(row, TemplateField.ACTION, action);
+			writeCell(row, TemplateField.EXPECTED_RESULT, expectedResult);
 
 			pendingSubModule = null;
 			pendingView = null;
 			pendingFeature = null;
+		}
+
+		/** Ferme les fusions encore ouvertes à la fin de l'onglet. */
+		private void finish() {
+			closeRuns(TemplateField.SUBMODULE, rowIndex - 1);
+		}
+
+		private void writeCell(Row row, TemplateField field, String value) {
+
+			Integer column = columns.get(field);
+
+			if (column == null) {
+				return;
+			}
+
+			CellStyle style = columnStyles.get(field);
+
+			setDataCell(row, column, value, style != null ? style : defaultStyle);
+		}
+
+		/** Un nouveau sous-module, une nouvelle vue... clôt aussi les niveaux inférieurs. */
+		private void startRun(TemplateField field, int startRow) {
+			closeRuns(field, startRow - 1);
+			runStarts.put(field, startRow);
+		}
+
+		private void closeRuns(TemplateField fromField, int endRow) {
+
+			boolean reached = false;
+
+			for (TemplateField level : RUN_LEVELS) {
+
+				if (level == fromField) {
+					reached = true;
+				}
+
+				if (!reached) {
+					continue;
+				}
+
+				Integer start = runStarts.remove(level);
+				Integer column = columns.get(level);
+
+				if (start != null && column != null && endRow > start) {
+					sheet.addMergedRegion(new CellRangeAddress(start, endRow, column, column));
+				}
+			}
 		}
 	}
 }

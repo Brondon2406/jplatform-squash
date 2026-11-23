@@ -16,6 +16,7 @@ import com.jalios.jcms.handler.JcmsFormHandler;
 import com.jalios.jcms.upload.DocUploadInfo;
 
 import co.kozao.jcmsplugin.squashtm.model.AuthentificationMode;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmResult;
@@ -139,7 +140,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 		comparisonSelectionError = false;
 
-		if (SquashTmImportJobManager.NO_SELECTION_MESSAGE.equals(message)) {
+		if (SquashTmConstants.NO_SELECTION_MESSAGE.equals(message)) {
 			comparisonSelectionError = true;
 			return;
 		}

@@ -1,5 +1,7 @@
 package co.kozao.jcmsplugin.squashtm;
 
+import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
@@ -16,6 +18,7 @@ import com.jalios.jcms.plugin.PluginManager;
 import com.jalios.util.Util;
 
 import co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo;
+import co.kozao.jcmsplugin.squashtm.service.SquashTmDashboardService;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmService;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
@@ -32,9 +35,9 @@ public class SquashTmManager {
 
 	private static SquashTmManager SINGLETON;
 	private final SquashTmService service;
-	
-	private static final String SQUASHTM_CACHE_KEY_API_REACHABLE = "jcmsplugin.squashtm.cache.api-reachable";
-	private final Cache<String, String> API_CACHE = CacheBuilder.newBuilder().expireAfterWrite(20, TimeUnit.MINUTES) .maximumSize(10).build();
+
+	private final Cache<String, String> API_CACHE = CacheBuilder.newBuilder().expireAfterWrite(20, TimeUnit.MINUTES)
+			.maximumSize(10).build();
 
 	private SquashTmManager() {
 		service = new SquashTmService();
@@ -65,7 +68,7 @@ public class SquashTmManager {
 		}
 		boolean apiReachable = false;
 		if (isCacheEnable()) {
-			String lastAccessTime = API_CACHE.getIfPresent(SQUASHTM_CACHE_KEY_API_REACHABLE);
+			String lastAccessTime = API_CACHE.getIfPresent(SquashTmConstants.SQUASHTM_CACHE_KEY_API_REACHABLE);
 			if (Util.notEmpty(lastAccessTime)) {
 				if (LOGGER.isDebugEnabled()) {
 					LOGGER.debug(
@@ -76,7 +79,7 @@ public class SquashTmManager {
 				apiReachable = checkSquashTmApiAccess();
 				if (apiReachable) {
 					Date now = new Date();
-					API_CACHE.put(SQUASHTM_CACHE_KEY_API_REACHABLE, now.toString());
+					API_CACHE.put(SquashTmConstants.SQUASHTM_CACHE_KEY_API_REACHABLE, now.toString());
 					if (LOGGER.isDebugEnabled()) {
 						LOGGER.debug("Time of last to API added in cache : '" + lastAccessTime + "'");
 					}
@@ -98,7 +101,7 @@ public class SquashTmManager {
 		boolean answer = false;
 		String urlRemoteSquashTm = SquashTmUtils.getSquashTmServerUrl();
 		try {
-			URL u = new URL(urlRemoteSquashTm);
+			URL u = URI.create(urlRemoteSquashTm).toURL();
 			URLConnection conn = u.openConnection();
 			conn.connect();
 			conn.getInputStream().close();
@@ -258,6 +261,20 @@ public class SquashTmManager {
 		LOGGER.info("Connexion Squash TM réussie : " + userInfo.getFullName());
 
 		return true;
+	}
+
+	/**
+	 * Crée le service du dashboard pour le membre JCMS connecté.
+	 *
+	 * @param member membre JCMS connecté (sert aussi de clé de cache)
+	 */
+	public SquashTmDashboardService newDashboardService(Member member) throws IOException {
+
+		if (member == null) {
+			throw new IOException("Aucun membre JCMS connecté.");
+		}
+
+		return new SquashTmDashboardService(service.resolveAuthorization(), member.getId());
 	}
 
 	/**
