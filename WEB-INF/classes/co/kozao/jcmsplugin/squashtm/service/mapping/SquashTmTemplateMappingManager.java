@@ -37,9 +37,6 @@ public class SquashTmTemplateMappingManager {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmTemplateMappingManager.class);
 
-	private static final String MAPPING_FILE_NAME = "template-mapping.json";
-	private static final String TEMPLATE_FILE_NAME = "active-template.xlsx";
-
 	private static final long PENDING_EXPIRATION_DELAY = 30L * 60L * 1000L;
 
 	private static final SquashTmTemplateMappingManager INSTANCE = new SquashTmTemplateMappingManager();
@@ -115,7 +112,7 @@ public class SquashTmTemplateMappingManager {
 	 */
 	public File getCustomTemplateFile() {
 
-		File templateFile = new File(getStorageDirectory(), TEMPLATE_FILE_NAME);
+		File templateFile = new File(getStorageDirectory(), SquashTmConstants.TEMPLATE_FILE_NAME);
 
 		return templateFile.isFile() ? templateFile : null;
 	}
@@ -153,18 +150,18 @@ public class SquashTmTemplateMappingManager {
 
 		File directory = getStorageDirectory();
 
-		File temporaryMapping = new File(directory, MAPPING_FILE_NAME + ".tmp");
-		File temporaryTemplate = new File(directory, TEMPLATE_FILE_NAME + ".tmp");
+		File temporaryMapping = new File(directory, SquashTmConstants.MAPPING_FILE_NAME + ".tmp");
+		File temporaryTemplate = new File(directory, SquashTmConstants.TEMPLATE_FILE_NAME + ".tmp");
 
 		try {
 
 			Files.write(temporaryMapping.toPath(), mapping.toJson().getBytes(StandardCharsets.UTF_8));
 			Files.copy(templateFile.toPath(), temporaryTemplate.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-			Files.move(temporaryTemplate.toPath(), new File(directory, TEMPLATE_FILE_NAME).toPath(),
+			Files.move(temporaryTemplate.toPath(), new File(directory, SquashTmConstants.TEMPLATE_FILE_NAME).toPath(),
 					StandardCopyOption.REPLACE_EXISTING);
 
-			Files.move(temporaryMapping.toPath(), new File(directory, MAPPING_FILE_NAME).toPath(),
+			Files.move(temporaryMapping.toPath(), new File(directory, SquashTmConstants.MAPPING_FILE_NAME).toPath(),
 					StandardCopyOption.REPLACE_EXISTING);
 
 		} finally {
@@ -183,7 +180,7 @@ public class SquashTmTemplateMappingManager {
 	public synchronized void resetToDefault() throws IOException {
 
 		Files.deleteIfExists(getMappingFile().toPath());
-		Files.deleteIfExists(new File(getStorageDirectory(), TEMPLATE_FILE_NAME).toPath());
+		Files.deleteIfExists(new File(getStorageDirectory(), SquashTmConstants.TEMPLATE_FILE_NAME).toPath());
 
 		LOGGER.info("[TEMPLATE] Retour au template par défaut.");
 	}
@@ -284,7 +281,7 @@ public class SquashTmTemplateMappingManager {
 	 */
 
 	private File getMappingFile() {
-		return new File(getStorageDirectory(), MAPPING_FILE_NAME);
+		return new File(getStorageDirectory(), SquashTmConstants.MAPPING_FILE_NAME);
 	}
 
 	/**

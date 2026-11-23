@@ -1,4 +1,4 @@
- <%-- En-tête du rapport --%>
+ <%-- En-tete du rapport --%>
   <div class="squashtm-report-header">
     <h2 class="squashtm-report-title">
        <span class="jalios-icon icomoon-file-excel"></span>
@@ -15,7 +15,7 @@
 		</div>
   </div>
 
-  <%-- Résumé des données importées --%>
+  <%-- Résumés des données Importés --%>
   <div class="squashtm-report-section">
     <h3> <%= glp("jcmsplugin.squashtm.app.import.report.summary") %> </h3>
 
@@ -77,7 +77,7 @@
         <span class="squashtm-report-stat-status"> <%= glp("jcmsplugin.squashtm.app.import.report.imported") %> </span>
       </div>
       
-      <%-- Étapes de test --%>
+      <%-- Etapes de test --%>
 <div class="squashtm-report-stat-card">
     <span class="jalios-icon icomoon-list"></span>
     <span class="squashtm-report-stat-label"> <%= glp("jcmsplugin.squashtm.app.import.report.test-steps") %> </span>
@@ -115,7 +115,7 @@
   <div class="squashtm-report-section" id="squashTmReportErrorSection" style="display: none;">
 
 		<jalios:accordion>
- 			<jalios:accordion-panel title="Détails des erreurs">
+ 			<jalios:accordion-panel title='<%= glp("jcmsplugin.squashtm.app.import.report.error-details") %>'>
   				<ul id="squashTmReportErrorList" class="list-group"> </ul>
    			</jalios:accordion-panel>
 		</jalios:accordion>
