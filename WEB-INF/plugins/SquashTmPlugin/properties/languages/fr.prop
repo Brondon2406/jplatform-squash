@@ -113,9 +113,6 @@ jcmsplugin.squashtm.app.import.analysis.inconsistencies: Incohérences détecté
 jcmsplugin.squashtm.app.import.analysis.no-inconsistencies: Aucune incohérence détectée.
 jcmsplugin.squashtm.app.import.analysis.confirm: Confirmer et importer
 
-# FICHIER SÉLECTIONNÉ
-jcmsplugin.squashtm.app.import.file.remove: Supprimer le fichier
-
 # RAPPORT D'IMPORTATION 
 jcmsplugin.squashtm.app.import.report.title: Rapport d'importation
 jcmsplugin.squashtm.app.import.report.success: Importation terminée avec succès
@@ -229,4 +226,198 @@ jcmsplugin.squashtm.app.administration.field.feature: Fonctionnalité
 jcmsplugin.squashtm.app.administration.field.element: Libellé de l'exigence et du cas de test
 jcmsplugin.squashtm.app.administration.field.action: Action de l'étape
 jcmsplugin.squashtm.app.administration.field.expected-result: Résultat attendu
+
+# ===== Dashboard =====
+# En-tête
+jcmsplugin.squashtm.dashboard.title: Tableau de bord Squash TM
+jcmsplugin.squashtm.dashboard.subtitle: Indicateurs calculés à partir de Squash TM : exigences, cas de test, campagnes et exécutions.
+jcmsplugin.squashtm.dashboard.refresh: Actualiser
+jcmsplugin.squashtm.dashboard.refresh.title: Recharger les données depuis Squash TM
+# Filtres
+jcmsplugin.squashtm.dashboard.filters.reset: Réinitialiser les filtres
+jcmsplugin.squashtm.dashboard.filters.advanced: Filtres avancés
+jcmsplugin.squashtm.dashboard.filters.active: Filtres :
+jcmsplugin.squashtm.dashboard.filters.clear-all: Tout effacer
+jcmsplugin.squashtm.dashboard.filters.remove: Retirer ce filtre
+jcmsplugin.squashtm.dashboard.filters.none-available: Aucune valeur disponible
+jcmsplugin.squashtm.dashboard.filters.selected: sélectionné(s)
+jcmsplugin.squashtm.dashboard.filter.scope: Périmètre
+jcmsplugin.squashtm.dashboard.scope.ALL: Tout
+jcmsplugin.squashtm.dashboard.scope.REQUIREMENTS: Exigences
+jcmsplugin.squashtm.dashboard.scope.TEST_CASES: Cas de test
+jcmsplugin.squashtm.dashboard.scope.CAMPAIGNS: Campagnes
+jcmsplugin.squashtm.dashboard.scope.REPORTING: Tableaux Squash TM
+jcmsplugin.squashtm.dashboard.filter.projects: Projets
+jcmsplugin.squashtm.dashboard.filter.projects.all: Tous les projets
+jcmsplugin.squashtm.dashboard.filter.period: Période
+jcmsplugin.squashtm.dashboard.period.all: Tout
+jcmsplugin.squashtm.dashboard.period.7: 7 jours
+jcmsplugin.squashtm.dashboard.period.30: 30 jours
+jcmsplugin.squashtm.dashboard.period.90: 90 jours
+jcmsplugin.squashtm.dashboard.period.year: Cette année
+jcmsplugin.squashtm.dashboard.filter.from: Du
+jcmsplugin.squashtm.dashboard.filter.to: Au
+jcmsplugin.squashtm.dashboard.filter.dateField: Date de référence
+jcmsplugin.squashtm.dashboard.dateField.CREATED: Date de création
+jcmsplugin.squashtm.dashboard.dateField.MODIFIED: Dernière modification
+jcmsplugin.squashtm.dashboard.filter.groupBy: Regroupement de l'évolution
+jcmsplugin.squashtm.dashboard.group.AUTO: Automatique
+jcmsplugin.squashtm.dashboard.group.DAY: Par jour
+jcmsplugin.squashtm.dashboard.group.WEEK: Par semaine
+jcmsplugin.squashtm.dashboard.group.MONTH: Par mois
+jcmsplugin.squashtm.dashboard.filter.search: Recherche
+jcmsplugin.squashtm.dashboard.filter.search.placeholder: Nom, référence ou identifiant
+jcmsplugin.squashtm.dashboard.filter.path: Dossier ou module
+jcmsplugin.squashtm.dashboard.filter.path.placeholder: Ex. Paiement/Carte
+jcmsplugin.squashtm.dashboard.filter.authors: Auteur
+jcmsplugin.squashtm.dashboard.filter.reqStatus: Statut des exigences
+jcmsplugin.squashtm.dashboard.filter.criticality: Criticité
+jcmsplugin.squashtm.dashboard.filter.category: Catégorie
+jcmsplugin.squashtm.dashboard.filter.reqCoverage: Couverture des exigences
+jcmsplugin.squashtm.dashboard.reqCoverage.ALL: Toutes
+jcmsplugin.squashtm.dashboard.reqCoverage.COVERED: Couvertes par au moins un test
+jcmsplugin.squashtm.dashboard.reqCoverage.UNCOVERED: Sans cas de test
+jcmsplugin.squashtm.dashboard.filter.tcStatus: Statut des cas de test
+jcmsplugin.squashtm.dashboard.filter.importance: Importance
+jcmsplugin.squashtm.dashboard.filter.nature: Nature
+jcmsplugin.squashtm.dashboard.filter.type: Type
+jcmsplugin.squashtm.dashboard.filter.tcCoverage: Lien avec les exigences
+jcmsplugin.squashtm.dashboard.tcCoverage.ALL: Tous
+jcmsplugin.squashtm.dashboard.tcCoverage.COVERED: Liés à une exigence
+jcmsplugin.squashtm.dashboard.tcCoverage.UNCOVERED: Sans exigence
+jcmsplugin.squashtm.dashboard.filter.automatable: Automatisation
+jcmsplugin.squashtm.dashboard.automatable.ALL: Tous
+jcmsplugin.squashtm.dashboard.automatable.Y: Automatisables
+jcmsplugin.squashtm.dashboard.automatable.N: Non automatisables
+jcmsplugin.squashtm.dashboard.automatable.M: À évaluer
+jcmsplugin.squashtm.dashboard.filter.campaignStatus: Statut des campagnes
+jcmsplugin.squashtm.dashboard.filter.execStatus: Résultat des exécutions
+jcmsplugin.squashtm.dashboard.filter.reportType: Type de tableau
+# États
+jcmsplugin.squashtm.dashboard.state.loading: Chargement des données Squash TM…
+jcmsplugin.squashtm.dashboard.state.loading.first: Premier chargement : la récupération des données peut prendre quelques instants. Les consultations suivantes seront immédiates.
+jcmsplugin.squashtm.dashboard.state.error: Impossible de charger le dashboard :
+jcmsplugin.squashtm.dashboard.state.retry: Réessayer
+jcmsplugin.squashtm.dashboard.state.empty: Aucune donnée ne correspond aux filtres sélectionnés.
+jcmsplugin.squashtm.dashboard.state.partial: Chargement partiel : le délai maximal a été atteint et certaines données sont absentes. Utilisez Actualiser pour réessayer.
+jcmsplugin.squashtm.dashboard.state.updated: Données {0}
+jcmsplugin.squashtm.dashboard.state.cache: en cache
+# Indicateurs
+jcmsplugin.squashtm.dashboard.kpi.requirements: Exigences
+jcmsplugin.squashtm.dashboard.kpi.testCases: Cas de test
+jcmsplugin.squashtm.dashboard.kpi.campaigns: Campagnes
+jcmsplugin.squashtm.dashboard.kpi.executions: Exécutions
+jcmsplugin.squashtm.dashboard.kpi.coverage: Exigences couvertes
+jcmsplugin.squashtm.dashboard.kpi.linked: Cas de test liés
+jcmsplugin.squashtm.dashboard.kpi.success: Taux de succès
+jcmsplugin.squashtm.dashboard.kpi.progress: Avancement des exécutions
+jcmsplugin.squashtm.dashboard.kpi.never: Cas de test jamais exécutés
+jcmsplugin.squashtm.dashboard.kpi.reporting: Tableaux de bord Squash TM
+# Sections et graphiques
+jcmsplugin.squashtm.dashboard.section.requirements: Exigences
+jcmsplugin.squashtm.dashboard.section.testCases: Cas de test
+jcmsplugin.squashtm.dashboard.section.campaigns: Campagnes et exécutions
+jcmsplugin.squashtm.dashboard.section.reporting: Tableaux de bord Squash TM
+jcmsplugin.squashtm.dashboard.chart.byReportType: Par type
+jcmsplugin.squashtm.dashboard.reporting.note: Squash TM ne fournit pas le contenu de ses tableaux de bord par l'API REST : seule leur liste est disponible ici. Les indicateurs des autres rubriques sont recalculés à partir des exigences, cas de test et campagnes. La période ne s'applique pas à cette liste.
+jcmsplugin.squashtm.dashboard.reporting.open: Ouvrir Squash TM
+jcmsplugin.squashtm.dashboard.chart.byStatus: Par statut
+jcmsplugin.squashtm.dashboard.chart.byCriticality: Par criticité
+jcmsplugin.squashtm.dashboard.chart.byCategory: Par catégorie
+jcmsplugin.squashtm.dashboard.chart.byProject: Par projet
+jcmsplugin.squashtm.dashboard.chart.byImportance: Par importance
+jcmsplugin.squashtm.dashboard.chart.byNature: Par nature
+jcmsplugin.squashtm.dashboard.chart.byType: Par type
+jcmsplugin.squashtm.dashboard.chart.byAutomation: Automatisation
+jcmsplugin.squashtm.dashboard.chart.coverage: Couverture par les tests
+jcmsplugin.squashtm.dashboard.chart.linkage: Lien avec les exigences
+jcmsplugin.squashtm.dashboard.chart.covered: Couvertes
+jcmsplugin.squashtm.dashboard.chart.uncovered: Non couvertes
+jcmsplugin.squashtm.dashboard.chart.linked: Liés à une exigence
+jcmsplugin.squashtm.dashboard.chart.notLinked: Sans exigence
+jcmsplugin.squashtm.dashboard.chart.timeline: Évolution
+jcmsplugin.squashtm.dashboard.chart.timeline.requirements: Exigences par période
+jcmsplugin.squashtm.dashboard.chart.timeline.testCases: Cas de test par période
+jcmsplugin.squashtm.dashboard.chart.execStatus: Exécutions par statut
+jcmsplugin.squashtm.dashboard.chart.execByProject: Exécutions par projet
+jcmsplugin.squashtm.dashboard.chart.execTimeline: Exécutions par période
+jcmsplugin.squashtm.dashboard.chart.campaignStatus: Campagnes par statut
+jcmsplugin.squashtm.dashboard.chart.success: Succès
+jcmsplugin.squashtm.dashboard.chart.failure: Échecs
+jcmsplugin.squashtm.dashboard.chart.total: Total
+jcmsplugin.squashtm.dashboard.chart.others: Autres
+jcmsplugin.squashtm.dashboard.chart.filter-hint: Cliquer pour filtrer
+
+# Tableaux
+jcmsplugin.squashtm.dashboard.col.id: ID
+jcmsplugin.squashtm.dashboard.col.reference: Référence
+jcmsplugin.squashtm.dashboard.col.name: Nom
+jcmsplugin.squashtm.dashboard.col.project: Projet
+jcmsplugin.squashtm.dashboard.col.status: Statut
+jcmsplugin.squashtm.dashboard.col.criticality: Criticité
+jcmsplugin.squashtm.dashboard.col.category: Catégorie
+jcmsplugin.squashtm.dashboard.col.importance: Importance
+jcmsplugin.squashtm.dashboard.col.nature: Nature
+jcmsplugin.squashtm.dashboard.col.type: Type
+jcmsplugin.squashtm.dashboard.col.links: Liens
+jcmsplugin.squashtm.dashboard.col.created: Créé le
+jcmsplugin.squashtm.dashboard.col.modified: Modifié le
+jcmsplugin.squashtm.dashboard.col.iterations: Itérations
+jcmsplugin.squashtm.dashboard.col.executions: Exécutions
+jcmsplugin.squashtm.dashboard.col.success: Succès
+jcmsplugin.squashtm.dashboard.col.failure: Échecs
+jcmsplugin.squashtm.dashboard.col.pending: En attente
+jcmsplugin.squashtm.dashboard.col.progress: Avancement
+jcmsplugin.squashtm.dashboard.col.successRate: Succès %
+jcmsplugin.squashtm.dashboard.col.lastExecution: Dernière exécution
+jcmsplugin.squashtm.dashboard.col.scheduledStart: Début prévu
+jcmsplugin.squashtm.dashboard.table.empty: Aucune ligne à afficher.
+jcmsplugin.squashtm.dashboard.table.truncated:
+# Valeurs
+jcmsplugin.squashtm.dashboard.value.UNDEFINED: Non défini
+jcmsplugin.squashtm.dashboard.value.WORK_IN_PROGRESS: En cours de rédaction
+jcmsplugin.squashtm.dashboard.value.UNDER_REVIEW: À approuver 
+jcmsplugin.squashtm.dashboard.value.APPROVED: Approuvé
+jcmsplugin.squashtm.dashboard.value.OBSOLETE: Obsolète
+jcmsplugin.squashtm.dashboard.value.TO_BE_UPDATED: À mettre à jour
+jcmsplugin.squashtm.dashboard.value.CRITICAL: Critique
+jcmsplugin.squashtm.dashboard.value.MAJOR: Majeure
+jcmsplugin.squashtm.dashboard.value.MINOR: Mineure
+jcmsplugin.squashtm.dashboard.value.VERY_HIGH: Très haute
+jcmsplugin.squashtm.dashboard.value.HIGH: Haute
+jcmsplugin.squashtm.dashboard.value.MEDIUM: Moyenne
+jcmsplugin.squashtm.dashboard.value.LOW: Basse
+jcmsplugin.squashtm.dashboard.value.Y: Oui
+jcmsplugin.squashtm.dashboard.value.N: Non
+jcmsplugin.squashtm.dashboard.value.M: À évaluer
+jcmsplugin.squashtm.dashboard.value.PLANNED: Planifiée
+jcmsplugin.squashtm.dashboard.value.IN_PROGRESS: En cours
+jcmsplugin.squashtm.dashboard.value.FINISHED: Terminée
+jcmsplugin.squashtm.dashboard.value.ARCHIVED: Archivée
+jcmsplugin.squashtm.dashboard.value.SUCCESS: Succès
+jcmsplugin.squashtm.dashboard.value.FAILURE: Échec
+jcmsplugin.squashtm.dashboard.value.BLOCKED: Bloqué
+jcmsplugin.squashtm.dashboard.value.RUNNING: En cours d'exécution
+jcmsplugin.squashtm.dashboard.value.READY: Prêt
+jcmsplugin.squashtm.dashboard.value.UNTESTABLE: Non testable
+jcmsplugin.squashtm.dashboard.value.SETTLED: Arbitré
+jcmsplugin.squashtm.dashboard.value.ERROR: Erreur
+jcmsplugin.squashtm.dashboard.value.WARNING: Avertissement
+jcmsplugin.squashtm.dashboard.value.NOT_RUN: Non exécuté
+jcmsplugin.squashtm.dashboard.value.CANCELLED: Annulé
+jcmsplugin.squashtm.dashboard.value.DASHBOARD: Tableau de bord
+jcmsplugin.squashtm.dashboard.value.CHART: Graphique
+jcmsplugin.squashtm.dashboard.value.REPORT: Rapport
+jcmsplugin.squashtm.dashboard.value.CUSTOM_EXPORT: Export personnalisé
+jcmsplugin.squashtm.dashboard.value.CAT_FUNCTIONAL: Fonctionnelle
+jcmsplugin.squashtm.dashboard.value.CAT_NON_FUNCTIONAL: Non fonctionnelle
+jcmsplugin.squashtm.dashboard.value.CAT_USE_CASE: Cas d'utilisation
+jcmsplugin.squashtm.dashboard.value.CAT_BUSINESS: Métier
+jcmsplugin.squashtm.dashboard.value.CAT_TEST_REQUIREMENT: Exigence de test
+jcmsplugin.squashtm.dashboard.value.CAT_ERGONOMIC: Ergonomique
+jcmsplugin.squashtm.dashboard.value.CAT_PERFORMANCE: Performance
+jcmsplugin.squashtm.dashboard.value.CAT_TECHNICAL: Technique
+jcmsplugin.squashtm.dashboard.value.CAT_USER_STORY: User story
+jcmsplugin.squashtm.dashboard.value.CAT_SECURITY: Sécurité
+jcmsplugin.squashtm.dashboard.value.CAT_UNDEFINED: Non définie
 

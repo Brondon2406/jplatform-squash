@@ -13,6 +13,7 @@ channel.less.plugins/SquashTmPlugin/css/squashtm.css: plugins/SquashTmPlugin/css
 channel.less.plugins/SquashTmPlugin/css/importfiles.css: plugins/SquashTmPlugin/css/importfiles.less
 channel.less.plugins/SquashTmPlugin/css/squashtm-analysis.css: plugins/SquashTmPlugin/css/squashtm-analysis.less
 channel.less.plugins/SquashTmPlugin/css/squashtm-report.css: plugins/SquashTmPlugin/css/squashtm-report.less
+channel.less.plugins/SquashTmPlugin/css/squashtm-dashboard.css: plugins/SquashTmPlugin/css/squashtm-dashboard.less
 
 
 # Module Properties
@@ -21,3 +22,6 @@ jcmsplugin.squashtm.provider.app.auth.redirect.urlSite: [APP_DOMAIN]/plugins/Squ
 jcmsplugin.squashtm.provider.authentication-mode.jsp: plugins/SquashTmPlugin/jsp/pluginProperties/doEditPluginAuthenticationMode.jsp
 jcmsplugin.squashtm.provider.authentication-mode.default: BASIC
 jcmsplugin.squashtm.properties.app.sidebar.icon.chooser-image: plugins/SquashTmPlugin/images/Squashtm64.png
+
+# Dashboard : durée (en minutes) de conservation des données Squash TM en mémoire
+jcmsplugin.squashtm.dashboard.cache.minutes: 10
