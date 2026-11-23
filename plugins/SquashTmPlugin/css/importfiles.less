@@ -1,13 +1,8 @@
-// Include variables and mixins
-@import "../../../css/jalios/core/init-mixins.less"; // Use init-mixins.less if more mixins are required
 
-// -------------------------------------------------------------------
-// PLUGINS LESS VARIABLES
-// -------------------------------------------------------------------
-
-
-// Hook for JCMS
+@import "../../../css/jalios/core/init-mixins.less"; 
 @import "../../../css/plugin.less";
+
+@app-color-squashtm: #33446B;
 
 /* =========== CONTENEUR PRINCIPAL ================== */
 
@@ -24,6 +19,7 @@
 }
 
 .squashtm-import-title {
+	color: @app-color-squashtm;
 	margin-top: 0;
 	margin-bottom: 8px;
 	font-size: 24px;

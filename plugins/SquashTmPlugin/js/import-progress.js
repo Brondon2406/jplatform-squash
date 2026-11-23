@@ -263,7 +263,6 @@ document.addEventListener("DOMContentLoaded", function() {
             try {
                 return decodeURIComponent(utf8Match[1]);
             } catch (e) {
-                // Ignoré : le nom simple est utilisé ci-dessous.
             }
         }
 
