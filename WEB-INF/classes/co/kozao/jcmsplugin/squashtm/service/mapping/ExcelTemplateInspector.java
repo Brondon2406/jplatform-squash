@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -18,6 +17,7 @@ import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateAnalysis;
 import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateColumnMapping;
 import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateField;
 import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateMapping;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
  * Inspecte un template Excel téléversé dans la vue d'administration.
@@ -122,7 +122,7 @@ public class ExcelTemplateInspector {
 			int filledCells = 0;
 
 			for (int columnIndex = 0; columnIndex < Math.max(row.getLastCellNum(), 0); columnIndex++) {
-				if (!getCellValue(row, columnIndex).isEmpty()) {
+				if (!SquashTmUtils.getCellValue(row, columnIndex, dataFormatter).isEmpty()) {
 					filledCells++;
 				}
 			}
@@ -165,7 +165,7 @@ public class ExcelTemplateInspector {
 
 		for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
 
-			String header = headerRow == null ? "" : getCellValue(headerRow, columnIndex);
+			String header = headerRow == null ? "" : SquashTmUtils.getCellValue(headerRow, columnIndex, dataFormatter);
 
 			TemplateAnalysis.Column column = new TemplateAnalysis.Column(columnIndex, header);
 
@@ -178,10 +178,10 @@ public class ExcelTemplateInspector {
 					continue;
 				}
 
-				String value = getCellValue(row, columnIndex);
+				String value = SquashTmUtils.getCellValue(row, columnIndex, dataFormatter);
 
 				if (!value.isEmpty() && !column.getSamples().contains(value)) {
-					column.getSamples().add(abbreviate(value));
+					column.getSamples().add(SquashTmUtils.abbreviate(value, MAX_SAMPLE_LENGTH));
 				}
 			}
 
@@ -235,23 +235,4 @@ public class ExcelTemplateInspector {
 		}
 	}
 
-	private String getCellValue(Row row, int columnIndex) {
-
-		Cell cell = row.getCell(columnIndex);
-
-		if (cell == null) {
-			return "";
-		}
-
-		return dataFormatter.formatCellValue(cell).trim();
-	}
-
-	private String abbreviate(String value) {
-
-		if (value.length() <= MAX_SAMPLE_LENGTH) {
-			return value;
-		}
-
-		return value.substring(0, MAX_SAMPLE_LENGTH - 1) + "…";
-	}
 }

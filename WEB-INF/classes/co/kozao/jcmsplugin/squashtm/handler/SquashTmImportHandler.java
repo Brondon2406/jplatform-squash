@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Locale;
 import java.util.Base64;
 import java.nio.charset.StandardCharsets;
 
@@ -152,7 +153,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 	/**
 	 * Construit un message d'erreur lisible pour l'échec du téléchargement de la
-	 * version à jour du module (notamment les HTTP 404).
+	 * version à jour du module.
 	 */
 	private String buildDownloadErrorMessage(Throwable e) {
 
@@ -195,7 +196,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 			return "0,00";
 		}
 
-		return String.format(java.util.Locale.FRANCE, "%.2f", importAnalysis.getValidityRate());
+		return String.format(Locale.FRANCE, "%.2f", importAnalysis.getValidityRate());
 	}
 
 	/**
@@ -255,10 +256,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 	 * @return true si l'importation a été démarrée
 	 */
 	public boolean performImport(File uploadedFile) {
-
-		LOGGER.info("[IMPORT][DEBUT] Demande de lancement.");
-		LOGGER.info("[IMPORT][PROJET] " + projectName);
-		LOGGER.info("[IMPORT][FICHIER] " + (uploadedFile != null ? uploadedFile.getAbsolutePath() : "null"));
 
 		try {
 
@@ -328,16 +325,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 	@Override
 	public boolean processAction() throws IOException {
 
-		LOGGER.info("[HANDLER][DEBUT] processAction() appelée.");
-
-		LOGGER.info("[HANDLER 1] processAction() appelée.");
-		LOGGER.info("[HANDLER 2] opAnalyze = " + opAnalyze);
-		LOGGER.info("[HANDLER 3] opImport = " + opImport);
-		LOGGER.info("[HANDLER 4] opCancelAnalysis = " + opCancelAnalysis);
-		LOGGER.info("[HANDLER 4b] opDownloadReport = " + opDownloadReport);
-		LOGGER.info("[HANDLER 5] projectName = " + projectName);
-		LOGGER.info("[HANDLER 6] analysisId = " + analysisId);
-
 		try {
 
 			if (opLoadAnalysis) {
@@ -359,61 +346,31 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 			if (opAnalyze) {
 
-				LOGGER.info("[HANDLER 7] Action détectée : ANALYSE.");
-
 				if (projectName == null || projectName.trim().isEmpty()) {
-
-					LOGGER.warn("[HANDLER 8] Arrêt : nom du projet vide.");
-
 					setImportError("Le nom du projet Squash TM est obligatoire.");
-
 					return false;
 				}
 
-				LOGGER.info("[HANDLER 9] Récupération du fichier uploadé.");
-
 				List<DocUploadInfo> uploadedFiles = getUploadedFiles("excelFile");
 
-				LOGGER.info("[HANDLER 10] Nombre de fichiers reçus : "
-						+ (uploadedFiles == null ? "null" : uploadedFiles.size()));
-
 				if (uploadedFiles == null || uploadedFiles.isEmpty()) {
-
-					LOGGER.warn("[HANDLER 11] Arrêt : aucun fichier reçu.");
-
 					return false;
 				}
 
 				File uploadedFile = uploadedFiles.get(0).getFile();
 
-				LOGGER.info("[HANDLER 12] Fichier reçu : "
-						+ (uploadedFile != null ? uploadedFile.getAbsolutePath() : "null"));
-
 				if (uploadedFile == null || !uploadedFile.isFile()) {
-
-					LOGGER.warn("[HANDLER 13] Arrêt : fichier introuvable.");
-
 					setImportError("Le fichier Excel uploadé est introuvable.");
 
 					return false;
 				}
 
-				LOGGER.info("[HANDLER 14] Appel de analyzeImport().");
-
 				String authorizationHeader = prepareAuthorizationHeader();
 
 				analysisId = importJobManager.analyzeImport(uploadedFile, projectName.trim(), authorizationHeader);
-
-				LOGGER.info("[HANDLER 15] Analyse terminée. ID : " + analysisId);
-
 				importAnalysis = importJobManager.getAnalysis(analysisId);
 
-				LOGGER.info("[HANDLER 16] Récupération de la synthèse terminée.");
-				LOGGER.info("[HANDLER 17] importAnalysis = " + (importAnalysis != null ? "disponible" : "null"));
-
 				if (importAnalysis == null) {
-
-					LOGGER.error("[HANDLER 18] Arrêt : synthèse introuvable.");
 
 					importJobManager.cancelAnalysis(analysisId);
 					analysisId = null;
@@ -423,36 +380,25 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 					return false;
 				}
 
-				LOGGER.info("[HANDLER 19] Analyse prête à être affichée.");
-
 				return false;
 			}
 
 			if (opCancelAnalysis) {
 
-				LOGGER.info("[HANDLER 20] Action détectée : ANNULATION.");
-				LOGGER.info("[HANDLER 21] Analyse à annuler : " + analysisId);
-
 				boolean cancelled = importJobManager.cancelAnalysis(analysisId);
-
-				LOGGER.info("[HANDLER 22] Résultat de l'annulation : " + cancelled);
+				LOGGER.info("Résultat de l'annulation : " + cancelled);
 
 				analysisId = null;
 				importAnalysis = null;
 				importJobId = null;
 				importResult = null;
 
-				LOGGER.info("[HANDLER 23] Données de l'analyse réinitialisées.");
-
 				return false;
 			}
 
 			if (opDownloadReport) {
 
-				LOGGER.info("[HANDLER][DOWNLOAD] Action détectée : TÉLÉCHARGEMENT VERSION À JOUR.");
-
 				if (projectName == null || projectName.trim().isEmpty()) {
-					LOGGER.warn("[HANDLER][DOWNLOAD] Arrêt : nom du projet vide.");
 					setImportError("Le nom du projet Squash TM est obligatoire pour le téléchargement.");
 					return false;
 				}
@@ -468,7 +414,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 					byte[] content = exportService.exportProject(cleanProjectName);
 
 					if (content == null || content.length == 0) {
-						LOGGER.error("[HANDLER][DOWNLOAD] Contenu généré vide pour le projet : " + cleanProjectName);
 						setImportError("Impossible de télécharger le fichier depuis Squash TM. (fichier vide)");
 						return false;
 					}
@@ -489,9 +434,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 						out.flush();
 					}
 
-					LOGGER.info(
-							"[HANDLER][DOWNLOAD] Fichier envoyé : " + fileName + " (" + content.length + " octets)");
-					return true; // réponse déjà écrite, ne pas rediriger / re-rendre la page
+					LOGGER.info("Fichier envoyé : " + fileName + " (" + content.length + " octets)");
 
 				} catch (IOException e) {
 					LOGGER.error("[HANDLER][DOWNLOAD] Échec I/O du téléchargement depuis Squash TM.", e);
@@ -510,47 +453,27 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 
 			if (opImport) {
 
-				LOGGER.info("[HANDLER 24] Action détectée : CONFIRMATION.");
-				LOGGER.info("[HANDLER 25] Vérification de l'identifiant d'analyse.");
-
 				if (analysisId == null || analysisId.trim().isEmpty()) {
-
-					LOGGER.error("[HANDLER 26] Arrêt : identifiant d'analyse absent.");
-
 					setImportError("Aucune analyse à confirmer.");
 
 					return false;
 				}
 
-				LOGGER.info("[HANDLER 27] Préparation de l'authentification.");
-
 				String authorizationHeader = prepareAuthorizationHeader();
-
-				LOGGER.info("[HANDLER 28] Authentification préparée.");
-				LOGGER.info("[HANDLER 29] Appel de confirmImport().");
 
 				importJobId = importJobManager.confirmImport(analysisId, authorizationHeader,
 						selectedComparisonIndexes);
-
-				LOGGER.info("[HANDLER 30] Importation démarrée. ID : " + importJobId);
-
 				analysisId = null;
 				importAnalysis = null;
 				importResult = null;
 				selectedComparisonIndexes = null;
 
-				LOGGER.info("[HANDLER 31] Données de l'analyse réinitialisées.");
-
 				return false;
 			}
-
-			LOGGER.warn("[HANDLER 32] Arrêt : aucune action reconnue.");
 
 			return false;
 
 		} catch (IOException | RuntimeException e) {
-
-			LOGGER.error("[HANDLER 33] Erreur pendant le traitement.", e);
 
 			if (analysisId != null && !analysisId.trim().isEmpty()) {
 
@@ -575,8 +498,6 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 			return false;
 
 		} finally {
-
-			LOGGER.info("[HANDLER 34] Fin de processAction().");
 			LOGGER.info("[HANDLER][FIN] Fin de processAction().");
 		}
 	}

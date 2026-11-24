@@ -5,6 +5,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.log4j.Logger;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
 
 import com.jalios.jcms.Channel;
 import com.jalios.jcms.Member;
@@ -242,6 +245,40 @@ public final class SquashTmUtils {
 				.replace("'", "&#39;");
 	}
 
+	/** Squash TM stocke du texte riche : le HTML est converti en texte simple. */
+	public static String htmlToText(String text) {
+
+		if (text == null) {
+			return "";
+		}
+
+		String value = text.replaceAll("(?i)<br\\s*/?>", "\n").replaceAll("(?i)</p>", "\n").replaceAll("<[^>]*>", "");
+
+		value = value.replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"")
+				.replace("&#39;", "'").replace("&amp;", "&");
+
+		value = value.replace('\u00A0', ' ').replaceAll("[ \\t]+", " ").replaceAll(" ?\\n ?", "\n")
+				.replaceAll("\\n{3,}", "\n\n");
+
+		return value.trim();
+	}
+
+	/**
+	 * Tronque une chaîne à maxLength caractères (ellipse incluse).
+	 */
+	public static String abbreviate(String value, int maxLength) {
+
+		return value.length() <= maxLength ? value : value.substring(0, maxLength - 1) + "…";
+	}
+
+	/**
+	 * Vérifie si une chaîne est nulle ou vide (espaces ignorés).
+	 */
+	public static boolean isBlank(String value) {
+
+		return value == null || value.trim().isEmpty();
+	}
+
 	/*
 	 * =================== DATE ====================
 	 */
@@ -264,5 +301,20 @@ public final class SquashTmUtils {
 
 			return null;
 		}
+	}
+
+	/*
+	 * =================== EXCEL ====================
+	 */
+
+	public static String getCellValue(Row row, int columnIndex, DataFormatter formatter) {
+
+		Cell cell = row.getCell(columnIndex);
+
+		if (cell == null) {
+			return "";
+		}
+
+		return formatter.formatCellValue(cell).trim();
 	}
 }

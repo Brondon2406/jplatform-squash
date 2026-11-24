@@ -34,7 +34,7 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 public class SquashTmService {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmService.class);
-	
+
 	private static final int DASHBOARD_PAGE_SIZE = 200;
 	private static final int DASHBOARD_MAX_PAGES = 500;
 	private static final int CONNECT_TIMEOUT = 5000;
@@ -51,9 +51,6 @@ public class SquashTmService {
 		this.authorizationHeader = authorizationHeader;
 	}
 
-	/**
-	 * Constructeur par défaut conservé pour les autres utilisations du service.
-	 */
 	public SquashTmService() {
 		this.authorizationHeader = null;
 	}
@@ -66,17 +63,13 @@ public class SquashTmService {
 	 */
 	public LoggedUserInfo authenticate(Member member) {
 
-		LOGGER.error("========== SquashTmService.authenticate() APPELE ==========");
-
 		if (member == null) {
 			LOGGER.warn("Member JCMS null.");
 			return null;
 		}
 
 		AuthentificationMode mode = SquashTmUtils.getAuthentificationMode();
-		LOGGER.error("========== MODE = " + mode + " ==========");
-
-		// LOGGER.info("Mode d'authentification Squash TM : " + mode);
+		LOGGER.debug("========== MODE = " + mode + " ==========");
 
 		if (mode == AuthentificationMode.BASIC) {
 			return authenticateWithBasic(member);
@@ -103,21 +96,12 @@ public class SquashTmService {
 
 		try {
 
-			/*
-			 * ======================== 1. VALIDATION DU TOKEN
-			 * =====================================
-			 */
-
 			String tokenUrl = baseUrl + "/api/rest/latest/tokens";
 
-			LOGGER.error("========== AUTH TOKEN ==========");
-			LOGGER.error("baseUrl = [" + baseUrl + "]");
-			LOGGER.error("tokenUrl = [" + tokenUrl + "]");
+			LOGGER.debug("baseUrl = [" + baseUrl + "]");
+			LOGGER.debug("tokenUrl = [" + tokenUrl + "]");
 
 			String tokensJson = executeGet(tokenUrl, "Bearer " + token);
-
-			LOGGER.error("========== REPONSE /api/rest/latest/tokens ==========");
-			LOGGER.error(tokensJson);
 
 			if (Util.isEmpty(tokensJson)) {
 
@@ -173,29 +157,14 @@ public class SquashTmService {
 
 			String userId = userReference.get("id").getAsString();
 
-			LOGGER.error("========== USER ID DU TOKEN ==========");
-
-			LOGGER.error("userId = " + userId);
-
-			LOGGER.error("========== TEST CODE VERSION ==========");
-
-			LOGGER.error("!!! NOUVELLE VERSION SquashTmService !!!");
+			LOGGER.debug("userId = " + userId);
 
 			String userUrl = baseUrl + "/api/rest/latest/users/" + userId;
 
-			LOGGER.error("========== RECUPERATION PROFIL SQUASH ==========");
-
-			LOGGER.error("userUrl = " + userUrl);
+			LOGGER.debug("userUrl = " + userUrl);
 
 			String userJson = executeGet(userUrl, "Bearer " + token);
-
 			LOGGER.error("========== REPONSE /api/rest/latest/users/{id} ==========");
-
-			LOGGER.error(userJson);
-
-			/*
-			 * ==================== DE LoggedUserInfo ======================
-			 */
 
 			LoggedUserInfo info = null;
 
@@ -215,21 +184,6 @@ public class SquashTmService {
 
 				info.setId(userId);
 			}
-
-			/*
-			 * ============================================================ 5. LOGS FINAUX
-			 * ============================================================
-			 */
-
-			LOGGER.error("========== LOGGED USER INFO FINAL ==========");
-
-			LOGGER.error("ID       = " + info.getId());
-
-			LOGGER.error("FullName = " + info.getFullName());
-
-			LOGGER.error("Email    = " + info.getEmailAddr());
-
-			LOGGER.error("Created  = " + info.getCreatedAt());
 
 			LOGGER.info("===== UTILISATEUR SQUASH TM AUTHENTIFIE =====");
 
@@ -262,19 +216,10 @@ public class SquashTmService {
 	 */
 	private LoggedUserInfo authenticateWithBasic(Member member) {
 
-		LOGGER.error("========== AUTHENTIFICATION BASIC ==========");
-
-		/*
-		 * ============================================================ 1. RECUPERATION
-		 * DES IDENTIFIANTS SQUASH TM
-		 * ============================================================
-		 */
-
 		String username = SquashTmUtils.getSquashTmUsername(member);
 		String password = SquashTmUtils.getSquashTmPassword(member);
 
-		LOGGER.error("Username Squash TM = [" + username + "]");
-		LOGGER.error("Password présente ? " + Util.notEmpty(password));
+		LOGGER.debug("Password présente ? " + Util.notEmpty(password));
 
 		if (Util.isEmpty(username) || Util.isEmpty(password)) {
 
@@ -285,7 +230,7 @@ public class SquashTmService {
 
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
 
-		LOGGER.error("Base URL Squash TM = [" + baseUrl + "]");
+		LOGGER.debug("Base URL Squash TM = [" + baseUrl + "]");
 
 		if (Util.isEmpty(baseUrl)) {
 
@@ -305,12 +250,9 @@ public class SquashTmService {
 
 			String usersUrl = baseUrl + "/api/rest/latest/users?size=1000";
 
-			LOGGER.error("========== RECHERCHE UTILISATEUR SQUASH ==========");
-			LOGGER.error("usersUrl = [" + usersUrl + "]");
+			LOGGER.debug("usersUrl = [" + usersUrl + "]");
 
 			String usersJson = executeGet(usersUrl, authorization);
-
-			LOGGER.error("========== REPONSE /users ==========");
 
 			if (Util.isEmpty(usersJson)) {
 
@@ -318,8 +260,6 @@ public class SquashTmService {
 
 				return null;
 			}
-
-			LOGGER.error("Réponse reçue : " + usersJson);
 
 			JsonObject root = JsonParser.parseString(usersJson).getAsJsonObject();
 
@@ -341,7 +281,7 @@ public class SquashTmService {
 
 			JsonArray users = embedded.getAsJsonArray("users");
 
-			LOGGER.error("Nombre d'utilisateurs reçus = " + users.size());
+			LOGGER.debug("Nombre d'utilisateurs reçus = " + users.size());
 
 			String userId = null;
 
@@ -355,8 +295,6 @@ public class SquashTmService {
 
 				String login = getString(user, "login");
 
-				LOGGER.error("Utilisateur Squash trouvé : login = [" + login + "]");
-
 				if (Util.isEmpty(login)) {
 					continue;
 				}
@@ -364,11 +302,6 @@ public class SquashTmService {
 				if (username.equalsIgnoreCase(login)) {
 
 					userId = getString(user, "id");
-
-					LOGGER.error("========== UTILISATEUR BASIC TROUVE ==========");
-
-					LOGGER.error("Login = " + login);
-					LOGGER.error("ID    = " + userId);
 
 					break;
 				}
@@ -383,15 +316,9 @@ public class SquashTmService {
 
 			String userUrl = baseUrl + "/api/rest/latest/users/" + userId;
 
-			LOGGER.error("========== RECUPERATION PROFIL SQUASH ==========");
-
-			LOGGER.error("userUrl = [" + userUrl + "]");
+			LOGGER.debug("userUrl = [" + userUrl + "]");
 
 			String userJson = executeGet(userUrl, authorization);
-
-			LOGGER.error("========== REPONSE /users/{id} ==========");
-
-			LOGGER.error(userJson);
 
 			if (Util.isEmpty(userJson)) {
 
@@ -408,13 +335,6 @@ public class SquashTmService {
 
 				return null;
 			}
-
-			LOGGER.error("========== LOGGED USER INFO BASIC ==========");
-
-			LOGGER.error("ID       = " + info.getId());
-			LOGGER.error("FullName = " + info.getFullName());
-			LOGGER.error("Email    = " + info.getEmailAddr());
-			LOGGER.error("Created  = " + info.getCreatedAt());
 
 			LOGGER.info("===== UTILISATEUR SQUASH TM AUTHENTIFIE EN BASIC =====");
 
@@ -441,12 +361,10 @@ public class SquashTmService {
 	 */
 	private String executeGet(String urlString, String authorization) throws IOException {
 
-		LOGGER.error("========== executeGet() APPELE ==========");
-		LOGGER.error("URL reçue = [" + urlString + "]");
-		LOGGER.error("Authorization présente ? " + Util.notEmpty(authorization));
+		LOGGER.debug("URL reçue = [" + urlString + "]");
+		LOGGER.debug("Authorization présente ? " + Util.notEmpty(authorization));
 
 		if (Util.isEmpty(urlString)) {
-			LOGGER.error("========== URL VIDE ==========");
 			return null;
 		}
 
@@ -454,12 +372,12 @@ public class SquashTmService {
 
 			URI uri = URI.create(urlString);
 
-			LOGGER.error("URI créée = [" + uri + "]");
-			LOGGER.error("URI absolue ? " + uri.isAbsolute());
+			LOGGER.debug("URI créée = [" + uri + "]");
+			LOGGER.debug("URI absolue ? " + uri.isAbsolute());
 
 			URL url = uri.toURL();
 
-			LOGGER.error("URL finale = [" + url + "]");
+			LOGGER.debug("URL finale = [" + url + "]");
 
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -478,11 +396,9 @@ public class SquashTmService {
 				connection.setConnectTimeout(CONNECT_TIMEOUT);
 				connection.setReadTimeout(READ_TIMEOUT);
 
-				LOGGER.error("========== ENVOI REQUETE GET ==========");
-
 				int responseCode = connection.getResponseCode();
 
-				LOGGER.error("Réponse Squash TM HTTP = " + responseCode);
+				LOGGER.debug("Réponse Squash TM HTTP = " + responseCode);
 
 				if (responseCode != HttpURLConnection.HTTP_OK) {
 
@@ -503,8 +419,6 @@ public class SquashTmService {
 					}
 				}
 
-				LOGGER.error("========== REPONSE RECUE ==========");
-
 				return response.toString();
 
 			} finally {
@@ -514,7 +428,6 @@ public class SquashTmService {
 
 		} catch (IllegalArgumentException e) {
 
-			LOGGER.error("========== URI INVALIDE ==========");
 			LOGGER.error("URL reçue par executeGet() = [" + urlString + "]", e);
 
 			throw e;
@@ -660,16 +573,11 @@ public class SquashTmService {
 	/**
 	 * Construit l'en-tête Authorization utilisé pour les appels à l'API REST de
 	 * Squash TM.
-	 *
-	 * <p>
-	 * L'authentification concerne le compte Squash TM configuré dans le connecteur.
-	 * </p>
-	 *
+	 * 
 	 * @return valeur de l'en-tête Authorization
 	 * @throws IOException si les credentials Squash TM sont absents
 	 */
 	private String getAuthorization() throws IOException {
-		// En arrière-plan, utiliser l'en-tête capturé pendant la requête JCMS.
 		if (Util.notEmpty(authorizationHeader)) {
 			return authorizationHeader;
 		}
@@ -1417,7 +1325,6 @@ public class SquashTmService {
 			JsonObject response = executeGetJson(url,
 					"Impossible de récupérer les étapes du cas de test " + testCaseId);
 
-			// Un cas de test sans étape renvoie une réponse sans _embedded.
 			if (!response.has("_embedded") || !response.get("_embedded").isJsonObject()) {
 				break;
 			}
@@ -1434,7 +1341,6 @@ public class SquashTmService {
 				allSteps.add(step);
 			}
 
-			// Pagination : si elle est absente, il n'y a qu'une seule page.
 			if (!response.has("page") || !response.get("page").isJsonObject()
 					|| !response.getAsJsonObject("page").has("totalPages")
 					|| response.getAsJsonObject("page").get("totalPages").isJsonNull()) {
@@ -1491,14 +1397,8 @@ public class SquashTmService {
 
 		LOGGER.info("Suppression du contenu du projet Squash TM id=" + projectId);
 
-		/*
-		 * 1. Récupération de l'arbre des exigences.
-		 */
 		JsonElement requirementTree = getRequirementFolderTree(projectId);
 
-		/*
-		 * 2. Suppression des dossiers racines d'exigences.
-		 */
 		String requirementFolderIds = extractRootFolderIds(requirementTree, "requirement-folder");
 
 		if (Util.notEmpty(requirementFolderIds)) {
@@ -1506,14 +1406,8 @@ public class SquashTmService {
 			deleteRequirementFolders(requirementFolderIds);
 		}
 
-		/*
-		 * 3. Récupération de l'arbre des cas de test.
-		 */
 		JsonElement testCaseTree = getTestCaseFolderTree(projectId);
 
-		/*
-		 * 4. Suppression des dossiers racines de cas de test.
-		 */
 		String testCaseFolderIds = extractRootFolderIds(testCaseTree, "test-case-folder");
 
 		if (Util.notEmpty(testCaseFolderIds)) {
@@ -1594,10 +1488,62 @@ public class SquashTmService {
 	}
 
 	/**
+	 * Retourne le plus grand numéro déjà utilisé par les références d'un projet
+	 * qui suivent le format PREFIXE + nombre (par exemple REQ012 ou TC007).
+	 *
+	 * @param projectId   identifiant du projet Squash TM
+	 * @param prefix      préfixe recherché (REQ ou TC)
+	 * @param requirement true pour les exigences, false pour les cas de test
+	 * @return le plus grand numéro trouvé, ou 0 si aucune référence ne correspond
+	 * @throws IOException si la lecture dans Squash TM échoue
+	 */
+	public int getMaxReferenceNumber(long projectId, String prefix, boolean requirement) throws IOException {
+
+		String path = "/projects/" + projectId + (requirement ? "/requirements" : "/test-cases");
+		String fields = requirement ? "current_version[reference]" : "reference";
+
+		java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+				"^" + java.util.regex.Pattern.quote(prefix) + "(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+		int max = 0;
+
+		for (JsonElement element : getAllPaged(path + "?fields=" + java.net.URLEncoder.encode(fields, "UTF-8"))) {
+
+			if (!element.isJsonObject()) {
+				continue;
+			}
+
+			JsonObject item = element.getAsJsonObject();
+
+			if (requirement) {
+				item = item.has("current_version") && item.get("current_version").isJsonObject()
+						? item.getAsJsonObject("current_version")
+						: null;
+			}
+
+			if (item == null || !item.has("reference") || item.get("reference").isJsonNull()) {
+				continue;
+			}
+
+			java.util.regex.Matcher matcher = pattern.matcher(item.get("reference").getAsString().trim());
+
+			if (matcher.matches()) {
+				try {
+					max = Math.max(max, Integer.parseInt(matcher.group(1)));
+				} catch (NumberFormatException ignored) {
+					// Numéro trop grand : ignoré.
+				}
+			}
+		}
+
+		return max;
+	}
+
+	/**
 	 * Crée une exigence dans un dossier Squash TM.
 	 *
 	 * @param name           nom de l'exigence
-	 * @param reference      référence générée localement
+	 * @param reference      référence générée (envoyée à Squash TM)
 	 * @param parentFolderId identifiant du dossier parent
 	 * @return exigence créée
 	 * @throws IOException si la création échoue
@@ -1616,25 +1562,21 @@ public class SquashTmService {
 
 		String authorization = getAuthorization();
 
-		/*
-		 * Requirement
-		 */
 		JsonObject requirement = new JsonObject();
 
 		requirement.addProperty("_type", "requirement");
 
-		/*
-		 * Version courante de la requirement.
-		 */
 		JsonObject currentVersion = new JsonObject();
 
 		currentVersion.addProperty("_type", "requirement-version");
 
 		currentVersion.addProperty("name", name.trim());
 
-		/*
-		 * Paramètres minimaux nécessaires.
-		 */
+		// Référence de l'exigence (champ "reference" de la version courante).
+		if (!Util.isEmpty(reference)) {
+			currentVersion.addProperty("reference", reference.trim());
+		}
+
 		currentVersion.addProperty("criticality", "MINOR");
 
 		JsonObject category = new JsonObject();
@@ -1647,9 +1589,6 @@ public class SquashTmService {
 
 		requirement.add("current_version", currentVersion);
 
-		/*
-		 * Parent = dossier de fonctionnalités.
-		 */
 		JsonObject parent = new JsonObject();
 
 		parent.addProperty("_type", "requirement-folder");
@@ -1670,7 +1609,7 @@ public class SquashTmService {
 
 			JsonObject createdRequirement = JsonParser.parseString(response).getAsJsonObject();
 
-			LOGGER.info("Requirement créée : " + name + " | référence locale : " + reference);
+			LOGGER.info("Requirement créée : " + name + " | référence : " + reference);
 
 			return createdRequirement;
 
@@ -1733,7 +1672,7 @@ public class SquashTmService {
 	 * Crée un cas de test standard dans un dossier Squash TM.
 	 *
 	 * @param name           nom du cas de test
-	 * @param reference      référence générée localement
+	 * @param reference      référence générée (envoyée à Squash TM)
 	 * @param parentFolderId identifiant du dossier parent
 	 * @return cas de test créé
 	 * @throws IOException si la création échoue
@@ -1758,9 +1697,11 @@ public class SquashTmService {
 
 		testCase.addProperty("name", name.trim());
 
-		/*
-		 * Parent = dossier de fonctionnalités.
-		 */
+		// Référence du cas de test.
+		if (!Util.isEmpty(reference)) {
+			testCase.addProperty("reference", reference.trim());
+		}
+
 		JsonObject parent = new JsonObject();
 
 		parent.addProperty("_type", "test-case-folder");
@@ -1769,9 +1710,6 @@ public class SquashTmService {
 
 		testCase.add("parent", parent);
 
-		/*
-		 * Paramètres standards.
-		 */
 		testCase.addProperty("importance", "MEDIUM");
 
 		testCase.addProperty("status", "UNDER_REVIEW");
@@ -1800,7 +1738,7 @@ public class SquashTmService {
 
 			JsonObject createdTestCase = JsonParser.parseString(response).getAsJsonObject();
 
-			LOGGER.info("Cas de test créé : " + name + " | référence locale : " + reference);
+			LOGGER.info("Cas de test créé : " + name + " | référence : " + reference);
 
 			return createdTestCase;
 

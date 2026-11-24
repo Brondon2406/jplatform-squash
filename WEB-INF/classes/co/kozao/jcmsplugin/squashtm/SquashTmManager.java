@@ -168,7 +168,7 @@ public class SquashTmManager {
 	public boolean isConnect() {
 
 		LoggedUserInfo userInfo = SquashTmUtils
-				.getSquashTmRemoteUserInfos(com.jalios.jcms.Channel.getChannel().getCurrentLoggedMember());
+				.getSquashTmRemoteUserInfos(Channel.getChannel().getCurrentLoggedMember());
 
 		return userInfo != null;
 	}
@@ -176,17 +176,11 @@ public class SquashTmManager {
 	/**
 	 * Retourne les informations de l'utilisateur Squash TM actuellement connecté.
 	 *
-	 * <p>
-	 * Cette méthode sans paramètre est conservée car les JSP du plugin l'utilisent
-	 * directement.
-	 * </p>
 	 *
 	 * @return informations de l'utilisateur Squash TM ou null
 	 */
 	public LoggedUserInfo getLoggedUserInfo() {
-
-		Member member = com.jalios.jcms.Channel.getChannel().getCurrentLoggedMember();
-
+		Member member = Channel.getChannel().getCurrentLoggedMember();
 		return SquashTmUtils.getSquashTmRemoteUserInfos(member);
 	}
 
@@ -231,7 +225,7 @@ public class SquashTmManager {
 
 			LOGGER.warn("Authentification Squash TM échouée.");
 
-			LOGGER.error("Aucune information utilisateur Squash TM n'a été retournée.");
+			LOGGER.warn("Aucune information utilisateur Squash TM n'a été retournée.");
 
 			return false;
 		}
@@ -245,18 +239,6 @@ public class SquashTmManager {
 		 * On ne complète pas ces informations avec le Member JCMS.
 		 */
 		SquashTmUtils.setSquashTmRemoteUserInfos(userInfo);
-
-		LoggedUserInfo savedInfo = SquashTmUtils.getSquashTmRemoteUserInfos(member);
-
-		LOGGER.error("========== INFOS SQUASH TM SAUVEGARDEES ==========");
-
-		LOGGER.error("Saved ID       = " + (savedInfo != null ? savedInfo.getId() : "NULL"));
-
-		LOGGER.error("Saved FullName = " + (savedInfo != null ? savedInfo.getFullName() : "NULL"));
-
-		LOGGER.error("Saved Email    = " + (savedInfo != null ? savedInfo.getEmailAddr() : "NULL"));
-
-		LOGGER.error("Saved Created  = " + (savedInfo != null ? savedInfo.getCreatedAt() : "NULL"));
 
 		LOGGER.info("Connexion Squash TM réussie : " + userInfo.getFullName());
 

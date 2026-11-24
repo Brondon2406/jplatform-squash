@@ -23,15 +23,6 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
  *
  * Fichiers conservés dans le répertoire de stockage :
  *
- * - template-mapping.json : le mapping actif
- *
- * - active-template.xlsx : le template personnalisé proposé au téléchargement
- *
- * Sans ces fichiers, le module fonctionne avec le template historique
- * (TemplateMapping.createDefault()).
- *
- * Le manager conserve aussi, le temps de la configuration, les fichiers
- * téléversés par l'administrateur mais pas encore enregistrés.
  */
 public class SquashTmTemplateMappingManager {
 
@@ -50,16 +41,10 @@ public class SquashTmTemplateMappingManager {
 		return INSTANCE;
 	}
 
-	/*
-	 * ================== MAPPING ACTIF ======================
-	 */
-
 	/**
 	 * Retourne le mapping actif. Si aucun mapping n'est enregistré, ou s'il est
 	 * illisible, le mapping du template historique est retourné.
 	 *
-	 * Le résultat est une copie : le modifier n'a aucun effet sur le mapping
-	 * enregistré.
 	 */
 	public TemplateMapping getActiveMapping() {
 
@@ -76,7 +61,7 @@ public class SquashTmTemplateMappingManager {
 			TemplateMapping mapping = TemplateMapping.fromJson(json);
 
 			if (mapping == null) {
-				LOGGER.error("[TEMPLATE] Mapping vide : " + mappingFile.getAbsolutePath()
+				LOGGER.warn("[TEMPLATE] Mapping vide : " + mappingFile.getAbsolutePath()
 						+ ". Le mapping par défaut est utilisé.");
 				return TemplateMapping.createDefault();
 			}
@@ -84,7 +69,7 @@ public class SquashTmTemplateMappingManager {
 			List<String> errors = mapping.validate();
 
 			if (!errors.isEmpty()) {
-				LOGGER.error("[TEMPLATE] Mapping invalide : " + errors + ". Le mapping par défaut est utilisé.");
+				LOGGER.warn("[TEMPLATE] Mapping invalide : " + errors + ". Le mapping par défaut est utilisé.");
 				return TemplateMapping.createDefault();
 			}
 
@@ -99,17 +84,10 @@ public class SquashTmTemplateMappingManager {
 		}
 	}
 
-	/**
-	 * Indique si un mapping personnalisé est enregistré.
-	 */
 	public boolean isCustomMappingActive() {
 		return getMappingFile().isFile();
 	}
 
-	/**
-	 * Retourne le template personnalisé, ou null si le template historique est
-	 * utilisé.
-	 */
 	public File getCustomTemplateFile() {
 
 		File templateFile = new File(getStorageDirectory(), SquashTmConstants.TEMPLATE_FILE_NAME);
@@ -184,11 +162,6 @@ public class SquashTmTemplateMappingManager {
 
 		LOGGER.info("[TEMPLATE] Retour au template par défaut.");
 	}
-
-	/*
-	 * ==================== FICHIERS TELEVERSES EN ATTENTE
-	 * ================================
-	 */
 
 	/**
 	 * Copie un fichier téléversé dans un fichier temporaire et retourne un jeton
@@ -276,10 +249,6 @@ public class SquashTmTemplateMappingManager {
 		}
 	}
 
-	/*
-	 * ================== STOCKAGE ===================
-	 */
-
 	private File getMappingFile() {
 		return new File(getStorageDirectory(), SquashTmConstants.MAPPING_FILE_NAME);
 	}
@@ -287,16 +256,6 @@ public class SquashTmTemplateMappingManager {
 	/**
 	 * Retourne le répertoire de stockage, en le créant si nécessaire.
 	 *
-	 * Ordre de résolution :
-	 *
-	 * 1. la propriété jcmsplugin.squashtm.template.storage-dir si elle est
-	 * renseignée ;
-	 *
-	 * 2. sinon WEB-INF/data/squashtm, déduit de l'emplacement des classes du
-	 * plugin.
-	 *
-	 * Le répertoire n'est pas dans le dossier du plugin : une mise à jour du plugin
-	 * ne supprime donc pas le template personnalisé.
 	 */
 	private File getStorageDirectory() {
 
@@ -322,7 +281,6 @@ public class SquashTmTemplateMappingManager {
 
 	/**
 	 * Retrouve le répertoire WEB-INF à partir de l'emplacement de cette classe
-	 * (WEB-INF/classes ou WEB-INF/lib/xxx.jar).
 	 */
 	private File resolveWebInfDirectory() {
 

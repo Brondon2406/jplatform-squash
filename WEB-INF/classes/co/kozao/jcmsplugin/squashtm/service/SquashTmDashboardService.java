@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAdjusters;
@@ -14,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +25,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -54,11 +55,15 @@ public class SquashTmDashboardService {
 	private static final Logger LOGGER = Logger.getLogger(SquashTmDashboardService.class);
 
 	private static final int WORKERS = 6;
+
+	/**
+	 * Fils pour les lectures d'itérations et de plans de test : requêtes courtes et
+	 * très nombreuses, le temps est surtout passé à attendre le réseau.
+	 */
+	private static final int IO_WORKERS = 12;
 	private static final long LOAD_BUDGET_MS = 180000L;
 	private static final int DEFAULT_CACHE_MINUTES = 10;
 	private static final String UNDEFINED = "UNDEFINED";
-
-	private static final ZoneId ZONE = ZoneId.systemDefault();
 
 	private static final Set<String> PENDING_EXEC = new HashSet<String>(Arrays.asList("READY", "RUNNING", "NOT_RUN"));
 	private static final Set<String> SUCCESS_EXEC = new HashSet<String>(Arrays.asList("SUCCESS", "SETTLED"));
@@ -182,6 +187,12 @@ public class SquashTmDashboardService {
 	private final String owner;
 
 	/**
+	 * Liste des projets, lue une seule fois par requête (et non une fois par type
+	 * de données).
+	 */
+	private JsonArray projectsMemo;
+
+	/**
 	 * @param authorizationHeader en-tête Authorization Squash TM (capturé dans la
 	 *                            requête JCMS)
 	 * @param owner               identifiant du membre JCMS (clé de cache)
@@ -204,7 +215,7 @@ public class SquashTmDashboardService {
 
 		JsonArray result = new JsonArray();
 
-		for (JsonElement element : service.getAllPaged("/projects")) {
+		for (JsonElement element : allProjects()) {
 
 			if (!element.isJsonObject()) {
 				continue;
@@ -233,11 +244,29 @@ public class SquashTmDashboardService {
 
 		long started = System.currentTimeMillis();
 
-		Dataset requirements = f.wants(DashboardFilter.SCOPE_REQUIREMENTS) ? load(Kind.REQUIREMENTS, f.isRefresh())
-				: null;
-		Dataset testCases = f.wants(DashboardFilter.SCOPE_TEST_CASES) ? load(Kind.TEST_CASES, f.isRefresh()) : null;
-		Dataset campaigns = f.wants(DashboardFilter.SCOPE_CAMPAIGNS) ? load(Kind.CAMPAIGNS, f.isRefresh()) : null;
-		Dataset reporting = f.wants(DashboardFilter.SCOPE_REPORTING) ? load(Kind.REPORTING, f.isRefresh()) : null;
+		// Les types de données sont indépendants : ils sont chargés en parallèle
+		// (durée = celle du plus long, au lieu de la somme des quatre).
+		List<Kind> wanted = new ArrayList<Kind>();
+
+		if (f.wants(DashboardFilter.SCOPE_REQUIREMENTS)) {
+			wanted.add(Kind.REQUIREMENTS);
+		}
+		if (f.wants(DashboardFilter.SCOPE_TEST_CASES)) {
+			wanted.add(Kind.TEST_CASES);
+		}
+		if (f.wants(DashboardFilter.SCOPE_CAMPAIGNS)) {
+			wanted.add(Kind.CAMPAIGNS);
+		}
+		if (f.wants(DashboardFilter.SCOPE_REPORTING)) {
+			wanted.add(Kind.REPORTING);
+		}
+
+		Map<Kind, Dataset> loaded = loadAll(wanted, f.isRefresh());
+
+		Dataset requirements = loaded.get(Kind.REQUIREMENTS);
+		Dataset testCases = loaded.get(Kind.TEST_CASES);
+		Dataset campaigns = loaded.get(Kind.CAMPAIGNS);
+		Dataset reporting = loaded.get(Kind.REPORTING);
 
 		JsonObject root = new JsonObject();
 		root.addProperty("scope", f.getScope());
@@ -318,7 +347,8 @@ public class SquashTmDashboardService {
 	public String buildCsv(DashboardFilter f, String dataset) throws IOException {
 
 		StringBuilder csv = new StringBuilder("\uFEFF");
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZONE);
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(SquashTmConstants.DATE_FORMAT_DASHBOARD_EXPORT)
+				.withZone(SquashTmConstants.ZONE_ID);
 
 		if ("requirements".equals(dataset)) {
 
@@ -407,7 +437,81 @@ public class SquashTmDashboardService {
 		return System.currentTimeMillis() - dataset.loadedAt > TimeUnit.MINUTES.toMillis(Math.max(1, minutes));
 	}
 
+	/**
+	 * Liste des projets Squash TM, lue une seule fois pour toute la requête.
+	 */
+	private synchronized JsonArray allProjects() throws IOException {
+
+		if (projectsMemo == null) {
+			projectsMemo = service.getAllPaged("/projects");
+		}
+
+		return projectsMemo;
+	}
+
+	/**
+	 * Charge plusieurs types de données en parallèle.
+	 */
+	private Map<Kind, Dataset> loadAll(List<Kind> kinds, final boolean refresh) throws IOException {
+
+		Map<Kind, Dataset> result = new EnumMap<Kind, Dataset>(Kind.class);
+
+		if (kinds.isEmpty()) {
+			return result;
+		}
+
+		if (kinds.size() == 1) {
+			result.put(kinds.get(0), load(kinds.get(0), refresh));
+			return result;
+		}
+
+		ExecutorService pool = Executors.newFixedThreadPool(kinds.size());
+
+		try {
+
+			Map<Kind, Future<Dataset>> futures = new EnumMap<Kind, Future<Dataset>>(Kind.class);
+
+			for (final Kind kind : kinds) {
+				futures.put(kind, pool.submit(new Callable<Dataset>() {
+					@Override
+					public Dataset call() throws Exception {
+						return load(kind, refresh);
+					}
+				}));
+			}
+
+			for (Map.Entry<Kind, Future<Dataset>> entry : futures.entrySet()) {
+
+				try {
+					result.put(entry.getKey(), entry.getValue().get());
+
+				} catch (ExecutionException e) {
+
+					Throwable cause = e.getCause();
+
+					if (cause instanceof IOException) {
+						throw (IOException) cause;
+					}
+
+					throw new IOException(cause == null ? e.getMessage() : cause.getMessage(), cause);
+
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					throw new IOException("Chargement du dashboard interrompu.", e);
+				}
+			}
+
+		} finally {
+			pool.shutdownNow();
+		}
+
+		return result;
+	}
+
 	private Dataset load(Kind kind, boolean refresh) throws IOException {
+
+		// Instant de la demande : sert à fusionner les actualisations simultanées.
+		long requestedAt = System.currentTimeMillis();
 
 		String key = owner + "|" + kind.name();
 
@@ -427,6 +531,14 @@ public class SquashTmDashboardService {
 				return cached.asCached();
 			}
 
+			// Actualisation demandée pendant qu'un chargement identique était déjà en
+			// cours (double clic, requête précédente abandonnée par le navigateur mais
+			// poursuivie côté serveur) : ce chargement vient de se terminer, inutile de
+			// tout relire une seconde fois.
+			if (refresh && cached != null && cached.loadedAt >= requestedAt) {
+				return cached;
+			}
+
 			Dataset fresh = doLoad(kind);
 			CACHE.put(key, fresh);
 			return fresh;
@@ -442,7 +554,7 @@ public class SquashTmDashboardService {
 		long started = System.currentTimeMillis();
 		long deadline = started + LOAD_BUDGET_MS;
 
-		JsonArray projects = service.getAllPaged("/projects");
+		JsonArray projects = allProjects();
 		Map<Long, String> projectNames = new LinkedHashMap<Long, String>();
 
 		for (JsonElement element : projects) {
@@ -465,7 +577,11 @@ public class SquashTmDashboardService {
 			collectPerProject(kind, projectNames, raws, deadline);
 		}
 
+		long listedAt = System.currentTimeMillis();
+
 		boolean partial = enrich(kind, raws, deadline);
+
+		long enrichedAt = System.currentTimeMillis();
 
 		Map<Long, Item> items = new LinkedHashMap<Long, Item>();
 
@@ -484,8 +600,11 @@ public class SquashTmDashboardService {
 			partial = loadExecutions(list, deadline) || partial;
 		}
 
-		LOGGER.info("Dashboard Squash TM : " + list.size() + " éléments " + kind + " chargés en "
-				+ (System.currentTimeMillis() - started) + " ms" + (partial ? " (chargement partiel)" : ""));
+		long finished = System.currentTimeMillis();
+
+		LOGGER.info("Dashboard Squash TM : " + list.size() + " éléments " + kind + " chargés en " + (finished - started)
+				+ " ms [liste = " + (listedAt - started) + " ms, détails = " + (enrichedAt - listedAt)
+				+ " ms, exécutions = " + (finished - enrichedAt) + " ms]" + (partial ? " (chargement partiel)" : ""));
 
 		return new Dataset(list, System.currentTimeMillis(), partial, false);
 	}
@@ -567,7 +686,7 @@ public class SquashTmDashboardService {
 		final List<Item> items = Collections.synchronizedList(new ArrayList<Item>());
 		List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
 
-		for (JsonElement element : service.getAllPaged("/projects")) {
+		for (JsonElement element : allProjects()) {
 
 			if (!element.isJsonObject()) {
 				continue;
@@ -604,7 +723,7 @@ public class SquashTmDashboardService {
 							Item item = new Item();
 							item.id = id;
 							item.projectId = projectId;
-							item.projectName = isEmpty(projectName) ? "-" : projectName;
+							item.projectName = SquashTmUtils.isBlank(projectName) ? "-" : projectName;
 							item.name = firstNonEmpty(str(object, "name"), "#" + id);
 							item.type = type;
 							items.add(item);
@@ -711,7 +830,7 @@ public class SquashTmDashboardService {
 			});
 		}
 
-		runAll(tasks);
+		runAll(tasks, IO_WORKERS);
 
 		return partial.get();
 	}
@@ -724,11 +843,14 @@ public class SquashTmDashboardService {
 	private boolean loadExecutions(List<Item> campaigns, final long deadline) {
 
 		final AtomicBoolean partial = new AtomicBoolean(false);
-		List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
+
+		// Étape 1 : itérations de chaque campagne (en parallèle).
+		final ConcurrentMap<Long, List<Long>> iterationIds = new ConcurrentHashMap<Long, List<Long>>();
+		List<Callable<Void>> iterationTasks = new ArrayList<Callable<Void>>();
 
 		for (final Item campaign : campaigns) {
 
-			tasks.add(new Callable<Void>() {
+			iterationTasks.add(new Callable<Void>() {
 				@Override
 				public Void call() {
 
@@ -742,6 +864,8 @@ public class SquashTmDashboardService {
 						JsonArray iterations = service.getAllPaged("/campaigns/" + campaign.id + "/iterations");
 						campaign.iterations = iterations.size();
 
+						List<Long> ids = new ArrayList<Long>();
+
 						for (JsonElement iterationElement : iterations) {
 
 							if (!iterationElement.isJsonObject()) {
@@ -750,9 +874,52 @@ public class SquashTmDashboardService {
 
 							long iterationId = longOf(iterationElement.getAsJsonObject(), "id");
 
-							if (iterationId <= 0) {
-								continue;
+							if (iterationId > 0) {
+								ids.add(Long.valueOf(iterationId));
 							}
+						}
+
+						iterationIds.put(Long.valueOf(campaign.id), ids);
+
+					} catch (IOException e) {
+						LOGGER.debug(
+								"Itérations indisponibles pour la campagne " + campaign.id + " : " + e.getMessage());
+					}
+
+					return null;
+				}
+			});
+		}
+
+		runAll(iterationTasks, IO_WORKERS);
+
+		// Étape 2 : plan de test de chaque itération (en parallèle, une tâche par
+		// itération et non plus une par campagne : une grosse campagne ne bloque
+		// plus un seul fil pendant que les autres attendent).
+		List<Callable<Void>> planTasks = new ArrayList<Callable<Void>>();
+
+		for (final Item campaign : campaigns) {
+
+			List<Long> ids = iterationIds.get(Long.valueOf(campaign.id));
+
+			if (ids == null) {
+				continue;
+			}
+
+			for (final Long iterationId : ids) {
+
+				planTasks.add(new Callable<Void>() {
+					@Override
+					public Void call() {
+
+						if (System.currentTimeMillis() > deadline) {
+							partial.set(true);
+							return null;
+						}
+
+						List<Exec> found = new ArrayList<Exec>();
+
+						try {
 
 							for (JsonElement planElement : service
 									.getAllPaged("/iterations/" + iterationId + "/test-plan")) {
@@ -772,28 +939,37 @@ public class SquashTmDashboardService {
 								JsonObject testCase = obj(plan, "referenced_test_case");
 								exec.testCaseId = testCase == null ? 0L : longOf(testCase, "id");
 
-								campaign.execs.add(exec);
+								found.add(exec);
 							}
+
+						} catch (IOException e) {
+							LOGGER.debug("Plan de test indisponible pour l'itération " + iterationId + " : "
+									+ e.getMessage());
 						}
 
-					} catch (IOException e) {
-						LOGGER.debug(
-								"Exécutions indisponibles pour la campagne " + campaign.id + " : " + e.getMessage());
-					}
+						// Plusieurs itérations d'une même campagne peuvent finir en même temps.
+						synchronized (campaign.execs) {
+							campaign.execs.addAll(found);
+						}
 
-					return null;
-				}
-			});
+						return null;
+					}
+				});
+			}
 		}
 
-		runAll(tasks);
+		runAll(planTasks, IO_WORKERS);
 
 		return partial.get();
 	}
 
 	private void runAll(List<Callable<Void>> tasks) {
+		runAll(tasks, WORKERS);
+	}
 
-		ExecutorService pool = Executors.newFixedThreadPool(WORKERS);
+	private void runAll(List<Callable<Void>> tasks, int workers) {
+
+		ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, Math.min(workers, tasks.size())));
 
 		try {
 
@@ -843,11 +1019,11 @@ public class SquashTmDashboardService {
 			item.projectName = str(o, "__projectName");
 		}
 
-		if (isEmpty(item.projectName) && projectNames.containsKey(Long.valueOf(item.projectId))) {
+		if (SquashTmUtils.isBlank(item.projectName) && projectNames.containsKey(Long.valueOf(item.projectId))) {
 			item.projectName = projectNames.get(Long.valueOf(item.projectId));
 		}
 
-		if (isEmpty(item.projectName)) {
+		if (SquashTmUtils.isBlank(item.projectName)) {
 			item.projectName = "-";
 		}
 
@@ -897,7 +1073,7 @@ public class SquashTmDashboardService {
 			item.iterations = sizeOf(o, "iterations");
 		}
 
-		if (isEmpty(item.name)) {
+		if (SquashTmUtils.isBlank(item.name)) {
 			item.name = "#" + item.id;
 		}
 
@@ -1358,7 +1534,7 @@ public class SquashTmDashboardService {
 
 	private void collectAuthors(List<Item> items, Set<String> authors) {
 		for (Item i : items) {
-			if (!isEmpty(i.author)) {
+			if (!SquashTmUtils.isBlank(i.author)) {
 				authors.add(i.author);
 			}
 		}
@@ -1637,7 +1813,7 @@ public class SquashTmDashboardService {
 
 	private static String bucketKey(long timestamp, String group) {
 
-		LocalDate day = Instant.ofEpochMilli(timestamp).atZone(ZONE).toLocalDate();
+		LocalDate day = Instant.ofEpochMilli(timestamp).atZone(SquashTmConstants.ZONE_ID).toLocalDate();
 
 		if (DashboardFilter.GROUP_DAY.equals(group)) {
 			return day.toString();
@@ -1751,24 +1927,20 @@ public class SquashTmDashboardService {
 		return Math.round(1000.0d * part / total) / 10.0d;
 	}
 
-	private static boolean isEmpty(String value) {
-		return value == null || value.trim().isEmpty();
-	}
-
 	private static String lower(String value) {
 		return value == null ? "" : value.toLowerCase(Locale.ROOT);
 	}
 
 	private static String upper(String value) {
-		return isEmpty(value) ? null : value.trim().toUpperCase(Locale.ROOT);
+		return SquashTmUtils.isBlank(value) ? null : value.trim().toUpperCase(Locale.ROOT);
 	}
 
 	private static String orUndefined(String value) {
-		return isEmpty(value) ? UNDEFINED : value;
+		return SquashTmUtils.isBlank(value) ? UNDEFINED : value;
 	}
 
 	private static String firstNonEmpty(String a, String b) {
-		return !isEmpty(a) ? a : b;
+		return !SquashTmUtils.isBlank(a) ? a : b;
 	}
 
 	private static Long firstDate(Long a, Long b) {
@@ -1860,7 +2032,7 @@ public class SquashTmDashboardService {
 
 	private static Long parseDate(String value) {
 
-		if (isEmpty(value)) {
+		if (SquashTmUtils.isBlank(value)) {
 			return null;
 		}
 
@@ -1873,15 +2045,15 @@ public class SquashTmDashboardService {
 		}
 
 		try {
-			return Long.valueOf(LocalDateTime.parse(s.length() > 19 ? s.substring(0, 19) : s).atZone(ZONE).toInstant()
-					.toEpochMilli());
+			return Long.valueOf(LocalDateTime.parse(s.length() > 19 ? s.substring(0, 19) : s)
+					.atZone(SquashTmConstants.ZONE_ID).toInstant().toEpochMilli());
 		} catch (DateTimeParseException e) {
 			// format suivant
 		}
 
 		try {
-			return Long.valueOf(LocalDate.parse(s.substring(0, Math.min(10, s.length()))).atStartOfDay(ZONE).toInstant()
-					.toEpochMilli());
+			return Long.valueOf(LocalDate.parse(s.substring(0, Math.min(10, s.length())))
+					.atStartOfDay(SquashTmConstants.ZONE_ID).toInstant().toEpochMilli());
 		} catch (DateTimeParseException e) {
 			return null;
 		}

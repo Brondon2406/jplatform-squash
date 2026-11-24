@@ -4,6 +4,8 @@ import org.apache.log4j.Logger;
 
 import com.jalios.jcms.handler.JcmsFormHandler;
 
+import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
+
 /**
  * @author Severin kengne
  */
@@ -22,15 +24,15 @@ public class SquashTmAppHandler extends JcmsFormHandler {
 
 	public String getAppTitle() {
 		if (showImportFiles()) {
-			return glp("jcmsplugin.squashtm.app.importfiles.title");
+			return glp(SquashTmConstants.I18N_APP_IMPORTFILES_TITLE);
 
 		} else if (showDashboard()) {
-			return glp("jcmsplugin.squashtm.app.dashboard.title");
+			return glp(SquashTmConstants.I18N_APP_DASHBOARD_TITLE);
 
 		} else if (showAdministration()) {
-			return glp("jcmsplugin.squashtm.app.sidebar.administration.label");
+			return glp(SquashTmConstants.I18N_APP_SIDEBAR_ADMINISTRATION_LABEL);
 		}
-		return glp("jcmsplugin.squashtm.app.label.title");
+		return glp(SquashTmConstants.I18N_APP_LABEL_TITLE);
 	}
 
 	public String getDashboardUrl() {

@@ -10,6 +10,7 @@ import com.jalios.jcms.handler.JcmsFormHandler;
 import com.jalios.util.Util;
 
 import co.kozao.jcmsplugin.squashtm.SquashTmManager;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
@@ -33,8 +34,7 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 	@Override
 	public boolean processAction() throws IOException {
 
-		LOGGER.error("========== SquashTmBasicFormHandler.processAction() ==========");
-		LOGGER.error("opSign = " + opSign);
+		LOGGER.debug("opSign = " + opSign);
 
 		if (opSign && validateBasic()) {
 			return true;
@@ -48,18 +48,16 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 	 */
 	public boolean validateBasic() {
 
-		LOGGER.error("========== validateBasic() ==========");
-
 		if (Util.isEmpty(username)) {
 
-			setErrorMsg("jcmsplugin.squashtm.basic-form.error.username");
+			setErrorMsg(SquashTmConstants.I18N_BASIC_FORM_ERROR_USERNAME);
 
 			return false;
 		}
 
 		if (Util.isEmpty(password)) {
 
-			setErrorMsg("jcmsplugin.squashtm.basic-form.error.password");
+			setErrorMsg(SquashTmConstants.I18N_BASIC_FORM_ERROR_PASSWORD);
 
 			return false;
 		}
@@ -71,7 +69,7 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 
 		if (member == null) {
 
-			setErrorMsg("jcmsplugin.squashtm.basic-form.error.member");
+			setErrorMsg(SquashTmConstants.I18N_BASIC_FORM_ERROR_MEMBER);
 
 			return false;
 		}
@@ -90,7 +88,7 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 			SquashTmUtils.setSquashTmUsername("");
 			SquashTmUtils.setSquashTmPassword("");
 
-			setErrorMsg("jcmsplugin.squashtm.basic-form.error.invalid");
+			setErrorMsg(SquashTmConstants.I18N_BASIC_FORM_ERROR_INVALID);
 
 			LOGGER.warn("Échec de connexion Basic Squash TM.");
 

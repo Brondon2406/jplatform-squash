@@ -1,7 +1,6 @@
 package co.kozao.jcmsplugin.squashtm.model.dashboard;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -10,6 +9,8 @@ import java.util.Locale;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+
+import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
  * Filtres du dashboard Squash TM.
@@ -42,8 +43,6 @@ public class DashboardFilter {
 
 	private static final int DEFAULT_LIMIT = 100;
 	private static final int MAX_LIMIT = 500;
-
-	private static final ZoneId ZONE = ZoneId.systemDefault();
 
 	private final Set<Long> projectIds = new LinkedHashSet<Long>();
 	private final Set<String> authors = new LinkedHashSet<String>();
@@ -205,10 +204,10 @@ public class DashboardFilter {
 			LocalDate day = LocalDate.parse(value.trim());
 
 			if (endOfDay) {
-				return Long.valueOf(day.plusDays(1).atStartOfDay(ZONE).toInstant().toEpochMilli() - 1L);
+				return Long.valueOf(day.plusDays(1).atStartOfDay(SquashTmConstants.ZONE_ID).toInstant().toEpochMilli() - 1L);
 			}
 
-			return Long.valueOf(day.atStartOfDay(ZONE).toInstant().toEpochMilli());
+			return Long.valueOf(day.atStartOfDay(SquashTmConstants.ZONE_ID).toInstant().toEpochMilli());
 
 		} catch (Exception e) {
 			return null;

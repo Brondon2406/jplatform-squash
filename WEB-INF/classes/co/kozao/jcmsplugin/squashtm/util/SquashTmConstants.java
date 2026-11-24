@@ -1,6 +1,8 @@
 
 package co.kozao.jcmsplugin.squashtm.util;
 
+import java.time.ZoneId;
+
 /**
  * Constantes utilisées par le plugin Squash TM.
  *
@@ -137,4 +139,50 @@ public final class SquashTmConstants {
 			"value.CAT_FUNCTIONAL", "value.CAT_NON_FUNCTIONAL", "value.CAT_USE_CASE", "value.CAT_BUSINESS",
 			"value.CAT_TEST_REQUIREMENT", "value.CAT_ERGONOMIC", "value.CAT_PERFORMANCE", "value.CAT_TECHNICAL",
 			"value.CAT_USER_STORY", "value.CAT_SECURITY", "value.CAT_UNDEFINED" };
+
+	/*
+	 * ========== DATES ===========================
+	 */
+
+	public static final ZoneId ZONE_ID = ZoneId.systemDefault();
+
+	public static final String DATE_FORMAT_ISO_DAY = "yyyy-MM-dd";
+
+	public static final String DATE_FORMAT_FILE_STAMP = "yyyyMMdd_HHmm";
+
+	public static final String DATE_FORMAT_DISPLAY = "dd/MM/yyyy HH:mm";
+
+	public static final String DATE_FORMAT_DASHBOARD_EXPORT = "yyyy-MM-dd HH:mm";
+
+	/*
+	 * ========== AFFICHAGE ===========================
+	 */
+
+	public static final int MAX_NAME_PREVIEW_LENGTH = 40;
+
+	/*
+	 * ========== CLES I18N ===========================
+	 */
+
+	public static final String I18N_APP_IMPORTFILES_TITLE = "jcmsplugin.squashtm.app.importfiles.title";
+
+	public static final String I18N_APP_DASHBOARD_TITLE = "jcmsplugin.squashtm.app.dashboard.title";
+
+	public static final String I18N_APP_SIDEBAR_ADMINISTRATION_LABEL = "jcmsplugin.squashtm.app.sidebar.administration.label";
+
+	public static final String I18N_APP_LABEL_TITLE = "jcmsplugin.squashtm.app.label.title";
+
+	public static final String I18N_BASIC_FORM_ERROR_USERNAME = "jcmsplugin.squashtm.basic-form.error.username";
+
+	public static final String I18N_BASIC_FORM_ERROR_PASSWORD = "jcmsplugin.squashtm.basic-form.error.password";
+
+	public static final String I18N_BASIC_FORM_ERROR_MEMBER = "jcmsplugin.squashtm.basic-form.error.member";
+
+	public static final String I18N_BASIC_FORM_ERROR_INVALID = "jcmsplugin.squashtm.basic-form.error.invalid";
+
+	public static final String I18N_TOKEN_FORM_ERROR_EMPTY = "jcmsplugin.squashtm.token-form.error.empty";
+
+	public static final String I18N_TOKEN_FORM_ERROR_MEMBER = "jcmsplugin.squashtm.token-form.error.member";
+
+	public static final String I18N_TOKEN_FORM_ERROR_INVALID = "jcmsplugin.squashtm.token-form.error.invalid";
 }

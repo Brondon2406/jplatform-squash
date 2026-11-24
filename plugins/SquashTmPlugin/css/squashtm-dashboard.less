@@ -315,6 +315,10 @@
 			width: 70px;
 			margin: 0;
 			white-space: nowrap;
+			font-size: 12px;
+			font-weight: 600;
+			color: #526078;
+			text-align: left;
 		}
 
 		>div:not(.control-label) {
@@ -782,6 +786,91 @@
 		}
 	}
 
+	/* Histogramme par période : 4 dates visibles, le reste défile horizontalement. */
+
+	.sqd-tl {
+		display: flex;
+		height: 190px;
+
+		.sqd-tl-axis {
+			position: relative;
+			flex: 0 0 34px;
+			height: 154px;
+			margin-top: 10px;
+
+			span {
+				position: absolute;
+				right: 6px;
+				transform: translateY(50%);
+				font-size: 10px;
+				line-height: 1;
+				color: @sqd-muted;
+			}
+		}
+
+		.sqd-tl-scroll {
+			flex: 1 1 auto;
+			min-width: 0;
+			overflow-x: auto;
+			overflow-y: hidden;
+			scroll-behavior: smooth;
+		}
+
+		.sqd-tl-inner {
+			position: relative;
+			display: flex;
+			height: 100%;
+		}
+
+		.sqd-tl-lines {
+			position: absolute;
+			top: 10px;
+			left: 0;
+			right: 0;
+			height: 154px;
+			pointer-events: none;
+
+			i {
+				position: absolute;
+				left: 0;
+				right: 0;
+				border-top: 1px solid @sqd-line;
+			}
+		}
+
+		.sqd-tl-col {
+			position: relative;
+			flex: 0 0 auto;
+			min-width: 0;
+		}
+
+		.sqd-tl-plot {
+			display: flex;
+			align-items: flex-end;
+			justify-content: center;
+			height: 154px;
+			margin-top: 10px;
+		}
+
+		.sqd-tl-bar {
+			width: 40%;
+			max-width: 56px;
+			min-height: 0;
+			background: @sqd-navy;
+			border-radius: 2px 2px 0 0;
+		}
+
+		.sqd-tl-label {
+			height: 26px;
+			padding: 0 2px;
+			font-size: 10px;
+			line-height: 26px;
+			text-align: center;
+			white-space: nowrap;
+			color: @sqd-muted;
+		}
+	}
+
 	/* =================== TABLEAUX =================== */
 
 	.sqd-table-wrap {
@@ -865,11 +954,25 @@
 			}
 		}
 
+		th:first-child,
+		td:first-child {
+			padding-left: 28px;
+		}
+
+		th:first-child {
+			.sqd-collapse {
+				position: absolute;
+				top: 50%;
+				left: 10px;
+				transform: translateY(-50%);
+			}
+		}
+
 		.sqd-collapse {
 			border: 0;
 			background: transparent;
 			cursor: pointer;
-			padding: 0 6px 0 0;
+			padding: 0;            
 			vertical-align: middle;
 
 			&::before {

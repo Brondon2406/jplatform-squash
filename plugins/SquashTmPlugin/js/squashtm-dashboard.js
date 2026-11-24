@@ -24,6 +24,9 @@
         READY: "#A0A8B5", NOT_RUN: "#A0A8B5"
     };
 
+    /* Nombre de dates visibles à la fois dans les graphes « par période » (le reste défile). */
+    var TIMELINE_VISIBLE = 4;
+
     var MULTI_FILTERS = ["projects", "authors", "reqStatus", "criticality", "category", "tcStatus", "importance",
         "nature", "type", "campaignStatus", "execStatus", "reportType"];
 
@@ -1202,7 +1205,54 @@
             return '<p class="sqd-empty">' + esc(this.t("state.empty")) + '</p>';
         }
 
-        return this.columns(points, timeline.group, [{ field: "count", color: "#33446B", label: this.t("chart.total") }], false);
+        return this.windowedColumns(points, timeline.group, TIMELINE_VISIBLE);
+    };
+
+    /*
+     * Histogramme « par période » : seules `visible` dates sont affichées à la fois,
+     * les autres sont accessibles en faisant défiler le bloc horizontalement.
+     * Construit en HTML/CSS (et non en SVG) : chaque colonne occupe 1/visible de la
+     * largeur du bloc, quelle que soit cette largeur. L'axe vertical reste fixe.
+     */
+    Dashboard.prototype.windowedColumns = function(points, group, visible) {
+        var max = 1;
+        var i;
+        var g;
+
+        for (i = 0;i < points.length;i++) {
+            max = Math.max(max, points[i].count || 0);
+        }
+
+        var step = Math.max(1, Math.ceil(max / 4));
+        max = step * Math.ceil(max / step);
+
+        var axis = "";
+        var lines = "";
+
+        for (g = 0;g <= max;g += step) {
+            var pos = (100 * g / max).toFixed(2);
+            axis += '<span style="bottom:' + pos + '%">' + g + '</span>';
+            lines += '<i style="bottom:' + pos + '%"></i>';
+        }
+
+        var cols = "";
+
+        for (i = 0;i < points.length;i++) {
+            var label = this.periodLabel(points[i].period, group);
+            var count = points[i].count || 0;
+            var height = (100 * count / max).toFixed(2);
+
+            cols += '<div class="sqd-tl-col" style="flex-basis:' + (100 / points.length).toFixed(4) + '%" title="' + esc(label + " : " + count) + '">' +
+                '<div class="sqd-tl-plot"><div class="sqd-tl-bar" style="height:' + height + '%"></div></div>' +
+                '<div class="sqd-tl-label">' + esc(label) + '</div></div>';
+        }
+
+        return '<div class="sqd-tl">' +
+            '<div class="sqd-tl-axis" aria-hidden="true">' + axis + '</div>' +
+            '<div class="sqd-tl-scroll" tabindex="0" role="region" aria-label="' + esc(this.t("chart.timeline")) + '">' +
+            '<div class="sqd-tl-inner" style="width:' + (100 * points.length / visible).toFixed(4) + '%">' +
+            '<div class="sqd-tl-lines" aria-hidden="true">' + lines + '</div>' + cols +
+            '</div></div></div>';
     };
 
     Dashboard.prototype.executionTimeline = function(timeline) {

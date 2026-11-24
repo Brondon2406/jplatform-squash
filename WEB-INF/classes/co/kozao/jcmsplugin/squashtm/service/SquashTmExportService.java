@@ -40,6 +40,7 @@ import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateField;
 import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateMapping;
 import co.kozao.jcmsplugin.squashtm.service.mapping.SquashTmTemplateMappingManager;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
  * Reconstruit, à partir de Squash TM, la version à jour des modules d'un projet
@@ -78,9 +79,9 @@ public class SquashTmExportService {
 	/** Exemple : SquashTM_MonProjet_20261111_1530.xlsx */
 	public static String buildFileName(String projectName) {
 
-		String base = isEmpty(projectName) ? "projet" : projectName.trim().replaceAll("[^\\p{L}\\p{N}._-]+", "_");
+		String base = SquashTmUtils.isBlank(projectName) ? "projet" : projectName.trim().replaceAll("[^\\p{L}\\p{N}._-]+", "_");
 
-		String stamp = new SimpleDateFormat("yyyyMMdd_HHmm").format(new Date());
+		String stamp = new SimpleDateFormat(SquashTmConstants.DATE_FORMAT_FILE_STAMP).format(new Date());
 
 		return "SquashTM_" + base + "_" + stamp + ".xlsx";
 	}
@@ -92,7 +93,7 @@ public class SquashTmExportService {
 	 */
 	public byte[] exportProject(String projectName) throws IOException {
 
-		if (isEmpty(projectName)) {
+		if (SquashTmUtils.isBlank(projectName)) {
 			throw new IOException("Le nom du projet est obligatoire.");
 		}
 
@@ -254,8 +255,8 @@ public class SquashTmExportService {
 				continue;
 			}
 
-			String action = htmlToText(getString(step, "action"));
-			String expectedResult = htmlToText(getString(step, "expected_result"));
+			String action = SquashTmUtils.htmlToText(getString(step, "action"));
+			String expectedResult = SquashTmUtils.htmlToText(getString(step, "expected_result"));
 
 			if (action.isEmpty() && expectedResult.isEmpty()) {
 				continue;
@@ -496,7 +497,7 @@ public class SquashTmExportService {
 			clearDataRows(modelSheet, firstDataIndex);
 
 			String title = "Export Squash TM - Projet : " + projectName + " - "
-					+ new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date());
+					+ new SimpleDateFormat(SquashTmConstants.DATE_FORMAT_DISPLAY).format(new Date());
 
 			writeTitle(modelSheet, headerIndex, title, headerStyle);
 
@@ -540,7 +541,7 @@ public class SquashTmExportService {
 
 			String path = Channel.getChannel().getRealPath(SquashTmConstants.DEFAULT_TEMPLATE_PATH);
 
-			if (!isEmpty(path) && new File(path).isFile()) {
+			if (!SquashTmUtils.isBlank(path) && new File(path).isFile()) {
 				templateFile = new File(path);
 			}
 		}
@@ -585,7 +586,7 @@ public class SquashTmExportService {
 				continue;
 			}
 
-			String label = isEmpty(column.getHeaderLabel()) ? field.getDefaultLabel() : column.getHeaderLabel();
+			String label = SquashTmUtils.isBlank(column.getHeaderLabel()) ? field.getDefaultLabel() : column.getHeaderLabel();
 
 			setCell(headerRow, column.getColumnIndex(), label, headerStyle);
 
@@ -829,7 +830,7 @@ public class SquashTmExportService {
 	/** Écrit une valeur de l'en-tête ou du titre (cellule créée seulement si la valeur est renseignée). */
 	private static void setCell(Row row, int column, String value, CellStyle style) {
 
-		if (isEmpty(value)) {
+		if (SquashTmUtils.isBlank(value)) {
 			return;
 		}
 
@@ -844,7 +845,7 @@ public class SquashTmExportService {
 
 		Cell cell = row.createCell(column);
 
-		if (!isEmpty(value)) {
+		if (!SquashTmUtils.isBlank(value)) {
 			cell.setCellValue(value.length() > MAX_CELL_LENGTH ? value.substring(0, MAX_CELL_LENGTH) : value);
 		}
 
@@ -855,24 +856,6 @@ public class SquashTmExportService {
 	 * ==================== OUTILS ====================
 	 */
 
-	/** Squash TM stocke du texte riche : le HTML est converti en texte simple. */
-	private String htmlToText(String text) {
-
-		if (text == null) {
-			return "";
-		}
-
-		String value = text.replaceAll("(?i)<br\\s*/?>", "\n").replaceAll("(?i)</p>", "\n").replaceAll("<[^>]*>", "");
-
-		value = value.replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"")
-				.replace("&#39;", "'").replace("&amp;", "&");
-
-		value = value.replace('\u00A0', ' ').replaceAll("[ \\t]+", " ").replaceAll(" ?\\n ?", "\n")
-				.replaceAll("\\n{3,}", "\n\n");
-
-		return value.trim();
-	}
-
 	private String getString(JsonObject object, String property) {
 
 		if (object == null || !object.has(property) || object.get(property).isJsonNull()
@@ -881,10 +864,6 @@ public class SquashTmExportService {
 		}
 
 		return object.get(property).getAsString();
-	}
-
-	private static boolean isEmpty(String value) {
-		return value == null || value.trim().isEmpty();
 	}
 
 	/*

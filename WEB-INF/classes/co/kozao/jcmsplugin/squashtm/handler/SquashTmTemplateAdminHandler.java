@@ -23,6 +23,7 @@ import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateMapping;
 import co.kozao.jcmsplugin.squashtm.service.ExcelSquashTmImportService;
 import co.kozao.jcmsplugin.squashtm.service.mapping.ExcelTemplateInspector;
 import co.kozao.jcmsplugin.squashtm.service.mapping.SquashTmTemplateMappingManager;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
@@ -530,7 +531,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		try {
 			row = Integer.parseInt(value.trim());
 		} catch (NumberFormatException e) {
-			errors.add(label + " doit être un nombre entier : " + abbreviate(value));
+			errors.add(label + " doit être un nombre entier : " + SquashTmUtils.abbreviate(value.trim(), SquashTmConstants.MAX_NAME_PREVIEW_LENGTH));
 			return valueIfEmpty;
 		}
 
@@ -631,7 +632,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 
 			if (field == null) {
 				errors.add("Le rôle choisi pour la colonne " + column.getLetter() + " est inconnu : "
-						+ abbreviate(selected));
+						+ SquashTmUtils.abbreviate(selected.trim(), SquashTmConstants.MAX_NAME_PREVIEW_LENGTH));
 				continue;
 			}
 
@@ -700,13 +701,6 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		}
 
 		return false;
-	}
-
-	private String abbreviate(String value) {
-
-		String trimmed = value.trim();
-
-		return trimmed.length() <= 40 ? trimmed : trimmed.substring(0, 39) + "…";
 	}
 
 	/**

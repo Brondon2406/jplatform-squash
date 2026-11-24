@@ -17,6 +17,7 @@ import co.kozao.jcmsplugin.squashtm.SquashTmManager;
 import co.kozao.jcmsplugin.squashtm.model.dashboard.DashboardFilter;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmDashboardService;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
  * Handler de la vue Dashboard Squash TM.
@@ -128,7 +129,7 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 		try {
 			DateFormat dayFormat = channel.getDateFormat(userLang);
 			Date parsed = dayFormat.parse(value.trim());
-			return new SimpleDateFormat("yyyy-MM-dd").format(parsed);
+			return new SimpleDateFormat(SquashTmConstants.DATE_FORMAT_ISO_DAY).format(parsed);
 		} catch (ParseException e) {
 			// Déjà en ISO ?
 			if (value.trim().matches("\\d{4}-\\d{2}-\\d{2}")) {
@@ -193,16 +194,7 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 				i18n.addProperty(key, value);
 			}
 		}
-		return escapeHtmlAttribute(i18n.toString());
-	}
-
-	private String escapeHtmlAttribute(String value) {
-		return value
-			.replace("&", "&amp;")
-			.replace("\"", "&quot;")
-			.replace("'", "&#39;")
-			.replace("<", "&lt;")
-			.replace(">", "&gt;");
+		return SquashTmUtils.escapeHtml(i18n.toString());
 	}
 
 	// -------------------------------------------------------------------------
