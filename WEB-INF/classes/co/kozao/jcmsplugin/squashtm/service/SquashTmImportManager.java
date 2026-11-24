@@ -29,14 +29,11 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestCase;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestStep;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmView;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmProgress;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
  * Manager chargé d'orchestrer l'import d'un fichier Excel vers Squash TM.
  *
- * <p>
- * Ce manager ne conserve aucune donnée après l'import. Les objets utilisés
- * pendant l'import sont uniquement temporaires.
- * </p>
  */
 public class SquashTmImportManager {
 
@@ -46,6 +43,42 @@ public class SquashTmImportManager {
 	private final SquashTmService squashTmService;
 	private int createdFolderCount;
 	private final Set<String> createdFolderPaths = new LinkedHashSet<>();
+
+	private static final String REQUIREMENT_PREFIX = "REQ";
+	private static final String TEST_CASE_PREFIX = "TC";
+
+	/** Dernier numéro de référence attribué (REQ / TC) pendant l'import en cours. */
+	private int lastRequirementNumber;
+	private int lastTestCaseNumber;
+
+	/**
+	 * Initialise la numérotation à partir des références déjà présentes dans le
+	 * projet, pour que les nouvelles références continuent la suite.
+	 */
+	private void initReferenceCounters(long projectId) throws IOException {
+
+		lastRequirementNumber = squashTmService.getMaxReferenceNumber(projectId, REQUIREMENT_PREFIX, true);
+		lastTestCaseNumber = squashTmService.getMaxReferenceNumber(projectId, TEST_CASE_PREFIX, false);
+
+		LOGGER.info("Numérotation des références : dernière exigence = " + lastRequirementNumber
+				+ ", dernier cas de test = " + lastTestCaseNumber);
+	}
+
+	/** Génère la référence suivante d'exigence : REQ001, REQ002, ... */
+	private String nextRequirementReference() {
+
+		lastRequirementNumber++;
+
+		return String.format("%s%03d", REQUIREMENT_PREFIX, lastRequirementNumber);
+	}
+
+	/** Génère la référence suivante de cas de test : TC001, TC002, ... */
+	private String nextTestCaseReference() {
+
+		lastTestCaseNumber++;
+
+		return String.format("%s%03d", TEST_CASE_PREFIX, lastTestCaseNumber);
+	}
 
 	/**
 	 * Constructeur utilisé lorsque l'importation est exécutée en arrière-plan.
@@ -83,26 +116,17 @@ public class SquashTmImportManager {
 
 		progress.update(2, "INITIALISATION", "Préparation de l'importation...");
 
-		/*
-		 * Informations générales du résultat.
-		 */
 		result.setProjectName(projectName);
 
 		if (excelFile != null) {
 			result.setFileName(excelFile.getName());
 		}
 
-		LOGGER.info("========== DEBUT IMPORT SQUASH TM ==========");
-
 		LOGGER.info("Projet : " + projectName);
 
 		LOGGER.info("Fichier : " + (excelFile != null ? excelFile.getName() : "null"));
 
 		try {
-
-			/*
-			 * =============== 1. VALIDATION ==========================
-			 */
 
 			if (excelFile == null) {
 
@@ -125,27 +149,14 @@ public class SquashTmImportManager {
 				return result;
 			}
 
-			/*
-			 * ======================= FICHIER EXCEL =================================
-			 */
-
 			LOGGER.info("Lecture du fichier Excel...");
 			progress.update(5, "LECTURE_EXCEL", "Lecture et analyse du fichier Excel...");
 
 			ImportSquashTmData importData = excelImportService.parse(excelFile, projectName);
 			progress.update(15, "LECTURE_TERMINEE", "Fichier Excel analysé. Préparation des données...");
 
-			LOGGER.error("[DIAGNOSTIC] Lecture Excel terminée.");
+			LOGGER.debug("Lecture Excel terminée : " + (importData == null ? "importData null" : importData.getModules().size() + " module(s)"));
 
-			if (importData == null) {
-				LOGGER.error("[DIAGNOSTIC] importData est null.");
-			} else {
-				LOGGER.error("[DIAGNOSTIC] Nombre de modules : " + importData.getModules().size());
-			}
-
-			/*
-			 * Récupération des incohérences détectées pendant la lecture du fichier Excel.
-			 */
 			for (String inconsistency : excelImportService.getInconsistencies()) {
 
 				result.addInconsistency(inconsistency);
@@ -168,10 +179,6 @@ public class SquashTmImportManager {
 
 			LOGGER.info("Total des dossiers à créer : " + totalFolders);
 
-			/*
-			 * =================== SQUASH TM ====================================
-			 */
-
 			progress.update(18, "IMPORT_SQUASH_TM", "Préparation du projet Squash TM...");
 
 			importToSquashTm(importData, result, progress, totals, totalFolders);
@@ -182,10 +189,6 @@ public class SquashTmImportManager {
 
 			result.addTechnicalError("Erreur technique pendant l'import : " + e.getMessage());
 		}
-
-		/*
-		 * ========================== FINALISATION =================================
-		 */
 
 		result.setSuccess(result.getTechnicalErrors().isEmpty());
 		if (result.isSuccess()) {
@@ -305,7 +308,7 @@ public class SquashTmImportManager {
 	 */
 	private long ensureTargetedFolder(JsonElement tree, String folderPath, String folderType) throws IOException {
 
-		if (tree == null || tree.isJsonNull() || isEmpty(folderPath)) {
+		if (tree == null || tree.isJsonNull() || SquashTmUtils.isBlank(folderPath)) {
 			throw new IOException("Arborescence ou chemin de dossier invalide.");
 		}
 
@@ -373,7 +376,7 @@ public class SquashTmImportManager {
 
 	private long findTargetedFolder(JsonElement tree, String folderPath) throws IOException {
 
-		if (tree == null || tree.isJsonNull() || isEmpty(folderPath)) {
+		if (tree == null || tree.isJsonNull() || SquashTmUtils.isBlank(folderPath)) {
 			throw new IOException("Arbre ou chemin de dossier invalide.");
 		}
 
@@ -441,7 +444,8 @@ public class SquashTmImportManager {
 
 				ImportSquashTmComparisonItem decision = decisions.get(key);
 
-				if (decision == null || !ImportSquashTmComparisonItem.ACTION_CREATE.equals(decision.getSelectedAction())) {
+				if (decision == null
+						|| !ImportSquashTmComparisonItem.ACTION_CREATE.equals(decision.getSelectedAction())) {
 
 					throw new IOException("Création impossible : le dossier parent '" + currentPath
 							+ "' n'existe pas et n'a pas été sélectionné.");
@@ -487,6 +491,8 @@ public class SquashTmImportManager {
 		createdFolderPaths.clear();
 		createdFolderCount = 0;
 
+		initReferenceCounters(projectId);
+
 		JsonElement requirementTree = squashTmService.getRequirementFolderTree(projectId);
 
 		JsonElement testCaseTree = squashTmService.getTestCaseFolderTree(projectId);
@@ -505,7 +511,8 @@ public class SquashTmImportManager {
 
 			String action = item.getSelectedAction();
 
-			if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action) || ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
+			if (ImportSquashTmComparisonItem.ACTION_CREATE.equals(action)
+					|| ImportSquashTmComparisonItem.ACTION_UPDATE.equals(action)) {
 
 				totalActions++;
 			}
@@ -529,8 +536,8 @@ public class SquashTmImportManager {
 
 				String folderPath = removeProjectRoot(item.getElementPath(), importData.getProjectName());
 
-				validateSelectedFolderParents(requirementTree, folderPath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER,
-						importData.getProjectName(), decisions);
+				validateSelectedFolderParents(requirementTree, folderPath,
+						ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER, importData.getProjectName(), decisions);
 
 				ensureTargetedFolder(requirementTree, folderPath, "requirement-folder");
 
@@ -538,8 +545,8 @@ public class SquashTmImportManager {
 
 				String folderPath = removeProjectRoot(item.getElementPath(), importData.getProjectName());
 
-				validateSelectedFolderParents(testCaseTree, folderPath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER,
-						importData.getProjectName(), decisions);
+				validateSelectedFolderParents(testCaseTree, folderPath,
+						ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER, importData.getProjectName(), decisions);
 
 				ensureTargetedFolder(testCaseTree, folderPath, "test-case-folder");
 
@@ -584,7 +591,7 @@ public class SquashTmImportManager {
 
 							for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
 
-								if (requirement == null || isEmpty(requirement.getName())) {
+								if (requirement == null || SquashTmUtils.isBlank(requirement.getName())) {
 									continue;
 								}
 
@@ -610,7 +617,10 @@ public class SquashTmImportManager {
 										long folderId = ensureTargetedFolder(requirementTree, relativeFeaturePath,
 												"requirement-folder");
 
-										squashTmService.createRequirement(requirement.getName().trim(), "", folderId);
+										requirement.setReference(nextRequirementReference());
+
+										squashTmService.createRequirement(requirement.getName().trim(),
+												requirement.getReference(), folderId);
 
 										result.setRequirementCount(result.getRequirementCount() + 1);
 										completedActions++;
@@ -645,7 +655,7 @@ public class SquashTmImportManager {
 
 							for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
 
-								if (testCase == null || isEmpty(testCase.getName())) {
+								if (testCase == null || SquashTmUtils.isBlank(testCase.getName())) {
 									continue;
 								}
 
@@ -671,8 +681,10 @@ public class SquashTmImportManager {
 										long folderId = ensureTargetedFolder(testCaseTree, relativeFeaturePath,
 												"test-case-folder");
 
-										JsonObject createdTestCase = squashTmService
-												.createTestCase(testCase.getName().trim(), "", folderId);
+										testCase.setReference(nextTestCaseReference());
+
+										JsonObject createdTestCase = squashTmService.createTestCase(
+												testCase.getName().trim(), testCase.getReference(), folderId);
 
 										if (createdTestCase == null || !createdTestCase.has("id")
 												|| createdTestCase.get("id").isJsonNull()) {
@@ -693,8 +705,8 @@ public class SquashTmImportManager {
 
 												stepPosition++;
 
-												if (step == null || isEmpty(step.getAction())
-														|| isEmpty(step.getExpectedResult())) {
+												if (step == null || SquashTmUtils.isBlank(step.getAction())
+														|| SquashTmUtils.isBlank(step.getExpectedResult())) {
 													continue;
 												}
 
@@ -821,7 +833,7 @@ public class SquashTmImportManager {
 
 	private String removeProjectRoot(String path, String projectName) {
 
-		if (isEmpty(path) || isEmpty(projectName)) {
+		if (SquashTmUtils.isBlank(path) || SquashTmUtils.isBlank(projectName)) {
 			return path;
 		}
 
@@ -849,17 +861,7 @@ public class SquashTmImportManager {
 	private void importToSquashTm(ImportSquashTmData importData, ImportSquashTmResult result,
 			ImportSquashTmProgress progress, int[] totals, int totalFolders) throws Exception {
 
-		LOGGER.info("========== IMPORT VERS SQUASH TM ==========");
-
-		/*
-		 * 1. Recherche du projet.
-		 */
 		LOGGER.info("Recherche du projet : " + importData.getProjectName());
-
-		/*
-		 * ============================================================ 1. RECHERCHE DU
-		 * PROJET ============================================================
-		 */
 
 		String projectName = importData.getProjectName();
 
@@ -873,12 +875,6 @@ public class SquashTmImportManager {
 
 		if (existingProject != null) {
 
-			/*
-			 * ============================================================ PROJET EXISTANT
-			 * : NOUVEAU FONCTIONNEMENT
-			 * ============================================================
-			 */
-
 			result.setExistingProjectReused(true);
 
 			if (!existingProject.has("id") || existingProject.get("id").isJsonNull()) {
@@ -890,23 +886,10 @@ public class SquashTmImportManager {
 
 			LOGGER.info("Projet Squash TM existant trouvé : " + projectName + " (id=" + projectId + ")");
 
-			/*
-			 * IMPORTANT : Le contenu du projet existant ne doit jamais être supprimé.
-			 *
-			 * La comparaison avec Excel sera effectuée dans le nouveau traitement dédié aux
-			 * projets existants.
-			 */
-
 			throw new IOException("Le projet existe déjà. La comparaison avec son contenu "
 					+ "doit être effectuée avant de lancer l'importation.");
 
 		} else {
-
-			/*
-			 * ============================================================ PROJET
-			 * INEXISTANT : ANCIEN FONCTIONNEMENT
-			 * ============================================================
-			 */
 
 			LOGGER.info("Aucun projet existant trouvé.");
 
@@ -922,35 +905,14 @@ public class SquashTmImportManager {
 			projectId = createdProject.get("id").getAsLong();
 
 			LOGGER.info("Projet Squash TM créé avec succès : " + projectName + " (id=" + projectId + ")");
+
+			// Projet neuf : la numérotation démarre à REQ001 / TC001.
+			lastRequirementNumber = 0;
+			lastTestCaseNumber = 0;
 		}
 
-		/*
-		 * ============================================================ 4. MAPPINGS
-		 * TEMPORAIRES DES DOSSIERS
-		 * ============================================================
-		 *
-		 * Ces mappings servent uniquement pendant l'import.
-		 *
-		 * Ils permettent de retrouver l'ID Squash TM d'un dossier à partir de son
-		 * chemin logique.
-		 *
-		 * Exemple :
-		 *
-		 * Gestion des documents / Vue moderne / Ajout
-		 *
-		 * sera associé à un ID de dossier Requirements et à un autre ID de dossier Test
-		 * Cases.
-		 *
-		 * Rien n'est conservé après l'import.
-		 */
 		Map<String, Long> requirementFolderIds = new HashMap<>();
 		Map<String, Long> testCaseFolderIds = new HashMap<>();
-
-		/*
-		 * ============================================================ 5. CRÉATION DE
-		 * LA HIÉRARCHIE Projet -> Module -> Sous-module -> Vue -> Fonctionnalité
-		 * ============================================================
-		 */
 
 		LOGGER.info("Création de la hiérarchie des dossiers Squash TM...");
 
@@ -958,7 +920,7 @@ public class SquashTmImportManager {
 
 		for (ImportSquashTmModule module : importData.getModules()) {
 
-			if (module == null || isEmpty(module.getName())) {
+			if (module == null || SquashTmUtils.isBlank(module.getName())) {
 				continue;
 			}
 
@@ -1024,7 +986,7 @@ public class SquashTmImportManager {
 
 			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
 
-				if (subModule == null || isEmpty(subModule.getName())) {
+				if (subModule == null || SquashTmUtils.isBlank(subModule.getName())) {
 					continue;
 				}
 
@@ -1064,7 +1026,7 @@ public class SquashTmImportManager {
 
 				for (ImportSquashTmView view : subModule.getViews()) {
 
-					if (view == null || isEmpty(view.getName())) {
+					if (view == null || SquashTmUtils.isBlank(view.getName())) {
 						continue;
 					}
 
@@ -1102,7 +1064,7 @@ public class SquashTmImportManager {
 
 					for (ImportSquashTmFeature feature : view.getFeatures()) {
 
-						if (feature == null || isEmpty(feature.getName())) {
+						if (feature == null || SquashTmUtils.isBlank(feature.getName())) {
 							continue;
 						}
 
@@ -1151,10 +1113,6 @@ public class SquashTmImportManager {
 			}
 		}
 
-		/*
-		 * ======== 6. CRÉATION DES REQUIREMENTS ET DES TEST CASES ============
-		 */
-
 		LOGGER.info("Création des requirements et des cas de test...");
 		progress.update(60, "DONNEES", "Importation des exigences et des cas de test...");
 		int completedDataItems = 0;
@@ -1162,7 +1120,7 @@ public class SquashTmImportManager {
 
 		for (ImportSquashTmModule module : importData.getModules()) {
 
-			if (module == null || isEmpty(module.getName())) {
+			if (module == null || SquashTmUtils.isBlank(module.getName())) {
 				continue;
 			}
 
@@ -1170,7 +1128,7 @@ public class SquashTmImportManager {
 
 			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
 
-				if (subModule == null || isEmpty(subModule.getName())) {
+				if (subModule == null || SquashTmUtils.isBlank(subModule.getName())) {
 					continue;
 				}
 
@@ -1178,7 +1136,7 @@ public class SquashTmImportManager {
 
 				for (ImportSquashTmView view : subModule.getViews()) {
 
-					if (view == null || isEmpty(view.getName())) {
+					if (view == null || SquashTmUtils.isBlank(view.getName())) {
 						continue;
 					}
 
@@ -1186,7 +1144,7 @@ public class SquashTmImportManager {
 
 					for (ImportSquashTmFeature feature : view.getFeatures()) {
 
-						if (feature == null || isEmpty(feature.getName())) {
+						if (feature == null || SquashTmUtils.isBlank(feature.getName())) {
 							continue;
 						}
 
@@ -1214,14 +1172,15 @@ public class SquashTmImportManager {
 								continue;
 							}
 
-							if (isEmpty(requirement.getName())) {
+							if (SquashTmUtils.isBlank(requirement.getName())) {
 								result.addInconsistency("Requirement sans nom dans : " + folderPath);
 								continue;
 							}
 
 							String requirementName = requirement.getName().trim();
 
-							String reference = requirement.getReference();
+							String reference = nextRequirementReference();
+							requirement.setReference(reference);
 
 							try {
 
@@ -1250,13 +1209,14 @@ public class SquashTmImportManager {
 								continue;
 							}
 
-							if (isEmpty(testCase.getName())) {
+							if (SquashTmUtils.isBlank(testCase.getName())) {
 								result.addInconsistency("Cas de test sans nom dans : " + folderPath);
 								continue;
 							}
 
 							String testCaseName = testCase.getName().trim();
-							String reference = testCase.getReference();
+							String reference = nextTestCaseReference();
+							testCase.setReference(reference);
 
 							try {
 
@@ -1287,7 +1247,7 @@ public class SquashTmImportManager {
 									String action = step.getAction();
 									String expectedResult = step.getExpectedResult();
 
-									if (isEmpty(action) || isEmpty(expectedResult)) {
+									if (SquashTmUtils.isBlank(action) || SquashTmUtils.isBlank(expectedResult)) {
 
 										result.addInconsistency("Étape invalide pour le cas de test '" + testCaseName
 												+ "' dans " + folderPath + " : action ou résultat attendu manquant.");
@@ -1335,31 +1295,30 @@ public class SquashTmImportManager {
 	/**
 	 * Construit le chemin complet d'une fonctionnalité.
 	 *
-	 * Exemple : Module / Sous-module / Vue / Fonctionnalité
 	 */
 	private String buildFolderPath(String moduleName, String subModuleName, String viewName, String featureName) {
 
 		StringBuilder path = new StringBuilder();
 
-		if (!isEmpty(moduleName)) {
+		if (!SquashTmUtils.isBlank(moduleName)) {
 			path.append(moduleName.trim());
 		}
 
-		if (!isEmpty(subModuleName)) {
+		if (!SquashTmUtils.isBlank(subModuleName)) {
 			if (path.length() > 0) {
 				path.append("/");
 			}
 			path.append(subModuleName.trim());
 		}
 
-		if (!isEmpty(viewName)) {
+		if (!SquashTmUtils.isBlank(viewName)) {
 			if (path.length() > 0) {
 				path.append("/");
 			}
 			path.append(viewName.trim());
 		}
 
-		if (!isEmpty(featureName)) {
+		if (!SquashTmUtils.isBlank(featureName)) {
 			if (path.length() > 0) {
 				path.append("/");
 			}
@@ -1367,14 +1326,6 @@ public class SquashTmImportManager {
 		}
 
 		return path.toString();
-	}
-
-	/**
-	 * Vérifie si une chaîne est nulle ou vide.
-	 */
-	private boolean isEmpty(String value) {
-
-		return value == null || value.trim().isEmpty();
 	}
 
 	/**
@@ -1448,7 +1399,7 @@ public class SquashTmImportManager {
 
 							for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
 
-								if (requirement != null && !isEmpty(requirement.getName())) {
+								if (requirement != null && !SquashTmUtils.isBlank(requirement.getName())) {
 									requirementCount++;
 								}
 							}
@@ -1458,7 +1409,7 @@ public class SquashTmImportManager {
 
 							for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
 
-								if (testCase == null || isEmpty(testCase.getName())) {
+								if (testCase == null || SquashTmUtils.isBlank(testCase.getName())) {
 									continue;
 								}
 
@@ -1468,8 +1419,8 @@ public class SquashTmImportManager {
 
 									for (ImportSquashTmTestStep step : testCase.getSteps()) {
 
-										if (step == null || isEmpty(step.getAction())
-												|| isEmpty(step.getExpectedResult())) {
+										if (step == null || SquashTmUtils.isBlank(step.getAction())
+												|| SquashTmUtils.isBlank(step.getExpectedResult())) {
 											continue;
 										}
 
@@ -1540,7 +1491,7 @@ public class SquashTmImportManager {
 
 		for (ImportSquashTmModule module : importData.getModules()) {
 
-			if (module == null || isEmpty(module.getName())) {
+			if (module == null || SquashTmUtils.isBlank(module.getName())) {
 				continue;
 			}
 
@@ -1552,7 +1503,7 @@ public class SquashTmImportManager {
 
 			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
 
-				if (subModule == null || isEmpty(subModule.getName())) {
+				if (subModule == null || SquashTmUtils.isBlank(subModule.getName())) {
 					continue;
 				}
 
@@ -1564,7 +1515,7 @@ public class SquashTmImportManager {
 
 				for (ImportSquashTmView view : subModule.getViews()) {
 
-					if (view == null || isEmpty(view.getName())) {
+					if (view == null || SquashTmUtils.isBlank(view.getName())) {
 						continue;
 					}
 
@@ -1576,7 +1527,7 @@ public class SquashTmImportManager {
 
 					for (ImportSquashTmFeature feature : view.getFeatures()) {
 
-						if (feature == null || isEmpty(feature.getName())) {
+						if (feature == null || SquashTmUtils.isBlank(feature.getName())) {
 							continue;
 						}
 
@@ -1619,7 +1570,7 @@ public class SquashTmImportManager {
 
 	public JsonObject inspectExistingProject(String projectName) throws IOException {
 
-		if (isEmpty(projectName)) {
+		if (SquashTmUtils.isBlank(projectName)) {
 			throw new IOException("Le nom du projet est obligatoire.");
 		}
 
@@ -1641,11 +1592,9 @@ public class SquashTmImportManager {
 		LOGGER.info("[PROJECT INSPECTION] Projet trouvé : id=" + projectId);
 
 		JsonElement requirementTree = squashTmService.getRequirementFolderTree(projectId);
-		LOGGER.info("========== JSON ARBRE EXIGENCES ==========");
 		LOGGER.info(requirementTree != null ? requirementTree.toString() : "ARBRE EXIGENCES NULL");
 
 		JsonElement testCaseTree = squashTmService.getTestCaseFolderTree(projectId);
-		LOGGER.info("========== JSON ARBRE CAS DE TEST ==========");
 		LOGGER.info(testCaseTree != null ? testCaseTree.toString() : "ARBRE CAS DE TEST NULL");
 
 		if (requirementTree == null || requirementTree.isJsonNull()) {
@@ -1739,33 +1688,6 @@ public class SquashTmImportManager {
 		if (progress != null) {
 			progress.update(75, "COMPARAISON", "Comparaison du fichier avec Squash TM...");
 		}
-
-		LOGGER.error("========== DEBUT DIAGNOSTIC COMPARAISON ==========");
-
-		LOGGER.error("[DIAGNOSTIC] Nombre total Excel : " + excelItems.size());
-		LOGGER.error("[DIAGNOSTIC] Nombre total Squash : " + squashItems.size());
-
-		for (Map.Entry<String, ImportSquashTmComparisonItem> entry : excelItems.entrySet()) {
-
-			ImportSquashTmComparisonItem item = entry.getValue();
-
-			if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(item.getElementType())) {
-
-				LOGGER.error("[EXCEL REQUIREMENT FOLDER] " + entry.getKey());
-			}
-		}
-
-		for (Map.Entry<String, ImportSquashTmComparisonItem> entry : squashItems.entrySet()) {
-
-			ImportSquashTmComparisonItem item = entry.getValue();
-
-			if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(item.getElementType())) {
-
-				LOGGER.error("[SQUASH REQUIREMENT FOLDER] " + entry.getKey());
-			}
-		}
-
-		LOGGER.error("========== FIN DIAGNOSTIC COMPARAISON ==========");
 
 		Map<String, Long> existingTestCaseIds = new HashMap<>();
 
@@ -1906,7 +1828,7 @@ public class SquashTmImportManager {
 
 						for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
 
-							if (testCase == null || isEmpty(testCase.getName()) || testCase.getSteps() == null
+							if (testCase == null || SquashTmUtils.isBlank(testCase.getName()) || testCase.getSteps() == null
 									|| testCase.getSteps().isEmpty()) {
 								continue;
 							}
@@ -1945,8 +1867,8 @@ public class SquashTmImportManager {
 
 								ImportSquashTmTestStep excelStep = excelSteps.get(i);
 
-								if (excelStep == null || isEmpty(excelStep.getAction())
-										|| isEmpty(excelStep.getExpectedResult())) {
+								if (excelStep == null || SquashTmUtils.isBlank(excelStep.getAction())
+										|| SquashTmUtils.isBlank(excelStep.getExpectedResult())) {
 									continue;
 								}
 
@@ -2302,7 +2224,6 @@ public class SquashTmImportManager {
 
 					if (detail != null && detail.has("path") && !detail.get("path").isJsonNull()) {
 						String fullPath = detail.get("path").getAsString();
-						// On force le préfixe projet même si l'API le renvoie déjà
 						squashPath = projectName.trim() + "/" + normalizeSquashPath(fullPath, projectName);
 					} else {
 						squashPath = projectName.trim() + (folderPath.isEmpty() ? "" : "/" + folderPath) + "/"
@@ -2377,7 +2298,7 @@ public class SquashTmImportManager {
 
 		for (ImportSquashTmModule module : importData.getModules()) {
 
-			if (module == null || isEmpty(module.getName())) {
+			if (module == null || SquashTmUtils.isBlank(module.getName())) {
 				continue;
 			}
 
@@ -2385,10 +2306,10 @@ public class SquashTmImportManager {
 			String modulePath = projectName + "/" + moduleName;
 
 			addExcelFolder(items, modulePath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER);
-			LOGGER.error("[EXCEL DEBUG] MODULE / REQUIREMENTS = " + modulePath);
+			LOGGER.debug("[EXCEL DEBUG] MODULE / REQUIREMENTS = " + modulePath);
 
 			addExcelFolder(items, modulePath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER);
-			LOGGER.error("[EXCEL DEBUG] MODULE / TEST CASES = " + modulePath);
+			LOGGER.debug("[EXCEL DEBUG] MODULE / TEST CASES = " + modulePath);
 
 			if (module.getSubModules() == null) {
 				continue;
@@ -2396,7 +2317,7 @@ public class SquashTmImportManager {
 
 			for (ImportSquashTmSubModule subModule : module.getSubModules()) {
 
-				if (subModule == null || isEmpty(subModule.getName())) {
+				if (subModule == null || SquashTmUtils.isBlank(subModule.getName())) {
 					continue;
 				}
 
@@ -2404,10 +2325,10 @@ public class SquashTmImportManager {
 				String subModulePath = projectName + "/" + buildFolderPath(moduleName, subModuleName, null, null);
 
 				addExcelFolder(items, subModulePath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER);
-				LOGGER.error("[EXCEL DEBUG] SOUS-MODULE / REQUIREMENTS = " + subModulePath);
+				LOGGER.debug("[EXCEL DEBUG] SOUS-MODULE / REQUIREMENTS = " + subModulePath);
 
 				addExcelFolder(items, subModulePath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER);
-				LOGGER.error("[EXCEL DEBUG] SOUS-MODULE / TEST CASES = " + subModulePath);
+				LOGGER.debug("[EXCEL DEBUG] SOUS-MODULE / TEST CASES = " + subModulePath);
 
 				if (subModule.getViews() == null) {
 					continue;
@@ -2415,7 +2336,7 @@ public class SquashTmImportManager {
 
 				for (ImportSquashTmView view : subModule.getViews()) {
 
-					if (view == null || isEmpty(view.getName())) {
+					if (view == null || SquashTmUtils.isBlank(view.getName())) {
 						continue;
 					}
 
@@ -2423,10 +2344,10 @@ public class SquashTmImportManager {
 							+ buildFolderPath(moduleName, subModuleName, view.getName(), null);
 
 					addExcelFolder(items, viewPath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER);
-					LOGGER.error("[EXCEL DEBUG] VUE / REQUIREMENTS = " + viewPath);
+					LOGGER.debug("[EXCEL DEBUG] VUE / REQUIREMENTS = " + viewPath);
 
 					addExcelFolder(items, viewPath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER);
-					LOGGER.error("[EXCEL DEBUG] VUE / TEST CASES = " + viewPath);
+					LOGGER.debug("[EXCEL DEBUG] VUE / TEST CASES = " + viewPath);
 
 					if (view.getFeatures() == null) {
 						continue;
@@ -2434,7 +2355,7 @@ public class SquashTmImportManager {
 
 					for (ImportSquashTmFeature feature : view.getFeatures()) {
 
-						if (feature == null || isEmpty(feature.getName())) {
+						if (feature == null || SquashTmUtils.isBlank(feature.getName())) {
 							continue;
 						}
 
@@ -2442,22 +2363,22 @@ public class SquashTmImportManager {
 								+ buildFolderPath(moduleName, subModuleName, view.getName(), feature.getName());
 
 						addExcelFolder(items, featurePath, ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER);
-						LOGGER.error("[EXCEL DEBUG] FONCTIONNALITE / REQUIREMENTS = " + featurePath);
+						LOGGER.debug("[EXCEL DEBUG] FONCTIONNALITE / REQUIREMENTS = " + featurePath);
 
 						addExcelFolder(items, featurePath, ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER);
-						LOGGER.error("[EXCEL DEBUG] FONCTIONNALITE / TEST CASES = " + featurePath);
+						LOGGER.debug("[EXCEL DEBUG] FONCTIONNALITE / TEST CASES = " + featurePath);
 
 						if (feature.getRequirements() != null) {
 
 							for (ImportSquashTmRequirement requirement : feature.getRequirements()) {
 
-								if (requirement == null || isEmpty(requirement.getName())) {
+								if (requirement == null || SquashTmUtils.isBlank(requirement.getName())) {
 									continue;
 								}
 
 								String requirementName = requirement.getName().trim();
 								String path = featurePath + "/" + requirementName;
-								LOGGER.error("[EXCEL DEBUG] EXIGENCE = " + path);
+								LOGGER.debug("[EXCEL DEBUG] EXIGENCE = " + path);
 
 								addExcelElement(items, ImportSquashTmComparisonItem.TYPE_REQUIREMENT, requirementName,
 										path);
@@ -2468,13 +2389,13 @@ public class SquashTmImportManager {
 
 							for (ImportSquashTmTestCase testCase : feature.getTestCases()) {
 
-								if (testCase == null || isEmpty(testCase.getName())) {
+								if (testCase == null || SquashTmUtils.isBlank(testCase.getName())) {
 									continue;
 								}
 
 								String testCaseName = testCase.getName().trim();
 								String path = featurePath + "/" + testCaseName;
-								LOGGER.error("[EXCEL DEBUG] CAS DE TEST = " + path);
+								LOGGER.debug("[EXCEL DEBUG] CAS DE TEST = " + path);
 
 								addExcelElement(items, ImportSquashTmComparisonItem.TYPE_TEST_CASE, testCaseName, path);
 							}
@@ -2669,7 +2590,7 @@ public class SquashTmImportManager {
 	 */
 	private String normalizeComparisonPath(String path) {
 
-		if (isEmpty(path)) {
+		if (SquashTmUtils.isBlank(path)) {
 			return "";
 		}
 

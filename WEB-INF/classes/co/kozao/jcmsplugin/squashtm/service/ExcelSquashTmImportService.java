@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -32,6 +31,7 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestCase;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmTestStep;
 import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmView;
 import co.kozao.jcmsplugin.squashtm.service.mapping.SquashTmTemplateMappingManager;
+import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
  * Service responsable de la lecture du fichier Excel utilisé pour l'import
@@ -45,11 +45,8 @@ import co.kozao.jcmsplugin.squashtm.service.mapping.SquashTmTemplateMappingManag
  */
 public class ExcelSquashTmImportService {
 
-	// Mapping du template Excel.
 	private TemplateMapping mapping;
 
-	// Mapping imposé par l'appelant (tests, simulation). S'il est null, le mapping
-	// actif enregistré par l'administration est lu au début de chaque analyse.
 	private final TemplateMapping injectedMapping;
 
 	private int requirementCounter;
@@ -334,10 +331,11 @@ public class ExcelSquashTmImportService {
 	private String buildDuplicateKey(String subModuleName, String viewName, String featureName, String elementValue,
 			String action, String expectedResult, ImportSquashTmSubModule currentSubModule,
 			ImportSquashTmView currentView, ImportSquashTmFeature currentFeature) {
-		String subModule = !isEmpty(subModuleName) ? subModuleName.trim()
+		String subModule = !SquashTmUtils.isBlank(subModuleName) ? subModuleName.trim()
 				: currentSubModule == null ? "" : currentSubModule.getName();
-		String view = !isEmpty(viewName) ? viewName.trim() : currentView == null ? "" : currentView.getName();
-		String feature = !isEmpty(featureName) ? featureName.trim()
+		String view = !SquashTmUtils.isBlank(viewName) ? viewName.trim()
+				: currentView == null ? "" : currentView.getName();
+		String feature = !SquashTmUtils.isBlank(featureName) ? featureName.trim()
 				: currentFeature == null ? "" : currentFeature.getName();
 		return String.join("|", subModule, view, feature, elementValue == null ? "" : elementValue.trim(),
 				action == null ? "" : action.trim(), expectedResult == null ? "" : expectedResult.trim());
@@ -356,7 +354,7 @@ public class ExcelSquashTmImportService {
 
 		String moduleName = sheet.getSheetName();
 
-		if (isEmpty(moduleName)) {
+		if (SquashTmUtils.isBlank(moduleName)) {
 			return;
 		}
 
@@ -409,8 +407,9 @@ public class ExcelSquashTmImportService {
 			/*
 			 * Une ligne totalement vide est ignorée.
 			 */
-			if (isEmpty(subModuleName) && isEmpty(viewName) && isEmpty(featureName) && isEmpty(elementValue)
-					&& isEmpty(action) && isEmpty(expectedResult)) {
+			if (SquashTmUtils.isBlank(subModuleName) && SquashTmUtils.isBlank(viewName)
+					&& SquashTmUtils.isBlank(featureName) && SquashTmUtils.isBlank(elementValue)
+					&& SquashTmUtils.isBlank(action) && SquashTmUtils.isBlank(expectedResult)) {
 
 				continue;
 			}
@@ -436,13 +435,13 @@ public class ExcelSquashTmImportService {
 			 */
 			String effectiveSubModuleName = subModuleName;
 
-			if (isEmpty(effectiveSubModuleName) && currentSubModule == null
+			if (SquashTmUtils.isBlank(effectiveSubModuleName) && currentSubModule == null
 					&& !columns.containsKey(TemplateField.SUBMODULE)) {
 
 				effectiveSubModuleName = mapping.getDefaultName(TemplateField.SUBMODULE);
 			}
 
-			if (!isEmpty(effectiveSubModuleName)) {
+			if (!SquashTmUtils.isBlank(effectiveSubModuleName)) {
 
 				currentSubModule = findOrCreateSubModule(module, effectiveSubModuleName);
 
@@ -457,13 +456,13 @@ public class ExcelSquashTmImportService {
 
 			String effectiveViewName = viewName;
 
-			if (isEmpty(effectiveViewName) && currentView == null && currentSubModule != null
+			if (SquashTmUtils.isBlank(effectiveViewName) && currentView == null && currentSubModule != null
 					&& !columns.containsKey(TemplateField.VIEW)) {
 
 				effectiveViewName = mapping.getDefaultName(TemplateField.VIEW);
 			}
 
-			if (!isEmpty(effectiveViewName)) {
+			if (!SquashTmUtils.isBlank(effectiveViewName)) {
 
 				if (currentSubModule == null) {
 
@@ -487,13 +486,13 @@ public class ExcelSquashTmImportService {
 			 */
 			String effectiveFeatureName = featureName;
 
-			if (isEmpty(effectiveFeatureName) && currentFeature == null && currentView != null
+			if (SquashTmUtils.isBlank(effectiveFeatureName) && currentFeature == null && currentView != null
 					&& !columns.containsKey(TemplateField.FEATURE)) {
 
 				effectiveFeatureName = mapping.getDefaultName(TemplateField.FEATURE);
 			}
 
-			if (!isEmpty(effectiveFeatureName)) {
+			if (!SquashTmUtils.isBlank(effectiveFeatureName)) {
 
 				if (currentView == null) {
 					continue;
@@ -511,7 +510,7 @@ public class ExcelSquashTmImportService {
 			/*
 			 * --------- EXIGENCE ET CAS DE TEST --------------
 			 */
-			if (!isEmpty(elementValue)) {
+			if (!SquashTmUtils.isBlank(elementValue)) {
 
 				if (currentFeature == null) {
 
@@ -524,14 +523,15 @@ public class ExcelSquashTmImportService {
 					String elementName = elementValue.trim();
 
 					// Création de l'exigence.
-					ImportSquashTmRequirement requirement = new ImportSquashTmRequirement(
-							generateRequirementReference(), elementName);
+					// La référence est générée plus tard, lors du clic sur "Valider et importer".
+					ImportSquashTmRequirement requirement = new ImportSquashTmRequirement(null, elementName);
+					requirementCounter++;
 
 					currentFeature.addRequirement(requirement);
 
 					// Création du cas de test portant le même nom.
-					ImportSquashTmTestCase testCase = new ImportSquashTmTestCase(generateTestCaseReference(),
-							elementName);
+					ImportSquashTmTestCase testCase = new ImportSquashTmTestCase(null, elementName);
+					testCaseCounter++;
 
 					currentFeature.addTestCase(testCase);
 
@@ -546,20 +546,20 @@ public class ExcelSquashTmImportService {
 			 *
 			 * Les actions appartiennent uniquement au cas de test courant.
 			 */
-			if (!isEmpty(action) || !isEmpty(expectedResult)) {
+			if (!SquashTmUtils.isBlank(action) || !SquashTmUtils.isBlank(expectedResult)) {
 
 				if (currentTestCase == null) {
 
 					addLineInconsistency(sheet, row, "Onglet '" + sheet.getSheetName() + "', ligne "
 							+ (row.getRowNum() + 1) + " : action ou résultat attendu présent sans cas de test valide.");
 
-				} else if (isEmpty(action)) {
+				} else if (SquashTmUtils.isBlank(action)) {
 
 					addLineInconsistency(sheet, row,
 							"Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
 									+ " : action manquante pour le cas de test '" + currentTestCase.getName() + "'.");
 
-				} else if (isEmpty(expectedResult)) {
+				} else if (SquashTmUtils.isBlank(expectedResult)) {
 
 					addLineInconsistency(sheet, row,
 							"Onglet '" + sheet.getSheetName() + "', ligne " + (row.getRowNum() + 1)
@@ -651,30 +651,6 @@ public class ExcelSquashTmImportService {
 	}
 
 	/**
-	 * Génère une référence d'exigence.
-	 *
-	 * Exemple : REQ001 REQ002 REQ003
-	 */
-	private String generateRequirementReference() {
-
-		requirementCounter++;
-
-		return String.format("REQ%03d", requirementCounter);
-	}
-
-	/**
-	 * Génère une référence de cas de test.
-	 *
-	 * Exemple : TC001 TC002 TC003
-	 */
-	private String generateTestCaseReference() {
-
-		testCaseCounter++;
-
-		return String.format("TC%03d", testCaseCounter);
-	}
-
-	/**
 	 * Détermine, pour un onglet, la colonne de chaque élément du mapping.
 	 *
 	 * Une colonne est d'abord recherchée par le texte de son en-tête : si le
@@ -697,7 +673,8 @@ public class ExcelSquashTmImportService {
 
 			for (int columnIndex = 0; columnIndex < Math.max(headerRow.getLastCellNum(), 0); columnIndex++) {
 
-				String normalizedHeader = TemplateField.normalize(getCellValue(headerRow, columnIndex));
+				String normalizedHeader = TemplateField
+						.normalize(SquashTmUtils.getCellValue(headerRow, columnIndex, dataFormatter));
 
 				if (!normalizedHeader.isEmpty() && !headerIndexes.containsKey(normalizedHeader)) {
 					headerIndexes.put(normalizedHeader, columnIndex);
@@ -769,7 +746,7 @@ public class ExcelSquashTmImportService {
 			return;
 		}
 
-		String foundHeader = getCellValue(headerRow, index);
+		String foundHeader = SquashTmUtils.getCellValue(headerRow, index, dataFormatter);
 		String normalizedFound = TemplateField.normalize(foundHeader);
 
 		if (normalizedFound.isEmpty() || normalizedFound.contains(expectedLabel)
@@ -796,28 +773,7 @@ public class ExcelSquashTmImportService {
 			return "";
 		}
 
-		return getCellValue(row, columnIndex.intValue());
+		return SquashTmUtils.getCellValue(row, columnIndex.intValue(), dataFormatter);
 	}
 
-	/**
-	 * Récupère la valeur d'une cellule.
-	 */
-	private String getCellValue(Row row, int columnIndex) {
-
-		Cell cell = row.getCell(columnIndex);
-
-		if (cell == null) {
-			return "";
-		}
-
-		return dataFormatter.formatCellValue(cell).trim();
-	}
-
-	/**
-	 * Vérifie si une chaîne est vide.
-	 */
-	private boolean isEmpty(String value) {
-
-		return value == null || value.trim().isEmpty();
-	}
 }
