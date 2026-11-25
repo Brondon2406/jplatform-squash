@@ -6,9 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Contient les résultats de l'analyse préalable d'un fichier Excel.
- *
- * Cette classe ne communique pas avec Squash TM.
+ * @author Severin Kengne
  */
 public class ImportSquashTmAnalysis {
 
@@ -122,8 +120,7 @@ public class ImportSquashTmAnalysis {
 			return;
 		}
 
-		// Les dossiers ne sont jamais proposés à l'utilisateur : ils sont créés
-		// automatiquement lors de la création d'une exigence ou d'un cas de test.
+
 		if (ImportSquashTmComparisonItem.TYPE_REQUIREMENT_FOLDER.equals(item.getElementType())
 				|| ImportSquashTmComparisonItem.TYPE_TEST_CASE_FOLDER.equals(item.getElementType())) {
 			return;

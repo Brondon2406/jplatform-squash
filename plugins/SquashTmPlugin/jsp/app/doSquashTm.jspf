@@ -43,10 +43,10 @@ jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-admin.js");
  	 	request.setAttribute("jcmsplugin.squashtm.token.is-connect", SquashTmManager.getInstance().isConnect());
  	  %>
 
-		<%-- SIDEBAR --%>
+		
 		 <%@ include file='/plugins/SquashTmPlugin/jsp/app/sidebar/doSquashTmSidebar.jspf'%> 
 
-		<%-- MAIN --%>
+		
 		<jalios:appMain headerTitle="<%= appHandler.getAppTitle() %>">
 			<%@ include file='/plugins/SquashTmPlugin/jsp/app/body/doSquashTmBody.jspf'%>
 		</jalios:appMain>

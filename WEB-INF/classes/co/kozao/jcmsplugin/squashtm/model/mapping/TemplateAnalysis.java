@@ -4,11 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Résultat de l'inspection d'un template Excel téléversé par l'administrateur.
- *
- * Il décrit les colonnes détectées (en-tête, exemples de valeurs, rôle suggéré)
- * afin que l'administrateur puisse confirmer ou corriger les associations avant
- * de les enregistrer.
+ * @author Severin Kengne
  */
 public class TemplateAnalysis {
 

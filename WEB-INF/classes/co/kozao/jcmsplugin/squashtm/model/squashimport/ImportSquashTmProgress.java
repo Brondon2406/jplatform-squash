@@ -1,9 +1,7 @@
 package co.kozao.jcmsplugin.squashtm.model.squashimport;
 
 /**
- * Représente l'état d'avancement d'une importation Squash TM.
- *
- * Cet objet est consulté pendant que l'importation est en cours.
+ * @author Severin Kengne
  */
 public class ImportSquashTmProgress {
 
@@ -15,9 +13,7 @@ public class ImportSquashTmProgress {
 	private volatile long startTime;
 	private volatile long endTime;
 
-	/**
-	 * Initialise le suivi de l'importation.
-	 */
+	
 	public ImportSquashTmProgress() {
 		this.percentage = 0;
 		this.stage = "INITIALISATION";

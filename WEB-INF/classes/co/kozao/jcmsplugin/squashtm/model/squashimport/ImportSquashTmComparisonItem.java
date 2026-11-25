@@ -4,27 +4,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Représente un élément issu de la comparaison entre Excel et Squash TM.
+ * @author Severin Kengne
  */
 public class ImportSquashTmComparisonItem {
 
-	// Types d'éléments comparés.
+	
 	public static final String TYPE_REQUIREMENT_FOLDER = "REQUIREMENT_FOLDER";
 	public static final String TYPE_TEST_CASE_FOLDER = "TEST_CASE_FOLDER";
 	public static final String TYPE_REQUIREMENT = "REQUIREMENT";
 	public static final String TYPE_TEST_CASE = "TEST_CASE";
 	public static final String TYPE_TEST_STEP = "TEST_STEP";
 
-	// Résultats utiles de la comparaison.
+	
 	public static final String STATUS_EXCEL_ONLY = "EXCEL_ONLY";
 	public static final String STATUS_RENAME = "RENAME";
 
-	// Statuts conservés pour compatibilité avec les anciennes utilisations.
+	
 	public static final String STATUS_DIFFERENT = "DIFFERENT";
 	public static final String STATUS_IDENTICAL = "IDENTICAL";
 	public static final String STATUS_SQUASH_ONLY = "SQUASH_ONLY";
 
-	// Actions possibles après la comparaison.
+	
 	public static final String ACTION_CREATE = "CREATE";
 	public static final String ACTION_UPDATE = "UPDATE";
 	public static final String ACTION_IGNORE = "IGNORE";
@@ -40,14 +40,13 @@ public class ImportSquashTmComparisonItem {
 	private String status;
 	private String selectedAction;
 
-	// Identifiant Squash TM. Vaut 0 si l'élément n'existe pas dans Squash.
+	
 	private long squashId;
 
-	// Pour une étape : identifiant du cas de test Squash TM qui la contient.
-	// Vaut 0 si le cas de test n'existe pas encore dans Squash TM.
+
 	private long parentSquashId;
 
-	// Explication des différences constatées.
+	
 	private List<String> differences = new ArrayList<>();
 
 	public ImportSquashTmComparisonItem() {

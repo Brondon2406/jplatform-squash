@@ -1,9 +1,8 @@
-// Include variables and mixins
-@import "../../../css/jalios/core/init-mixins.less";
 
-// -------------------------------------------------------------------
-// PLUGINS LESS VARIABLES
-// -------------------------------------------------------------------
+@import "../../../css/jalios/core/init-mixins.less";
+@import "../../../css/plugin.less";
+
+
 
 @sqd-navy: #33446B;
 @sqd-ink: #1f2a44;
@@ -14,10 +13,6 @@
 @sqd-focus: #4F7CAC;
 @sqd-danger: #b3372b;
 
-// Hook for JCMS
-@import "../../../css/plugin.less";
-
-/* =================== CONTENEUR =================== */
 
 .squashtm-dashboard {
 
@@ -48,7 +43,7 @@
 		outline-offset: 2px;
 	}
 
-	// Barre de progression pendant les chargements.
+	
 	&:before {
 		content: "";
 		position: absolute;
@@ -79,7 +74,6 @@
 		}
 	}
 
-	/* =================== EN-TETE =================== */
 
 	.sqd-header {
 		display: flex;
@@ -102,7 +96,6 @@
 		color: @sqd-muted;
 	}
 
-	/* =================== LOADING WAVES (Jalios) =================== */
 
 	.sqd-body {
 		position: relative;
@@ -138,7 +131,6 @@
 		font-size: 12px;
 	}
 
-	/* =================== BOUTONS =================== */
 
 	.sqd-btn {
 		display: inline-flex;
@@ -179,7 +171,6 @@
 		}
 	}
 
-	/* =================== FILTRES =================== */
 
 	.sqd-filters {
 		border: 1px solid @sqd-line;
@@ -223,7 +214,6 @@
 		margin-bottom: 0;
 	}
 
-	/* =================== SWITCH FILTRES JALIOS =================== */
 
 	.sqd-filter-toggle {
 		display: flex;
@@ -297,7 +287,6 @@
 		}
 	}
 
-	/* Contrôles segmentés : périmètre et périodes */
 
 	.sqd-field-scope>.sqd-scope-control,
 	.sqd-field-period>.sqd-period-control {
@@ -328,7 +317,6 @@
 		}
 	}
 
-	/* Alignement des contrôles Du/Au et Projets */
 
 	.sqd-field-dates,
 	.sqd-field-projects {
@@ -464,7 +452,6 @@
 		}
 	}
 
-	/* Filtres avancés repliables */
 
 	.sqd-advanced {
 		border-top: 1px solid @sqd-line;
@@ -485,7 +472,6 @@
 		}
 	}
 
-	/* Filtres actifs */
 
 	.sqd-chips {
 		display: flex;
@@ -527,7 +513,6 @@
 		padding: 0 12px 8px;
 	}
 
-	/* =================== MESSAGES =================== */
 
 	.sqd-message {
 		display: none;
@@ -553,7 +538,6 @@
 		}
 	}
 
-	/* =================== INDICATEURS CLES =================== */
 
 	.sqd-kpis {
 		display: grid;
@@ -590,7 +574,6 @@
 		}
 	}
 
-	/* =================== SECTIONS =================== */
 
 	.sqd-section {
 		margin-bottom: 30px;
@@ -652,7 +635,6 @@
 		color: @sqd-muted;
 	}
 
-	/* =================== BARRES =================== */
 
 	.sqd-bars {
 		list-style: none;
@@ -713,7 +695,6 @@
 		}
 	}
 
-	/* =================== ANNEAU =================== */
 
 	.sqd-donut {
 		display: flex;
@@ -765,7 +746,6 @@
 		}
 	}
 
-	/* =================== CHRONOLOGIE =================== */
 
 	.sqd-timeline {
 		overflow-x: auto;
@@ -785,8 +765,6 @@
 			stroke-width: 1;
 		}
 	}
-
-	/* Histogramme par période : 4 dates visibles, le reste défile horizontalement. */
 
 	.sqd-tl {
 		display: flex;
@@ -871,7 +849,6 @@
 		}
 	}
 
-	/* =================== TABLEAUX =================== */
 
 	.sqd-table-wrap {
 		max-height: 350px;
@@ -1028,7 +1005,6 @@
 		font-size: 12px;
 	}
 
-	/* =================== SURCHARGES VISUELLES =================== */
 
 	.sqd-header {
 		padding: 18px 20px;
@@ -1076,7 +1052,7 @@
 	}
 
 	.sqd-field {
-		gap: 40px;
+		gap: 20px;
 
 		>label,
 		>.sqd-label {
@@ -1101,7 +1077,6 @@
 		}
 	}
 
-	/* Maintien des contrôles segmentés sur une seule ligne */
 
 	.sqd-field-scope,
 	.sqd-field-period {
@@ -1130,7 +1105,6 @@
 		}
 	}
 
-	/* Répartition de la largeur des boutons Périmètre et Période */
 
 	.sqd-field-scope,
 	.sqd-field-period {
@@ -1170,7 +1144,6 @@
 		color: #40516f;
 	}
 
-	/* =================== STYLE DES INDICATEURS =================== */
 
 	.sqd-kpis {
 		grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
@@ -1216,7 +1189,6 @@
 		}
 	}
 
-	/* =================== STYLE DES SECTIONS =================== */
 
 	.sqd-section {
 		margin-bottom: 32px;
@@ -1289,71 +1261,6 @@
 	}
 
 
-
-	.sqd-panel-camp {
-		padding: 18px 19px;
-		border: 1px solid #e4eaf2;
-		border-radius: 10px;
-		background: #fff;
-		overflow: hidden;
-		box-shadow: 0 2px 8px rgba(31, 42, 68, .035);
-		transition: box-shadow .18s ease, transform .18s ease;
-
-		&:hover {
-			box-shadow: 0 6px 18px rgba(31, 42, 68, .07);
-			transform: translateY(-1px);
-		}
-
-		h4 {
-			display: flex;
-			align-items: center;
-			min-height: 20px;
-			margin-bottom: 16px;
-			color: #40516f;
-			font-size: 14px;
-			font-weight: 650;
-		}
-	}
-
-	.sqd-grid-rep {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 16px;
-		margin-bottom: 20px;
-	}
-
-	.sqd-grid-rep>.sqd-panel-rep.is-wide {
-		grid-column: auto;
-	}
-
-	.sqd-panel-rep {
-		padding: 18px 19px;
-		border: 1px solid #e4eaf2;
-		border-radius: 10px;
-		background: #fff;
-		overflow: hidden;
-		box-shadow: 0 2px 8px rgba(31, 42, 68, .035);
-		transition: box-shadow .18s ease, transform .18s ease;
-
-		&:hover {
-			box-shadow: 0 6px 18px rgba(31, 42, 68, .07);
-			transform: translateY(-1px);
-		}
-
-		h4 {
-			display: flex;
-			align-items: center;
-			min-height: 20px;
-			margin-bottom: 16px;
-			color: #40516f;
-			font-size: 14px;
-			font-weight: 650;
-		}
-	}
-
-
-	/* =================== STYLE DES GRAPHIQUES =================== */
-
 	.sqd-bars li {
 		gap: 12px;
 		margin-bottom: 10px;
@@ -1424,7 +1331,6 @@
 		}
 	}
 
-	/* =================== STYLE DES TABLEAUX =================== */
 
 	.sqd-table-wrap {
 		max-height: 350px;
@@ -1454,7 +1360,6 @@
 		font-weight: 600;
 	}
 
-	/* =================== RESPONSIVE =================== */
 
 	@media (max-width: 1200px) {
 		.sqd-grid {
@@ -1559,14 +1464,12 @@
 		}
 	}
 
-	/* =================== ELEMENTS MASQUES =================== */
 
 	[hidden] {
 		display: none !important;
 	}
 }
 
-/* =================== ANIMATIONS =================== */
 
 @keyframes sqd-progress {
 	0% {
@@ -1578,7 +1481,6 @@
 	}
 }
 
-/* =================== ACCESSIBILITE =================== */
 
 @media (prefers-reduced-motion: reduce) {
 	.squashtm-dashboard.is-loading:before {

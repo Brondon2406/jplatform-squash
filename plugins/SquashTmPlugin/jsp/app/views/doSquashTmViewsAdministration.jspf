@@ -48,7 +48,6 @@
 
 <% } else { %>
 
-    <%-- ============== MESSAGES ============== --%>
 
     <% if (templateAdminHandler.getSuccessMessage() != null) { %>
     <div class="alert alert-success">
@@ -79,7 +78,6 @@
 
     <% if (templateAnalysis == null) { %>
 
-    <%-- ============== TEMPLATE ACTIF ============== --%>
 
     <div class="squashtm-administration-section squashtm-template-active">
 
@@ -175,9 +173,7 @@
         </div>
     </div>
 
-    <%-- ============== TELEVERSEMENT DU NOUVEAU TEMPLATE ============== --%>
-	
-	
+
     <div class="squashtm-administration-section squashtm-template-upload">
 
         <h3><%= glp("jcmsplugin.squashtm.app.administration.upload.title") %></h3>
@@ -210,7 +206,6 @@
 
     <% } %>
 
-    <%-- ============== CORRESPONDANCE DES COLONNES ============== --%>
 
     <% if (templateAnalysis != null) {
 

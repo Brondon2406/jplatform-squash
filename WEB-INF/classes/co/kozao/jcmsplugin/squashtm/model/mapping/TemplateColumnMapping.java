@@ -1,7 +1,7 @@
 package co.kozao.jcmsplugin.squashtm.model.mapping;
 
 /**
- * Association entre une colonne du template Excel et un rôle du module.
+ * @author Severin Kengne
  */
 public class TemplateColumnMapping {
 

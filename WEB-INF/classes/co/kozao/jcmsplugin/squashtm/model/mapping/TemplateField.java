@@ -4,15 +4,7 @@ import java.text.Normalizer;
 import java.util.Locale;
 
 /**
- * Rôles fonctionnels connus du module.
- *
- * Chaque colonne du template Excel peut être associée à l'un de ces rôles.
- * C'est cette association (le mapping) qui permet de faire évoluer le template
- * sans modifier le code : le parseur ne lit plus "la colonne D" mais "la
- * colonne associée au rôle ELEMENT".
- *
- * Pour ajouter un nouveau rôle plus tard, il suffit d'ajouter une valeur ici et
- * de l'exploiter dans ExcelSquashTmImportService.
+ * @author Severin Kengne
  */
 public enum TemplateField {
 
@@ -25,11 +17,7 @@ public enum TemplateField {
 	EXPECTED_RESULT("Résultat attendu", "jcmsplugin.squashtm.app.administration.field.expected-result", true,
 			"resultat", "attendu");
 
-	/**
-	 * Ordre dans lequel les mots-clés sont testés pour suggérer un rôle à partir
-	 * d'un en-tête. Les résultats attendus sont testés avant les actions, car un
-	 * en-tête comme "Résultat de l'action" contient les deux mots.
-	 */
+	
 	private static final TemplateField[] SUGGESTION_ORDER = { EXPECTED_RESULT, ACTION, ELEMENT, SUBMODULE, VIEW,
 			FEATURE };
 
@@ -74,11 +62,7 @@ public enum TemplateField {
 		}
 	}
 
-	/**
-	 * Suggère un rôle à partir du texte d'un en-tête de colonne.
-	 *
-	 * @return le rôle suggéré, ou null si aucun mot-clé ne correspond
-	 */
+	
 	public static TemplateField suggest(String header) {
 
 		String normalizedHeader = normalize(header);

@@ -32,8 +32,7 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.ImportSquashTmProgress;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Manager chargé d'orchestrer l'import d'un fichier Excel vers Squash TM.
- *
+ * @author Severin Kengne
  */
 public class SquashTmImportManager {
 
@@ -47,14 +46,11 @@ public class SquashTmImportManager {
 	private static final String REQUIREMENT_PREFIX = "REQ";
 	private static final String TEST_CASE_PREFIX = "TC";
 
-	/** Dernier numéro de référence attribué (REQ / TC) pendant l'import en cours. */
+	
 	private int lastRequirementNumber;
 	private int lastTestCaseNumber;
 
-	/**
-	 * Initialise la numérotation à partir des références déjà présentes dans le
-	 * projet, pour que les nouvelles références continuent la suite.
-	 */
+	
 	private void initReferenceCounters(long projectId) throws IOException {
 
 		lastRequirementNumber = squashTmService.getMaxReferenceNumber(projectId, REQUIREMENT_PREFIX, true);
@@ -64,7 +60,7 @@ public class SquashTmImportManager {
 				+ ", dernier cas de test = " + lastTestCaseNumber);
 	}
 
-	/** Génère la référence suivante d'exigence : REQ001, REQ002, ... */
+	
 	private String nextRequirementReference() {
 
 		lastRequirementNumber++;
@@ -72,7 +68,7 @@ public class SquashTmImportManager {
 		return String.format("%s%03d", REQUIREMENT_PREFIX, lastRequirementNumber);
 	}
 
-	/** Génère la référence suivante de cas de test : TC001, TC002, ... */
+	
 	private String nextTestCaseReference() {
 
 		lastTestCaseNumber++;
@@ -278,9 +274,7 @@ public class SquashTmImportManager {
 		return null;
 	}
 
-	/**
-	 * Retourne le tableau dans lequel ajouter un sous-dossier nouvellement créé.
-	 */
+	
 	private JsonArray getWritableChildren(JsonObject parent) {
 
 		if (parent.has("children") && parent.get("children").isJsonArray()) {
@@ -800,10 +794,7 @@ public class SquashTmImportManager {
 		return result;
 	}
 
-	/**
-	 * Enregistre l'échec d'une action dans le rapport sans interrompre les
-	 * suivantes.
-	 */
+	
 	private void recordActionError(ImportSquashTmResult result, String target, Exception e) {
 
 		String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
@@ -813,10 +804,7 @@ public class SquashTmImportManager {
 		result.addTechnicalError(target + " : " + detail);
 	}
 
-	/**
-	 * Nombre de dossiers distincts créés à un niveau donné (1 = module, 2 =
-	 * sous-module, 3 = vue, 4 = fonctionnalité).
-	 */
+	
 	private int countCreatedFolders(int depth) {
 
 		int count = 0;
@@ -906,7 +894,7 @@ public class SquashTmImportManager {
 
 			LOGGER.info("Projet Squash TM créé avec succès : " + projectName + " (id=" + projectId + ")");
 
-			// Projet neuf : la numérotation démarre à REQ001 / TC001.
+			
 			lastRequirementNumber = 0;
 			lastTestCaseNumber = 0;
 		}
@@ -1328,15 +1316,7 @@ public class SquashTmImportManager {
 		return path.toString();
 	}
 
-	/**
-	 * Vérifie que le nom d'un dossier respecte la limite de Squash TM.
-	 *
-	 * @param name   nom du dossier à vérifier
-	 * @param type   type de dossier (Requirement ou Test Case)
-	 * @param path   emplacement du dossier dans la hiérarchie
-	 * @param result résultat de l'import pour enregistrer les erreurs
-	 * @return true si le nom est valide, false sinon
-	 */
+	
 	private boolean isValidFolderName(String name, String type, String path, ImportSquashTmResult result) {
 
 		if (name != null && !name.trim().isEmpty() && name.trim().length() <= 255) {
@@ -1437,15 +1417,7 @@ public class SquashTmImportManager {
 		return new int[] { requirementCount, testCaseCount, testStepCount };
 	}
 
-	/**
-	 * Calcule la progression de l'import des données.
-	 *
-	 * La progression est comprise entre 60 et 98 %.
-	 *
-	 * @param completed nombre d'éléments importés avec succès
-	 * @param total     nombre total d'éléments prévus
-	 * @return pourcentage de progression
-	 */
+	
 	private int calculateDataProgress(int completed, int total) {
 
 		if (total <= 0) {
@@ -1457,15 +1429,7 @@ public class SquashTmImportManager {
 		return Math.max(60, Math.min(98, percentage));
 	}
 
-	/**
-	 * Calcule la progression de la création des dossiers.
-	 *
-	 * La progression des dossiers est comprise entre 25 et 59 %.
-	 *
-	 * @param completed nombre de dossiers créés
-	 * @param total     nombre total de dossiers prévus
-	 * @return pourcentage de progression
-	 */
+	
 	private int calculateFolderProgress(int completed, int total) {
 
 		if (total <= 0) {
@@ -1540,15 +1504,7 @@ public class SquashTmImportManager {
 		return folderCount;
 	}
 
-	/**
-	 * Recherche un projet existant dans Squash TM.
-	 *
-	 * Cette méthode ne crée, ne modifie et ne supprime aucune donnée.
-	 *
-	 * @param projectName nom du projet recherché
-	 * @return projet trouvé ou null si le projet n'existe pas
-	 * @throws IOException si la recherche échoue
-	 */
+	
 	public JsonObject findExistingProject(String projectName) throws IOException {
 
 		if (projectName == null || projectName.trim().isEmpty()) {
@@ -1620,14 +1576,7 @@ public class SquashTmImportManager {
 		return inspection;
 	}
 
-	/**
-	 * Compare les éléments Excel avec le contenu d'un projet Squash TM existant.
-	 *
-	 * La comparaison repose sur le type et le chemin hiérarchique complet.
-	 *
-	 * Les éléments identiques et les éléments uniquement présents dans Squash TM ne
-	 * sont pas transmis à l'interface.
-	 */
+	
 	public void compareExistingProject(ImportSquashTmData importData, ImportSquashTmAnalysis analysis)
 			throws IOException {
 		compareExistingProject(importData, analysis, null);
@@ -1744,9 +1693,7 @@ public class SquashTmImportManager {
 		LOGGER.info("[COMPARAISON] Comparaison terminée.");
 	}
 
-	/**
-	 * Construit la clé de comparaison d'une étape (position dans le cas de test).
-	 */
+	
 	private String buildStepKey(String testCasePath, int stepNumber) {
 
 		return buildComparisonKey(ImportSquashTmComparisonItem.TYPE_TEST_STEP,
@@ -1758,10 +1705,7 @@ public class SquashTmImportManager {
 		return "Étape " + stepNumber;
 	}
 
-	/**
-	 * Normalise un texte d'étape pour la comparaison : suppression du HTML (Squash
-	 * TM stocke du texte riche), des entités et des espaces multiples.
-	 */
+	
 	private String normalizeStepText(String text) {
 
 		if (text == null) {
@@ -2097,9 +2041,7 @@ public class SquashTmImportManager {
 		}
 	}
 
-	/**
-	 * Retourne le chemin du dossier parent d'un élément.
-	 */
+	
 	private String getParentPath(String path) {
 
 		if (path == null || path.trim().isEmpty()) {
@@ -2406,9 +2348,7 @@ public class SquashTmImportManager {
 		}
 	}
 
-	/**
-	 * Ajoute un dossier attendu dans la comparaison.
-	 */
+	
 	private void addExcelFolder(Map<String, ImportSquashTmComparisonItem> items, String path, String folderType) {
 
 		String name = path.substring(path.lastIndexOf('/') + 1);
@@ -2416,9 +2356,7 @@ public class SquashTmImportManager {
 		addExcelElement(items, folderType, name, path);
 	}
 
-	/**
-	 * Ajoute un élément Excel dans la liste.
-	 */
+	
 	private void addExcelElement(Map<String, ImportSquashTmComparisonItem> items, String type, String name,
 			String path) {
 

@@ -3,11 +3,8 @@
 <%@ page import="co.kozao.jcmsplugin.squashtm.handler.SquashTmDashboardHandler" %>
 <%@ include file="/jcore/doInitPage.jspf" %>
 <%
-	// Point d'entrée AJAX du dashboard Squash TM.
-	// Architecture : JSP → Handler → Manager → Service
-	//   op=projects : liste des projets accessibles
-	//   op=data     : indicateurs filtrés
-	//   op=export   : export CSV
+
+
 	response.setCharacterEncoding("UTF-8");
 	response.setHeader("Cache-Control", "no-store");
 %>

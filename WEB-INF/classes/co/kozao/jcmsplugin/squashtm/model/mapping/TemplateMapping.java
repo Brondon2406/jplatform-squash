@@ -11,7 +11,7 @@ import com.google.gson.GsonBuilder;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
- * Description complète de la façon dont le module doit lire le template Excel.
+ * @author Severin Kengne
  */
 public class TemplateMapping {
 
@@ -49,9 +49,6 @@ public class TemplateMapping {
 		return mapping;
 	}
 
-	/*
-	 * ----------------- COLONNES ------------------
-	 */
 
 	public List<TemplateColumnMapping> getColumns() {
 		return columns;
@@ -61,10 +58,7 @@ public class TemplateMapping {
 		this.columns = columns != null ? columns : new ArrayList<>();
 	}
 
-	/**
-	 * Ajoute une association. Si le rôle était déjà associé à une autre colonne,
-	 * l'ancienne association est remplacée.
-	 */
+	
 	public void setColumn(TemplateColumnMapping column) {
 
 		if (column == null || column.getTemplateField() == null) {
@@ -75,9 +69,7 @@ public class TemplateMapping {
 		columns.add(column);
 	}
 
-	/**
-	 * Retourne l'association d'un rôle, ou null si le rôle n'est pas associé.
-	 */
+	
 	public TemplateColumnMapping getColumn(TemplateField field) {
 
 		if (field == null) {
@@ -93,16 +85,11 @@ public class TemplateMapping {
 		return null;
 	}
 
-	/**
-	 * Indique si le rôle est associé à une colonne.
-	 */
+	
 	public boolean isMapped(TemplateField field) {
 		return getColumn(field) != null;
 	}
 
-	/*
-	 * ---------------------- LIGNES -------------------------
-	 */
 
 	public int getHeaderRow() {
 		return headerRow;
@@ -120,9 +107,6 @@ public class TemplateMapping {
 		this.firstDataRow = firstDataRow;
 	}
 
-	/*
-	 * -------------------- ONGLETS ---------------------------
-	 */
 
 	public List<String> getIgnoredSheets() {
 		return ignoredSheets;
@@ -132,10 +116,7 @@ public class TemplateMapping {
 		this.ignoredSheets = ignoredSheets != null ? ignoredSheets : new ArrayList<>();
 	}
 
-	/**
-	 * Renseigne les onglets ignorés à partir d'un texte séparé par des virgules,
-	 * des points-virgules ou des retours à la ligne.
-	 */
+	
 	public void setIgnoredSheetsFromText(String text) {
 
 		List<String> names = new ArrayList<>();
@@ -151,17 +132,12 @@ public class TemplateMapping {
 		this.ignoredSheets = names;
 	}
 
-	/**
-	 * Retourne les onglets ignorés sous forme de texte séparé par des virgules.
-	 */
+	
 	public String getIgnoredSheetsAsText() {
 		return String.join(", ", ignoredSheets);
 	}
 
-	/**
-	 * Indique si un onglet doit être ignoré (comparaison sans tenir compte de la
-	 * casse).
-	 */
+	
 	public boolean isSheetIgnored(String sheetName) {
 
 		if (sheetName == null) {
@@ -178,9 +154,6 @@ public class TemplateMapping {
 		return false;
 	}
 
-	/*
-	 * --------------------- NIVEAUX PAR DEFAUT -------------------------
-	 */
 
 	public String getDefaultSubModuleName() {
 		return defaultSubModuleName;
@@ -206,9 +179,7 @@ public class TemplateMapping {
 		this.defaultFeatureName = defaultFeatureName;
 	}
 
-	/**
-	 * Retourne le nom à utiliser lorsqu'un niveau de dossier n'a pas de colonne.
-	 */
+	
 	public String getDefaultName(TemplateField field) {
 
 		String name = null;
@@ -224,9 +195,6 @@ public class TemplateMapping {
 		return name == null || name.trim().isEmpty() ? SquashTmConstants.DEFAULT_LEVEL_NAME : name.trim();
 	}
 
-	/*
-	 * ------------------- SUIVI --------------------------
-	 */
 
 	public String getUpdatedBy() {
 		return updatedBy == null ? "" : updatedBy;
@@ -244,9 +212,6 @@ public class TemplateMapping {
 		this.updatedAt = updatedAt;
 	}
 
-	/*
-	 * ------------------- VALIDATION -------------------------
-	 */
 
 	/**
 	 * Vérifie la cohérence du mapping.
@@ -322,18 +287,12 @@ public class TemplateMapping {
 		}
 	}
 
-	/*
-	 * --------------- JSON -------------------
-	 */
 
 	public String toJson() {
 		return GSON.toJson(this);
 	}
 
-	/**
-	 * Reconstruit un mapping à partir de son JSON. Retourne null si le JSON est
-	 * vide.
-	 */
+	
 	public static TemplateMapping fromJson(String json) {
 
 		if (json == null || json.trim().isEmpty()) {
@@ -343,9 +302,7 @@ public class TemplateMapping {
 		return GSON.fromJson(json, TemplateMapping.class);
 	}
 
-	/**
-	 * Retourne une copie indépendante du mapping.
-	 */
+	
 	public TemplateMapping copy() {
 		return fromJson(toJson());
 	}

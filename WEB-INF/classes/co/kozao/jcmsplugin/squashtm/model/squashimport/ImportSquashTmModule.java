@@ -4,11 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Représente un module du projet.
- *
- * Dans Excel : un onglet = un module.
- *
- * Dans Squash TM : un module = un dossier.
+ * @author Severin Kengne
  */
 public class ImportSquashTmModule {
 

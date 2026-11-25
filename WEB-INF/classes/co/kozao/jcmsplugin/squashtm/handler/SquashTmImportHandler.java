@@ -25,9 +25,7 @@ import co.kozao.jcmsplugin.squashtm.service.SquashTmExportService;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmImportJobManager;
 
 /**
- * Handler responsable du lancement de l'import d'un fichier Excel vers Squash
- * TM.
- *
+ * @author Severin Kengne
  */
 public class SquashTmImportHandler extends JcmsFormHandler {
 
@@ -151,10 +149,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		importResult.addTechnicalError(message);
 	}
 
-	/**
-	 * Construit un message d'erreur lisible pour l'échec du téléchargement de la
-	 * version à jour du module.
-	 */
+	
 	private String buildDownloadErrorMessage(Throwable e) {
 
 		if (e == null) {
@@ -186,11 +181,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 		return comparisonSelectionError;
 	}
 
-	/**
-	 * Retourne le taux de validité formaté avec deux décimales.
-	 *
-	 * @return le taux formaté selon les conventions françaises
-	 */
+	
 	public String getFormattedValidityRate() {
 		if (importAnalysis == null) {
 			return "0,00";
@@ -410,7 +401,7 @@ public class SquashTmImportHandler extends JcmsFormHandler {
 					String authorizationHeader = prepareAuthorizationHeader();
 					SquashTmExportService exportService = new SquashTmExportService(authorizationHeader);
 
-					// Génération complète avant d'écrire la réponse HTTP
+					
 					byte[] content = exportService.exportProject(cleanProjectName);
 
 					if (content == null || content.length == 0) {

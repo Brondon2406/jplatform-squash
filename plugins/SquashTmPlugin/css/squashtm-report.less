@@ -1,17 +1,13 @@
-// Include variables and mixins
-@import "../../../css/jalios/core/init-mixins.less"; // Use init-mixins.less if more mixins are required
 
-// -------------------------------------------------------------------
-// PLUGINS LESS VARIABLES
-// -------------------------------------------------------------------
+@import "../../../css/jalios/core/init-mixins.less"; 
+
 
 @app-color-squashtm: #33446B;
 
-// Hook for JCMS
+
 @import "../../../css/plugin.less";
 
 
-/* Conteneur principal */
 .squashtm-import-report {
 	width: 100%;
 	max-width: 1100px;
@@ -20,8 +16,7 @@
 	box-sizing: border-box;
 }
 
-/* En-tête */
-/* Séparation entre l'en-tête du rapport et son contenu */
+
 .squashtm-report-header {
 	margin-bottom: 28px;
 	padding-bottom: 0;
@@ -54,7 +49,7 @@
 	}
 }
 
-/* Sections */
+
 .squashtm-report-section {
 	margin-bottom: 28px;
 
@@ -69,7 +64,7 @@
     font-size: 16px;
 }
 
-/* Grille des huit statistiques */
+
 .squashtm-report-statistics {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -111,7 +106,7 @@
 	color: #687385;
 }
 
-/* Durée et bilan des erreurs */
+
 .squashtm-report-summary-row {
 	display: flex;
 	align-items: center;
@@ -148,7 +143,7 @@
 	}
 }
 
-/* Liste d'erreurs : défilement indépendant */
+
 #squashTmReportErrorSection {
 	min-width: 0;
 }
@@ -166,7 +161,7 @@
 	}
 }
 
-/* Boutons finaux */
+
 .squashtm-report-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -177,7 +172,7 @@
 	background: #fff;
 }
 
-/* Erreur de téléchargement de la version à jour du module */
+
 .squashtm-report-download-error {
 	margin-bottom: 12px;
 	overflow-wrap: anywhere;

@@ -20,31 +20,12 @@ import co.kozao.jcmsplugin.squashtm.service.SquashTmDashboardService;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Handler de la vue Dashboard Squash TM.
- *
- * <p>
- * Suit le même schéma que les autres vues du plugin :
- * JSP → Handler → Manager → Service.
- * </p>
- *
- * <ul>
- * <li>Bind des paramètres de filtres (search, dates, scope, …)</li>
- * <li>Construction de {@link DashboardFilter}</li>
- * <li>Délégation au {@link SquashTmManager} / {@link SquashTmDashboardService}</li>
- * <li>Exposition de l'i18n et de l'URL AJAX pour le JS de rendu</li>
- * </ul>
- *
- * Le rendu des graphiques reste côté client (JSON). Ce handler est le point
- * d'entrée métier pour les opérations AJAX (data / projects / export).
+ * @author Severin Kengne
  */
 public class SquashTmDashboardHandler extends JcmsFormHandler {
 
 	private static final Logger LOGGER = Logger.getLogger(SquashTmDashboardHandler.class);
 
-
-	// -------------------------------------------------------------------------
-	// Propriétés de filtres (bind HTTP via property="*")
-	// -------------------------------------------------------------------------
 
 	private String op;
 	private String dataset;
@@ -57,11 +38,11 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 	private String tcCoverage = DashboardFilter.COVERAGE_ALL;
 	private String automatable = "ALL";
 
-	/** Chaîne saisie par le datepicker Jalios (format locale). */
+	
 	private String dateFromStr;
 	private String dateToStr;
 
-	/** Valeurs déjà normalisées yyyy-MM-dd (envoyées par le JS). */
+	
 	private String dateFrom;
 	private String dateTo;
 
@@ -82,9 +63,6 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 	private String limit;
 	private boolean refresh;
 
-	// -------------------------------------------------------------------------
-	// Manager / Service
-	// -------------------------------------------------------------------------
 
 	private SquashTmManager getManager() {
 		return SquashTmManager.getInstance();
@@ -101,27 +79,18 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 		return getManager().newDashboardService(member);
 	}
 
-	/**
-	 * Construit le filtre métier à partir des propriétés du handler.
-	 * Compatible avec les paramètres envoyés par le JS (dateFrom/dateTo ISO)
-	 * et avec les champs Jalios (dateFromStr/dateToStr au format locale).
-	 */
+	
 	public DashboardFilter buildFilter() {
-		// Si le JS a envoyé des ISO (dateFrom/dateTo), on les privilégie.
-		// Sinon on parse les chaînes Jalios (dateFromStr/dateToStr).
+		
+		
 		String fromParam = Util.notEmpty(dateFrom) ? dateFrom : toIsoDay(dateFromStr);
 		String toParam = Util.notEmpty(dateTo) ? dateTo : toIsoDay(dateToStr);
 
-		// Réutilise le parseur centralisé de DashboardFilter via une mini-request synthétique
-		// en passant par les setters du filtre n'est pas public : on délègue à fromRequest
-		// en construisant les paramètres attendus. Pour rester simple et stable, on
-		// reconstruit via les paramètres HTTP déjà présents sur la request.
+
 		return DashboardFilter.fromRequest(request);
 	}
 
-	/**
-	 * Normalise une date saisie (datepicker Jalios, format userLang) en yyyy-MM-dd.
-	 */
+	
 	private String toIsoDay(String value) {
 		if (Util.isEmpty(value)) {
 			return null;
@@ -131,7 +100,7 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 			Date parsed = dayFormat.parse(value.trim());
 			return new SimpleDateFormat(SquashTmConstants.DATE_FORMAT_ISO_DAY).format(parsed);
 		} catch (ParseException e) {
-			// Déjà en ISO ?
+			
 			if (value.trim().matches("\\d{4}-\\d{2}-\\d{2}")) {
 				return value.trim();
 			}
@@ -140,13 +109,7 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 		}
 	}
 
-	// -------------------------------------------------------------------------
-	// Opérations métier (appelées depuis dashboardData.jsp)
-	// -------------------------------------------------------------------------
 
-	/**
-	 * Liste des projets (JSON).
-	 */
 	public String getProjectsJson() throws IOException {
 		SquashTmDashboardService service = newService();
 		JsonObject json = new JsonObject();
@@ -154,18 +117,14 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 		return json.toString();
 	}
 
-	/**
-	 * Indicateurs filtrés (JSON).
-	 */
+	
 	public String getDashboardJson() throws IOException {
 		SquashTmDashboardService service = newService();
 		DashboardFilter filter = buildFilter();
 		return service.buildDashboard(filter).toString();
 	}
 
-	/**
-	 * Export CSV.
-	 */
+	
 	public String getExportCsv() throws IOException {
 		SquashTmDashboardService service = newService();
 		DashboardFilter filter = buildFilter();
@@ -177,9 +136,6 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 		return "squashtm-" + name + ".csv";
 	}
 
-	// -------------------------------------------------------------------------
-	// Présentation (JSP)
-	// -------------------------------------------------------------------------
 
 	public String getDataUrl(String contextPath) {
 		return contextPath + "/plugins/SquashTmPlugin/jsp/dashboard/dashboardData.jsp";
@@ -197,9 +153,6 @@ public class SquashTmDashboardHandler extends JcmsFormHandler {
 		return SquashTmUtils.escapeHtml(i18n.toString());
 	}
 
-	// -------------------------------------------------------------------------
-	// Getters / Setters (bind HTTP)
-	// -------------------------------------------------------------------------
 
 	public String getOp() {
 		return op;

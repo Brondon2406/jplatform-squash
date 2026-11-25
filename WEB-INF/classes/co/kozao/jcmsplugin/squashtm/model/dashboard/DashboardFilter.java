@@ -13,13 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
- * Filtres du dashboard Squash TM.
- *
- * <p>
- * Cet objet est construit à partir des paramètres de la requête HTTP envoyée
- * par la vue dashboard. Les valeurs multiples sont transmises séparées par des
- * virgules (ex. projects=1,4,7).
- * </p>
+ * @author Severin Kengne
  */
 public class DashboardFilter {
 
@@ -136,9 +130,6 @@ public class DashboardFilter {
 		return f;
 	}
 
-	/*
-	 * ================================ OUTILS ================================
-	 */
 
 	private static List<String> csv(String value) {
 
@@ -190,10 +181,7 @@ public class DashboardFilter {
 		return defaultValue;
 	}
 
-	/**
-	 * Convertit une date yyyy-MM-dd en millisecondes. Pour une borne de fin, le
-	 * dernier instant de la journée est retenu.
-	 */
+	
 	private static Long parseDay(String value, boolean endOfDay) {
 
 		if (value == null || value.trim().isEmpty()) {
@@ -214,13 +202,7 @@ public class DashboardFilter {
 		}
 	}
 
-	/*
-	 * ================================ LOGIQUE ================================
-	 */
 
-	/**
-	 * Indique si le périmètre demandé inclut la rubrique donnée.
-	 */
 	public boolean wants(String section) {
 		return SCOPE_ALL.equals(scope) || scope.equals(section);
 	}
@@ -229,9 +211,7 @@ public class DashboardFilter {
 		return dateFrom != null || dateTo != null;
 	}
 
-	/**
-	 * Vrai si aucune période n'est demandée, ou si la date est dans la période.
-	 */
+	
 	public boolean inPeriod(Long timestamp) {
 
 		if (!hasPeriod()) {
@@ -251,9 +231,6 @@ public class DashboardFilter {
 		return dateTo == null || value <= dateTo.longValue();
 	}
 
-	/*
-	 * ================================ GETTERS ================================
-	 */
 
 	public Set<Long> getProjectIds() {
 		return projectIds;

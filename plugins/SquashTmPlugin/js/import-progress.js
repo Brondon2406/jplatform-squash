@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function() {
 
-    // =============== ÉLÉMENTS DE LA BARRE DE PROGRESSION ==============
 
     var importForm = document.getElementById("squashTmImportForm");
 
@@ -12,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var progressStage = document.getElementById("squashTmProgressStage");
     var progressElapsed = document.getElementById("squashTmProgressElapsed");
     var progressResult = document.getElementById("squashTmProgressResult");
-    // Éléments du rapport final.
+    
     var reportSubModules = document.getElementById("squashTmReportSubModules");
     var reportTestSteps = document.getElementById("squashTmReportTestSteps");
     var importReport = document.getElementById("squashTmImportReport");
@@ -32,7 +31,6 @@ document.addEventListener("DOMContentLoaded", function() {
     var reportErrorList = document.getElementById("squashTmReportErrorList");
 
 
-    // Éléments du téléchargement de la version à jour du module.
     var reportDownloadButton = document.getElementById("squashTmReportDownloadButton");
     var reportDownloadLabel = document.getElementById("squashTmReportDownloadLabel");
     var reportDownloadError = document.getElementById("squashTmReportDownloadError");
@@ -42,13 +40,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var polling = false;
     var pollingTimer = null;
 
-    // =============== MISE À JOUR DE L'AFFICHAGE ==============
 
-    /**
-     * Met à jour les éléments visuels de la progression.
-     *
-     * @param {Object} data données reçues du serveur
-     */
     function updateImportProgress(data) {
 
         if (!data) {
@@ -105,10 +97,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
 
-            /**
-             * L'importation est terminée, avec ou sans erreurs.
-             * La progression doit donc atteindre 100 % dans les deux cas.
-             */
             if (progressBar) {
                 progressBar.style.width = "100%";
             }
@@ -124,11 +112,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    /**
-     * Affiche le rapport final de l'importation.
-     *
-     * @param {Object} data données reçues du serveur
-     */
+    
     function showImportReport(data) {
         if (!importReport) {
             return;
@@ -150,7 +134,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 : "squashtm-import-status alert alert-danger";
         }
 
-        // Un seul projet est concerné par le fichier importé.
+        
         if (reportProjects) {
             reportProjects.textContent = data.projectName ? "1" : "0";
         }
@@ -188,7 +172,7 @@ document.addEventListener("DOMContentLoaded", function() {
             reportDuration.textContent = seconds + " s";
         }
 
-        // Rassembler les incohérences et les erreurs techniques.
+        
         var errors = [];
 
         if (Array.isArray(data.inconsistencies)) {
@@ -218,10 +202,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 errors.length > 0 ? "block" : "none";
         }
 
-        // Bouton affiché uniquement pour un projet qui existait déjà dans Squash TM.
+        
         updateDownloadButton(data.projectName, data.existingProjectReused === true);
 
-        // Masquer la progression et afficher le rapport.
+        
         if (progressContainer) {
             progressContainer.style.display = "none";
         }
@@ -229,7 +213,6 @@ document.addEventListener("DOMContentLoaded", function() {
         importReport.style.display = "block";
     }
 
-    // =============== TÉLÉCHARGEMENT DE LA VERSION À JOUR DU MODULE ==============
 
     function updateDownloadButton(projectName, existingProject) {
 
@@ -248,9 +231,7 @@ document.addEventListener("DOMContentLoaded", function() {
             (existingProject === true && reportDownloadProject !== "") ? "" : "none";
     }
 
-    /**
-     * Extrait le nom du fichier de l'en-tête Content-Disposition.
-     */
+    
     function getDownloadFileName(contentDisposition, fallbackName) {
 
         if (!contentDisposition) {

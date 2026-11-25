@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Représente une vue du projet.
- *
- * Dans Squash TM, une vue correspond à un dossier sous le module.
+ * @author Severin Kengne
  */
 public class ImportSquashTmView {
 

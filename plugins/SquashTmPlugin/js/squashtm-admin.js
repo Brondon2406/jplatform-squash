@@ -10,17 +10,13 @@
 
     var FIELD_SELECTOR = "select[name=\"columnFields\"]";
 
-    /**
-     * Vérifie que le fichier choisi est un classeur Excel.
-     */
+    
     function isExcelFile(file) {
         var name = (file && file.name ? file.name : "").toLowerCase();
         return name.endsWith(".xlsx") || name.endsWith(".xls");
     }
 
-    /**
-     * Fichier de template sélectionné : affichage du nom et activation du bouton.
-     */
+    
     function onTemplateFileSelected(input) {
         var fileName = document.getElementById("squashTmTemplateFileName");
         var fileError = document.getElementById("squashTmTemplateFileError");
@@ -57,11 +53,7 @@
         }
     }
 
-    /**
-     * Un même élément ne peut correspondre qu'à une seule colonne : si
-     * l'administrateur le choisit pour une deuxième colonne, la première est
-     * remise à "Colonne non utilisée".
-     */
+    
     function preventDuplicateSelection(changedSelect) {
         if (!changedSelect.value) {
             return;

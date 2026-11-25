@@ -24,10 +24,7 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Manager principal du connecteur Squash TM.
- *
- * Cette classe centralise les opérations de connexion, de déconnexion et de
- * récupération des informations de l'utilisateur Squash TM.
+ * @author Severin Kengne
  */
 public class SquashTmManager {
 
@@ -43,11 +40,7 @@ public class SquashTmManager {
 		service = new SquashTmService();
 	}
 
-	/**
-	 * Retourne l'instance unique du Manager.
-	 *
-	 * @return instance du SquashTmManager
-	 */
+	
 	public static synchronized SquashTmManager getInstance() {
 
 		if (SINGLETON == null) {
@@ -116,12 +109,7 @@ public class SquashTmManager {
 		return answer;
 	}
 
-	/**
-	 * Vérifie que le plugin Squash TM est actif.
-	 *
-	 * @param member membre JCMS courant
-	 * @return true si le plugin est actif
-	 */
+	
 	public boolean isPluginActive(Member member) {
 
 		if (member == null) {
@@ -159,12 +147,7 @@ public class SquashTmManager {
 		return configured;
 	}
 
-	/**
-	 * Vérifie si un utilisateur Squash TM est actuellement connecté pour le membre
-	 * JCMS courant.
-	 *
-	 * @return true si les informations Squash TM sont présentes
-	 */
+	
 	public boolean isConnect() {
 
 		LoggedUserInfo userInfo = SquashTmUtils
@@ -173,24 +156,13 @@ public class SquashTmManager {
 		return userInfo != null;
 	}
 
-	/**
-	 * Retourne les informations de l'utilisateur Squash TM actuellement connecté.
-	 *
-	 *
-	 * @return informations de l'utilisateur Squash TM ou null
-	 */
+	
 	public LoggedUserInfo getLoggedUserInfo() {
 		Member member = Channel.getChannel().getCurrentLoggedMember();
 		return SquashTmUtils.getSquashTmRemoteUserInfos(member);
 	}
 
-	/**
-	 * Retourne les informations de l'utilisateur Squash TM associé à un membre JCMS
-	 * donné.
-	 *
-	 * @param member membre JCMS
-	 * @return informations Squash TM ou null
-	 */
+	
 	public LoggedUserInfo getLoggedUserInfo(Member member) {
 
 		if (member == null) {
@@ -230,14 +202,7 @@ public class SquashTmManager {
 			return false;
 		}
 
-		/*
-		 * L'authentification est réussie.
-		 *
-		 * IMPORTANT : userInfo contient uniquement les informations provenant de Squash
-		 * TM.
-		 *
-		 * On ne complète pas ces informations avec le Member JCMS.
-		 */
+		
 		SquashTmUtils.setSquashTmRemoteUserInfos(userInfo);
 
 		LOGGER.info("Connexion Squash TM réussie : " + userInfo.getFullName());
@@ -245,11 +210,7 @@ public class SquashTmManager {
 		return true;
 	}
 
-	/**
-	 * Crée le service du dashboard pour le membre JCMS connecté.
-	 *
-	 * @param member membre JCMS connecté (sert aussi de clé de cache)
-	 */
+	
 	public SquashTmDashboardService newDashboardService(Member member) throws IOException {
 
 		if (member == null) {
@@ -259,12 +220,7 @@ public class SquashTmManager {
 		return new SquashTmDashboardService(service.resolveAuthorization(), member.getId());
 	}
 
-	/**
-	 * Teste la connexion à Squash TM.
-	 *
-	 * @param member membre JCMS courant
-	 * @return true si Squash TM répond correctement
-	 */
+	
 	public boolean testConnection(Member member) {
 
 		if (member == null) {
@@ -274,9 +230,7 @@ public class SquashTmManager {
 		return service.testConnection(member);
 	}
 
-	/**
-	 * Déconnecte le compte Squash TM associé au membre courant.
-	 */
+	
 	public void disconnect() {
 
 		SquashTmUtils.setSquashTmApiToken("");

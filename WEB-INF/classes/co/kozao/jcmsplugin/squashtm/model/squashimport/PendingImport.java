@@ -3,10 +3,7 @@ package co.kozao.jcmsplugin.squashtm.model.squashimport;
 import java.io.File;
 
 /**
- * Représente un import Excel analysé, mais pas encore confirmé.
- *
- * Les données sont conservées temporairement jusqu'à la confirmation ou
- * l'annulation de l'importation.
+ * @author Severin Kengne
  */
 public class PendingImport {
 

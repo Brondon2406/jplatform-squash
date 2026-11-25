@@ -25,6 +25,10 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
  * Ce service ne modifie rien : il lit le premier onglet, repère la ligne
  * d'en-tête, liste les colonnes et suggère un rôle pour chacune d'elles.
  */
+
+/**
+ * @author Severin Kengne
+ */
 public class ExcelTemplateInspector {
 
 	private static final int MAX_HEADER_SCAN_ROWS = 20;

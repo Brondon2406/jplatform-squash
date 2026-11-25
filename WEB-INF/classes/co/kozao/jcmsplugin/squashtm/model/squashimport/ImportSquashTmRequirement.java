@@ -1,7 +1,7 @@
 package co.kozao.jcmsplugin.squashtm.model.squashimport;
 
 /**
- * Représente une exigence à importer dans Squash TM.
+ * @author Severin Kengne
  */
 public class ImportSquashTmRequirement {
 

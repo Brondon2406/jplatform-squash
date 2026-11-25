@@ -29,7 +29,7 @@ import co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Service chargé des appels REST vers Squash TM.
+ * @author Severin Kengne
  */
 public class SquashTmService {
 
@@ -41,12 +41,7 @@ public class SquashTmService {
 	private static final int READ_TIMEOUT = 30000;
 	private final String authorizationHeader;
 
-	/**
-	 * Constructeur utilisé par les traitements en arrière-plan.
-	 *
-	 * @param authorizationHeader en-tête Authorization préparé avant le lancement
-	 *                            du thread
-	 */
+	
 	public SquashTmService(String authorizationHeader) {
 		this.authorizationHeader = authorizationHeader;
 	}
@@ -55,12 +50,7 @@ public class SquashTmService {
 		this.authorizationHeader = null;
 	}
 
-	/**
-	 * Authentifie un utilisateur JCMS auprès de Squash TM.
-	 *
-	 * @param member membre JCMS courant
-	 * @return informations utilisateur Squash TM ou null
-	 */
+	
 	public LoggedUserInfo authenticate(Member member) {
 
 		if (member == null) {
@@ -434,9 +424,7 @@ public class SquashTmService {
 		}
 	}
 
-	/**
-	 * Construit LoggedUserInfo depuis un JSON utilisateur.
-	 */
+	
 	private LoggedUserInfo buildLoggedUserInfo(String json) {
 
 		try {
@@ -491,9 +479,7 @@ public class SquashTmService {
 		return info;
 	}
 
-	/**
-	 * Lecture sécurisée d'une propriété JSON.
-	 */
+	
 	private String getString(JsonObject object, String property) {
 
 		if (object == null || !object.has(property) || object.get(property).isJsonNull()) {
@@ -504,22 +490,13 @@ public class SquashTmService {
 		return object.get(property).getAsString();
 	}
 
-	/**
-	 * Test de connexion.
-	 */
+	
 	public boolean testConnection(Member member) {
 
 		return authenticate(member) != null;
 	}
 
-	/**
-	 * Supprime un ou plusieurs dossiers d'exigences.
-	 *
-	 * Les identifiants sont séparés par des virgules.
-	 *
-	 * @param folderIds identifiants des dossiers à supprimer
-	 * @throws IOException si la suppression échoue
-	 */
+	
 	public void deleteRequirementFolders(String folderIds) throws IOException {
 
 		if (Util.isEmpty(folderIds)) {
@@ -541,14 +518,7 @@ public class SquashTmService {
 		LOGGER.info("Dossiers d'exigences supprimés : " + folderIds);
 	}
 
-	/**
-	 * Supprime un ou plusieurs dossiers de cas de test.
-	 *
-	 * Les identifiants sont séparés par des virgules.
-	 *
-	 * @param folderIds identifiants des dossiers à supprimer
-	 * @throws IOException si la suppression échoue
-	 */
+	
 	public void deleteTestCaseFolders(String folderIds) throws IOException {
 
 		if (Util.isEmpty(folderIds)) {
@@ -587,9 +557,7 @@ public class SquashTmService {
 			throw new IOException("Le mode d'authentification Squash TM n'est pas configuré.");
 		}
 
-		/*
-		 * ====== TOKEN ===========
-		 */
+		
 		if (AuthentificationMode.TOKEN.equals(mode)) {
 			String token = SquashTmUtils.getSquashTmApiToken();
 
@@ -600,9 +568,7 @@ public class SquashTmService {
 			return "Bearer " + token;
 		}
 
-		/*
-		 * ============ BASIC ================
-		 */
+		
 		if (AuthentificationMode.BASIC.equals(mode)) {
 
 			String username = SquashTmUtils.getSquashTmUsername();
@@ -737,7 +703,7 @@ public class SquashTmService {
 			byte[] body = jsonBody.getBytes(StandardCharsets.UTF_8);
 			connection.setFixedLengthStreamingMode(body.length);
 
-			// Envoyer le corps JSON et fermer le flux de sortie.
+			
 			try (java.io.OutputStream output = connection.getOutputStream()) {
 				output.write(body);
 			}
@@ -1179,13 +1145,7 @@ public class SquashTmService {
 		}
 	}
 
-	/**
-	 * Récupère les détails d'un cas de test Squash TM.
-	 *
-	 * @param testCaseId identifiant du cas de test
-	 * @return détails du cas de test
-	 * @throws IOException si la récupération échoue
-	 */
+	
 	public JsonObject getTestCase(long testCaseId) throws IOException {
 
 		if (testCaseId <= 0) {
@@ -1203,9 +1163,7 @@ public class SquashTmService {
 		return executeGetJson(url, "Impossible de récupérer le cas de test " + testCaseId);
 	}
 
-	/**
-	 * Récupère le contenu paginé d'un dossier d'exigences.
-	 */
+	
 	public JsonObject getRequirementFolderContent(long folderId, int page, int size) throws IOException {
 
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
@@ -1275,9 +1233,7 @@ public class SquashTmService {
 		}
 	}
 
-	/**
-	 * Récupère le contenu paginé d'un dossier de cas de test.
-	 */
+	
 	public JsonObject getTestCaseFolderContent(long folderId, int page, int size) throws IOException {
 
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
@@ -1531,7 +1487,7 @@ public class SquashTmService {
 				try {
 					max = Math.max(max, Integer.parseInt(matcher.group(1)));
 				} catch (NumberFormatException ignored) {
-					// Numéro trop grand : ignoré.
+					
 				}
 			}
 		}
@@ -1572,7 +1528,7 @@ public class SquashTmService {
 
 		currentVersion.addProperty("name", name.trim());
 
-		// Référence de l'exigence (champ "reference" de la version courante).
+		
 		if (!Util.isEmpty(reference)) {
 			currentVersion.addProperty("reference", reference.trim());
 		}
@@ -1697,7 +1653,7 @@ public class SquashTmService {
 
 		testCase.addProperty("name", name.trim());
 
-		// Référence du cas de test.
+		
 		if (!Util.isEmpty(reference)) {
 			testCase.addProperty("reference", reference.trim());
 		}
@@ -1900,10 +1856,7 @@ public class SquashTmService {
 		LOGGER.info("Étapes Squash TM supprimées : " + ids);
 	}
 
-	/**
-	 * Retourne l'en-tête Authorization du membre JCMS courant.
-	 *
-	 */
+	
 	public String resolveAuthorization() throws IOException {
 		return getAuthorization();
 	}
@@ -1919,12 +1872,7 @@ public class SquashTmService {
 		return baseUrl + "/api/rest/latest" + apiPath;
 	}
 
-	/**
-	 * Lit une ressource Squash TM (objet JSON) à partir de son chemin API.
-	 *
-	 * @param apiPath chemin relatif à /api/rest/latest, par exemple
-	 *                /requirements/12
-	 */
+	
 	public JsonObject getResource(String apiPath) throws IOException {
 		return executeGetJson(buildApiUrl(apiPath), "Impossible de récupérer " + apiPath);
 	}

@@ -14,10 +14,7 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Form handler responsable de l'authentification Squash TM avec un token API.
- *
- * Le fonctionnement est basé sur le même principe que AuthenticationHandler du
- * plugin Squash.
+ * @author Severin Kengne
  */
 public class SquashTmTokenFormHandler extends JcmsFormHandler {
 

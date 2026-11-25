@@ -19,10 +19,7 @@ import co.kozao.jcmsplugin.squashtm.model.mapping.TemplateMapping;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
- * Gère le template Excel actif et son mapping.
- *
- * Fichiers conservés dans le répertoire de stockage :
- *
+ * @author Severin Kengne
  */
 public class SquashTmTemplateMappingManager {
 
@@ -151,10 +148,7 @@ public class SquashTmTemplateMappingManager {
 		LOGGER.info("[TEMPLATE] Mapping enregistré par " + updatedBy + " : " + getMappingFile().getAbsolutePath());
 	}
 
-	/**
-	 * Supprime le mapping et le template personnalisés. Le module revient au
-	 * template historique.
-	 */
+	
 	public synchronized void resetToDefault() throws IOException {
 
 		Files.deleteIfExists(getMappingFile().toPath());
@@ -191,10 +185,7 @@ public class SquashTmTemplateMappingManager {
 		return token;
 	}
 
-	/**
-	 * Retourne le fichier en attente associé au jeton, ou null s'il est inconnu ou
-	 * expiré.
-	 */
+	
 	public File getPendingTemplateFile(String token) {
 
 		if (Util.isEmpty(token)) {
@@ -208,9 +199,7 @@ public class SquashTmTemplateMappingManager {
 		return pending == null ? null : pending.file;
 	}
 
-	/**
-	 * Supprime un fichier en attente.
-	 */
+	
 	public void discardPendingTemplate(String token) {
 
 		if (Util.isEmpty(token)) {
@@ -307,9 +296,7 @@ public class SquashTmTemplateMappingManager {
 		return fallback;
 	}
 
-	/**
-	 * Fichier téléversé en attente d'enregistrement.
-	 */
+	
 	private static class PendingTemplate {
 
 		private final File file;

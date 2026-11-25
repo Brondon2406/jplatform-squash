@@ -21,9 +21,8 @@
 	 <input type="hidden" id="opLoadAnalysis" name="opLoadAnalysis" value="false" />
 	 <input type="hidden" id="analysisId" name="analysisId" value="<%= squashTmImportHandler.getAnalysisId() != null ? squashTmImportHandler.getAnalysisId() : "" %>" />
 	 <input type="hidden" id="selectedComparisonIndexes" name="selectedComparisonIndexes" value="" />
-	
-	<%-- ============== ERREURS DE TRAITEMENT (analyse / confirmation) ============== --%>
-	 
+
+
 	 <%
 	 	ImportSquashTmResult handlerResult = squashTmImportHandler.getImportResult();
 
@@ -37,19 +36,18 @@
 	 	</ul>
 	 </div>
 	 <% } %>
-	 
-            
-     <%-- ============== VUE D'IMPORT ============== --%> 
+
+
 	<div class="squashtm-import-container">
 	<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportFiles.jspf" %>	
 	</div>
 	
-	<%-- ============== SYNTHESE DE L'ANALYSE ============== --%>
+	
 	<div id="squashTmAnalysisContainer" class="squashtm-analysis-container" style="display: none;">
 		<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportAnalysis.jspf" %>
 	</div>
 	 	
-	<%-- ============== RAPPORT FINAL D'IMPORTATION ============== --%>
+	
 	<div id="squashTmImportReport" class="squashtm-import-report" style="display: none;">
 		<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportReport.jspf" %> 
 	</div>

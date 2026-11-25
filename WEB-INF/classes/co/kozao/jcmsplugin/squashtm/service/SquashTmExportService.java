@@ -43,12 +43,7 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Reconstruit, à partir de Squash TM, la version à jour des modules d'un projet
- * sous la forme d'un fichier Excel à l'image du modèle (template) actif :
- * le fichier du modèle est ouvert, son onglet type est dupliqué pour chaque
- * module, et les colonnes sont placées selon le mapping actif.
- *
- * Ce service ne crée, ne modifie et ne supprime aucune donnée dans Squash TM.
+ * @author Severin Kengne
  */
 public class SquashTmExportService {
 
@@ -56,7 +51,7 @@ public class SquashTmExportService {
 
 	private static final int PAGE_SIZE = 100;
 
-	/** Module / Sous-module / Vue / Fonctionnalité. */
+	
 	private static final int FEATURE_DEPTH = 4;
 
 	private static final int MAX_SHEET_NAME_LENGTH = 31;
@@ -67,7 +62,7 @@ public class SquashTmExportService {
 
 	private final SquashTmService squashTmService;
 
-	/** Utilisé dans une requête JCMS : l'authentification du membre connecté est utilisée. */
+	
 	public SquashTmExportService() {
 		this.squashTmService = new SquashTmService();
 	}
@@ -76,7 +71,7 @@ public class SquashTmExportService {
 		this.squashTmService = new SquashTmService(authorizationHeader);
 	}
 
-	/** Exemple : SquashTM_MonProjet_20261111_1530.xlsx */
+	
 	public static String buildFileName(String projectName) {
 
 		String base = SquashTmUtils.isBlank(projectName) ? "projet" : projectName.trim().replaceAll("[^\\p{L}\\p{N}._-]+", "_");
@@ -115,10 +110,10 @@ public class SquashTmExportService {
 
 		Node root = new Node("");
 
-		// Cas de test et étapes.
+		
 		collectTestCases(squashTmService.getTestCaseFolderTree(projectId), root);
 
-		// Exigences (celles qui n'ont pas de cas de test portant le même nom).
+		
 		collectRequirements(squashTmService.getRequirementFolderTree(projectId), root);
 
 		if (root.children.isEmpty()) {
@@ -132,9 +127,6 @@ public class SquashTmExportService {
 		return content;
 	}
 
-	/*
-	 * ==================== LECTURE DE SQUASH TM ====================
-	 */
 
 	private void collectTestCases(JsonElement tree, Node root) throws IOException {
 
@@ -153,7 +145,7 @@ public class SquashTmExportService {
 				continue;
 			}
 
-			// Seuls les dossiers de fonctionnalité contiennent des éléments.
+			
 			if (segments.size() != FEATURE_DEPTH) {
 				continue;
 			}
@@ -185,7 +177,7 @@ public class SquashTmExportService {
 					node.elements.put(name, element);
 				}
 
-				// Les étapes n'existent que pour les cas de test classiques.
+				
 				if ("test-case".equals(type) && id > 0) {
 					readSteps(id, element);
 				}
@@ -283,7 +275,7 @@ public class SquashTmExportService {
 				throw new IOException("Réponse vide pour le dossier Squash TM " + folderId + ".");
 			}
 
-			// Un dossier vide est retourné sans "_embedded" : ce n'est pas une erreur.
+			
 			if (response.has("_embedded") && response.get("_embedded").isJsonObject()) {
 
 				JsonObject embedded = response.getAsJsonObject("_embedded");
@@ -401,13 +393,10 @@ public class SquashTmExportService {
 		return current;
 	}
 
-	/*
-	 * ==================== CONSTRUCTION DU FICHIER EXCEL ====================
-	 */
 
 	private byte[] buildWorkbook(Node root, String projectName) throws IOException {
 
-		// Le mapping actif décrit le modèle : lignes d'en-tête / de données, colonnes, onglets ignorés.
+		
 		TemplateMapping mapping = SquashTmTemplateMappingManager.getInstance().getActiveMapping();
 
 		int headerIndex = Math.max(0, mapping.getHeaderRow() - 1);
@@ -425,14 +414,14 @@ public class SquashTmExportService {
 			CellStyle textStyle = workbook.createCellStyle();
 			textStyle.setWrapText(true);
 
-			// Ordre des onglets du modèle, pour reproduire son ordre dans l'export.
+			
 			List<String> templateOrder = new ArrayList<>();
 
 			for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
 				templateOrder.add(workbook.getSheetName(i).trim().toLowerCase());
 			}
 
-			// Onglet type = premier onglet non ignoré du modèle.
+			
 			int modelIndex = -1;
 
 			for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
@@ -450,7 +439,7 @@ public class SquashTmExportService {
 				modelSheet = workbook.getSheetAt(modelIndex);
 			}
 
-			// Les autres onglets non ignorés sont des exemples : ils sont retirés.
+			
 			for (int i = workbook.getNumberOfSheets() - 1; i >= 0; i--) {
 
 				Sheet sheet = workbook.getSheetAt(i);
@@ -462,7 +451,7 @@ public class SquashTmExportService {
 
 			workbook.setSheetName(workbook.getSheetIndex(modelSheet), SquashTmConstants.MODEL_SHEET_NAME);
 
-			// Onglets ignorés (légende, instructions...) : conservés, avec leur position relative.
+			
 			Set<String> usedNames = new HashSet<>();
 			List<String> sheetsAfterModel = new ArrayList<>();
 			boolean afterModel = false;
@@ -483,17 +472,17 @@ public class SquashTmExportService {
 				}
 			}
 
-			// Si l'onglet type n'a pas d'en-tête, il est reconstruit à partir du mapping.
+			
 			if (modelSheet.getRow(headerIndex) == null) {
 				createFallbackHeader(modelSheet, mapping, headerIndex, headerStyle);
 			}
 
 			Map<TemplateField, Integer> columns = resolveColumns(modelSheet, mapping, headerIndex);
 
-			// Styles de la première ligne de données du modèle, par rôle.
+			
 			Map<TemplateField, CellStyle> columnStyles = readColumnStyles(modelSheet, columns, firstDataIndex);
 
-			// Le modèle est vidé de ses lignes d'exemple, mais garde en-tête, largeurs et mise en forme.
+			
 			clearDataRows(modelSheet, firstDataIndex);
 
 			String title = "Export Squash TM - Projet : " + projectName + " - "
@@ -518,7 +507,7 @@ public class SquashTmExportService {
 
 			workbook.removeSheetAt(workbook.getSheetIndex(modelSheet));
 
-			// Les onglets ignorés placés après l'onglet type dans le modèle restent à la fin.
+			
 			for (String name : sheetsAfterModel) {
 				workbook.setSheetOrder(name, workbook.getNumberOfSheets() - 1);
 			}
@@ -670,7 +659,7 @@ public class SquashTmExportService {
 		return styles;
 	}
 
-	/** Supprime les lignes de données (et leurs fusions) de l'onglet type. */
+	
 	private void clearDataRows(Sheet sheet, int firstDataIndex) {
 
 		for (int i = sheet.getNumMergedRegions() - 1; i >= 0; i--) {
@@ -689,7 +678,7 @@ public class SquashTmExportService {
 		}
 	}
 
-	/** Écrit le titre dans la première ligne libre située au-dessus de l'en-tête. */
+	
 	private void writeTitle(Sheet sheet, int headerIndex, String title, CellStyle style) {
 
 		DataFormatter formatter = new DataFormatter();
@@ -827,7 +816,7 @@ public class SquashTmExportService {
 		return candidate;
 	}
 
-	/** Écrit une valeur de l'en-tête ou du titre (cellule créée seulement si la valeur est renseignée). */
+	
 	private static void setCell(Row row, int column, String value, CellStyle style) {
 
 		if (SquashTmUtils.isBlank(value)) {
@@ -840,7 +829,7 @@ public class SquashTmExportService {
 		cell.setCellStyle(style);
 	}
 
-	/** Écrit une cellule de données : la cellule est toujours créée pour conserver la mise en forme du modèle. */
+	
 	private static void setDataCell(Row row, int column, String value, CellStyle style) {
 
 		Cell cell = row.createCell(column);
@@ -852,9 +841,6 @@ public class SquashTmExportService {
 		cell.setCellStyle(style);
 	}
 
-	/*
-	 * ==================== OUTILS ====================
-	 */
 
 	private String getString(JsonObject object, String property) {
 
@@ -866,11 +852,7 @@ public class SquashTmExportService {
 		return object.get(property).getAsString();
 	}
 
-	/*
-	 * ==================== STRUCTURES INTERNES ====================
-	 */
 
-	/** Noeud de la hiérarchie Module / Sous-module / Vue / Fonctionnalité. */
 	private static class Node {
 
 		private final String name;
@@ -882,7 +864,7 @@ public class SquashTmExportService {
 		}
 	}
 
-	/** Exigence / cas de test portant le même libellé, avec ses étapes. */
+	
 	private static class Element {
 
 		private final String name;
@@ -954,7 +936,7 @@ public class SquashTmExportService {
 			pendingFeature = null;
 		}
 
-		/** Ferme les fusions encore ouvertes à la fin de l'onglet. */
+		
 		private void finish() {
 			closeRuns(TemplateField.SUBMODULE, rowIndex - 1);
 		}
@@ -972,7 +954,7 @@ public class SquashTmExportService {
 			setDataCell(row, column, value, style != null ? style : defaultStyle);
 		}
 
-		/** Un nouveau sous-module, une nouvelle vue... clôt aussi les niveaux inférieurs. */
+		
 		private void startRun(TemplateField field, int startRow) {
 			closeRuns(field, startRow - 1);
 			runStarts.put(field, startRow);

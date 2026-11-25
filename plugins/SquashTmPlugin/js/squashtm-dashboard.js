@@ -11,7 +11,7 @@
 
     var PALETTE = ["#33446B", "#4F7CAC", "#7FA7C9", "#6BA583", "#E0A458", "#C8553D", "#8E6C8A", "#6B7B8C"];
 
-    // Couleurs sémantiques : jamais le seul vecteur d'information (valeurs affichées en texte).
+    
     var VALUE_COLORS = {
         UNDEFINED: "#A0A8B5",
         APPROVED: "#3E8E5A", SUCCESS: "#3E8E5A", SETTLED: "#6BA583", FINISHED: "#3E8E5A",
@@ -24,7 +24,7 @@
         READY: "#A0A8B5", NOT_RUN: "#A0A8B5"
     };
 
-    /* Nombre de dates visibles à la fois dans les graphes « par période » (le reste défile). */
+    
     var TIMELINE_VISIBLE = 4;
 
     var MULTI_FILTERS = ["projects", "authors", "reqStatus", "criticality", "category", "tcStatus", "importance",
@@ -801,37 +801,37 @@
             self.renderChips();
         });
     };
-	
-	// Affiche l'animation Jalios "loading waves" dans la zone prévue de la JSPF.
-	Dashboard.prototype.showWaves = function() {
-	    var box = this.root.querySelector('[data-role="waves"]');
 
-	    if (!box) {
-	        return;
-	    }
+    // Affiche l'animation Jalios "loading waves" dans la zone prévue de la JSPF.
+    Dashboard.prototype.showWaves = function() {
+        var box = this.root.querySelector('[data-role="waves"]');
 
-	    box.hidden = false;
+        if (!box) {
+            return;
+        }
 
-	    if (window.jQuery && window.jQuery.fn.displayLoadingWaves) {
-	        window.jQuery(box).find(".ajax-loading-component-waves").remove();
-	        window.jQuery(box).displayLoadingWaves();
-	    }
-	};
+        box.hidden = false;
 
-	Dashboard.prototype.hideWaves = function() {
-	    var box = this.root.querySelector('[data-role="waves"]');
+        if (window.jQuery && window.jQuery.fn.displayLoadingWaves) {
+            window.jQuery(box).find(".ajax-loading-component-waves").remove();
+            window.jQuery(box).displayLoadingWaves();
+        }
+    };
 
-	    if (!box) {
-	        return;
-	    }
+    Dashboard.prototype.hideWaves = function() {
+        var box = this.root.querySelector('[data-role="waves"]');
 
-	    if (window.jQuery) {
-	        window.jQuery(box).find(".ajax-loading-component-waves").remove();
-	    }
+        if (!box) {
+            return;
+        }
 
-	    box.hidden = true;
-	};
-	
+        if (window.jQuery) {
+            window.jQuery(box).find(".ajax-loading-component-waves").remove();
+        }
+
+        box.hidden = true;
+    };
+
     Dashboard.prototype.load = function(refresh) {
         var self = this;
         var id = ++this.requestId;
@@ -844,9 +844,9 @@
         this.root.classList.add("is-loading");
         this.root.setAttribute("aria-busy", "true");
 
-		if (this.firstLoad || refresh) {
-		    this.showWaves();
-		}
+        if (this.firstLoad || refresh) {
+            this.showWaves();
+        }
 
         var url = this.endpoint + "?op=data&" + this.query(refresh ? { refresh: "true" } : {});
 
@@ -877,7 +877,7 @@
             if (id === self.requestId) {
                 self.root.classList.remove("is-loading");
                 self.root.removeAttribute("aria-busy");
-				self.hideWaves();
+                self.hideWaves();
             }
         });
     };
@@ -904,6 +904,9 @@
 
     Dashboard.prototype.showError = function(message) {
         var box = this.root.querySelector('[data-role="message"]');
+        if (message === "NetworkError when attempting to fetch resource.") {
+            message = "Erreur réseau lors de la tentative de récupération de la ressource.";
+        }
         box.className = "sqd-message is-visible is-error";
         box.innerHTML = esc(this.t("state.error")) + " " + esc(message) +
             ' <button type="button" class="sqd-btn is-link" data-role="refresh">' + esc(this.t("state.retry")) + '</button>';
@@ -1481,7 +1484,7 @@
         this.restore();
         this.build();
         this.bind();
-		this.showWaves();
+        this.showWaves();
 
         this.loadProjects().catch(function() {
             // Les projets seront aussi déductibles des erreurs de chargement principales.

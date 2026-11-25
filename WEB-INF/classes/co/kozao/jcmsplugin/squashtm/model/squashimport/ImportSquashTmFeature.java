@@ -4,11 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Représente une fonctionnalité.
- *
- * Dans Squash TM, une fonctionnalité correspond à un dossier sous la vue.
- *
- * Elle peut contenir des exigences et des cas de test.
+ * @author Severin Kengne
  */
 public class ImportSquashTmFeature {
 

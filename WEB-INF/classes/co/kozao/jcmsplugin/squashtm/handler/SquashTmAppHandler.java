@@ -7,9 +7,8 @@ import com.jalios.jcms.handler.JcmsFormHandler;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
- * @author Severin kengne
+ * @author Severin Kengne
  */
-
 public class SquashTmAppHandler extends JcmsFormHandler {
 	private static final Logger LOGGER = Logger.getLogger(SquashTmAppHandler.class);
 	private View view = View.DASHBOARD;

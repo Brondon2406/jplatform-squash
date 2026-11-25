@@ -33,7 +33,7 @@
 	
 	<div class="sqd-filters form-horizontal" data-role="filters" onsubmit="return false;">
 
-		<%-- Toolbar Filtres --%>
+		
 			<div class="sqd-filters-toolbar">
 			    <span class="sqd-filters-title">
 			        <%= glp("jcmsplugin.squashtm.dashboard.filters.active") %>
@@ -46,10 +46,10 @@
 						
 		<div class="sqd-filters-body" data-role="filters-body" style="display:none;">
 
-			<%-- Filtres principaux --%>
+			
 			<div class="sqd-filters-main">
 
-				<%-- Scope (segmented) --%>
+				
 				<div class="sqd-field sqd-field-scope">
 				
 				    <jalios:field name="scope" label='<%= glp("jcmsplugin.squashtm.dashboard.filter.scope") %>'
@@ -67,7 +67,7 @@
 				
 				</div>
 
-				<%-- Projects (multi dynamique) --%>
+				
 				<div class="sqd-field sqd-field-projects">
 					<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.projects") %></span>
 					<details class="sqd-multi" data-multi="projects">
@@ -76,7 +76,7 @@
 					</details>
 				</div>
 
-				<%-- Period (segmented) --%>
+				
 					<div class="sqd-field sqd-field-period">
 					
 					    <jalios:field name="preset" label='<%= glp("jcmsplugin.squashtm.dashboard.filter.period") %>' value="all" css="sqd-period-control">
@@ -93,7 +93,7 @@
 					
 					</div>
 
-				<%-- Dates (from / to) --%>
+				
 				<div class="sqd-field sqd-field-dates">
 					<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.from") %> / <%= glp("jcmsplugin.squashtm.dashboard.filter.to") %></span>
 					<div class="sqd-dates">
@@ -104,7 +104,7 @@
 
 			</div>
 
-			<%-- Filtres avancés --%>
+			
 			<div class="sqd-advanced" data-role="advanced">
 			
 			    <div class="sqd-advanced-toolbar">
@@ -131,7 +131,7 @@
 						</select>
 					</div> --%>
 
-					<%-- Authors (multi dynamique) --%>
+					
 					<div class="sqd-field">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.authors") %></span>
 						<details class="sqd-multi" data-multi="authors">
@@ -140,7 +140,7 @@
 						</details>
 					</div>
 					
-					<%-- Search --%>
+					
 				<div class="sqd-field">
 					<label for="sqdSearch"><%= glp("jcmsplugin.squashtm.dashboard.filter.search") %></label>
 					<input id="sqdSearch" type="search" class="form-control" data-field="search" placeholder="<%= glp("jcmsplugin.squashtm.dashboard.filter.search.placeholder") %>">
@@ -157,7 +157,7 @@
 						</select>
 					</div> --%>
 
-					<%-- Requirement status (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="REQUIREMENTS">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.reqStatus") %></span>
 						<details class="sqd-multi" data-multi="reqStatus">
@@ -166,7 +166,7 @@
 						</details>
 					</div>
 
-					<%-- Criticality (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="REQUIREMENTS">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.criticality") %></span>
 						<details class="sqd-multi" data-multi="criticality">
@@ -175,7 +175,7 @@
 						</details>
 					</div>
 
-					<%-- Category (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="REQUIREMENTS">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.category") %></span>
 						<details class="sqd-multi" data-multi="category">
@@ -184,7 +184,7 @@
 						</details>
 					</div>
 
-					<%-- Req coverage (select / Enumerate style) --%>
+					
 					<div class="sqd-field" data-scope-group="REQUIREMENTS">
 						<label for="sqd_reqCoverage"><%= glp("jcmsplugin.squashtm.dashboard.filter.reqCoverage") %></label>
 						<select id="sqd_reqCoverage" class="form-control" data-field="reqCoverage">
@@ -194,7 +194,7 @@
 						</select>
 					</div>
 
-					<%-- TC status (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="TEST_CASES">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.tcStatus") %></span>
 						<details class="sqd-multi" data-multi="tcStatus">
@@ -203,7 +203,7 @@
 						</details>
 					</div>
 
-					<%-- Importance (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="TEST_CASES">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.importance") %></span>
 						<details class="sqd-multi" data-multi="importance">
@@ -212,7 +212,7 @@
 						</details>
 					</div>
 
-					<%-- Nature (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="TEST_CASES">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.nature") %></span>
 						<details class="sqd-multi" data-multi="nature">
@@ -221,7 +221,7 @@
 						</details>
 					</div>
 
-					<%-- Type (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="TEST_CASES">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.type") %></span>
 						<details class="sqd-multi" data-multi="type">
@@ -240,7 +240,7 @@
 						</select>
 					</div>--%>
 
-					<%-- Automatable (select) --%>
+					
 					<div class="sqd-field" data-scope-group="TEST_CASES">
 						<label for="sqd_automatable"><%= glp("jcmsplugin.squashtm.dashboard.filter.automatable") %></label>
 						<select id="sqd_automatable" class="form-control" data-field="automatable">
@@ -251,7 +251,7 @@
 						</select>
 					</div>
 
-					<%-- Campaign status (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="CAMPAIGNS">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.campaignStatus") %></span>
 						<details class="sqd-multi" data-multi="campaignStatus">
@@ -260,7 +260,7 @@
 						</details>
 					</div>
 
-					<%-- Exec status (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="CAMPAIGNS">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.execStatus") %></span>
 						<details class="sqd-multi" data-multi="execStatus">
@@ -269,7 +269,7 @@
 						</details>
 					</div>
 
-					<%-- Report type (multi) --%>
+					
 					<div class="sqd-field" data-scope-group="REPORTING">
 						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.reportType") %></span>
 						<details class="sqd-multi" data-multi="reportType">
@@ -298,7 +298,7 @@
 		<div class="sqd-loading-waves" data-role="waves" hidden></div>
 		<p class="sqd-subtitle" data-role="loading"><%= glp("jcmsplugin.squashtm.dashboard.state.loading") %></p>
 
-		<%-- ================= INDICATEURS (KPI) ================= --%>
+		
 		<div class="sqd-kpis" data-role="kpis" hidden>
 			<div class="sqd-kpi" data-kpi="requirements" data-format="number" hidden>
 				<strong></strong>
@@ -342,7 +342,7 @@
 			</div>  
 		</div>
 
-		<%-- ================= EXIGENCES ================= --%>
+		
 		<section class="sqd-section" data-section="requirements" hidden>
 			<div class="sqd-section-header">
 				<h3><%= glp("jcmsplugin.squashtm.dashboard.section.requirements") %><span class="sqd-count" data-role="count"></span></h3>
@@ -402,7 +402,7 @@
 			</div>
 		</section>
 
-		<%-- ================= CAS DE TEST ================= --%>
+		
 		<section class="sqd-section" data-section="testCases" hidden>
 			<div class="sqd-section-header">
 				<h3><%= glp("jcmsplugin.squashtm.dashboard.section.testCases") %><span class="sqd-count" data-role="count"></span></h3>
@@ -470,7 +470,7 @@
 			</div>
 		</section>
 
-		<%-- ================= CAMPAGNES ET EXECUTIONS ================= --%>
+		
 		<section class="sqd-section" data-section="campaigns" hidden>
 			<div class="sqd-section-header">
 				<h3><%= glp("jcmsplugin.squashtm.dashboard.section.campaigns") %><span class="sqd-count" data-role="count"></span></h3>
@@ -525,7 +525,7 @@
 			</div>
 		</section>
 
-		<%-- ================= TABLEAUX DE BORD SQUASH TM (REPORTING) ================= --%>
+		
 		<section class="sqd-section" data-section="reporting" hidden>
 			<div class="sqd-section-header">
 				<h3><%= glp("jcmsplugin.squashtm.dashboard.section.reporting") %><span class="sqd-count" data-role="count"></span></h3>

@@ -1,4 +1,4 @@
-<%-- =============== TITRE ============== --%>
+
 	
  <div class="squashtm-import-header">
 	<h2 class="squashtm-import-title"> <span class="jalios-icon icomoon-download"></span>
@@ -8,9 +8,8 @@
 	    <%= glp("jcmsplugin.squashtm.app.import.description") %>
 	</p>
 </div>
-	
-	<%-- ========== FORMULAIRE D'IMPORT ============= --%>
-	
+
+
 <div class="panel panel-default squashtm-import-panel">
 	
   <div class="panel-heading">
@@ -19,9 +18,8 @@
 		    <%= glp("jcmsplugin.squashtm.app.import.panel.title") %>
 		</h3>
   </div>
-   
-	 <%-- =========== ZONE DE DEPOT / SELECTION ====================== --%>
-		
+
+
 <div class="panel-body">
 	  
 	<div id="squashTmDropZone" class="squashtm-import-dropzone">
@@ -95,7 +93,6 @@
 	
 </div>
 
-<%-- ============== PROGRESSION DE L'IMPORTATION ============== --%>
 
 <div id="squashTmProgressContainer" class="squashtm-import-progress" style="display: none;">
 

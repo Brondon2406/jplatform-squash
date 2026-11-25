@@ -2,7 +2,7 @@
 package co.kozao.jcmsplugin.squashtm.model;
 
 /**
- * Modes d'authentification supportés par Squash TM.
+ * @author Severin Kengne
  */
 public enum AuthentificationMode {
 

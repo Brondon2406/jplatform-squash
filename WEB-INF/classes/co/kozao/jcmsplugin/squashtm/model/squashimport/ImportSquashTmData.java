@@ -3,6 +3,9 @@ package co.kozao.jcmsplugin.squashtm.model.squashimport;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author Severin Kengne
+ */
 public class ImportSquashTmData {
 
 	private String fileName;

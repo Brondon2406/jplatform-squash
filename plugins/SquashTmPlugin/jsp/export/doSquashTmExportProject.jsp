@@ -4,13 +4,13 @@
 <%@ page import="co.kozao.jcmsplugin.squashtm.service.SquashTmExportService" %>
 <%@ include file="/jcore/doInitPage.jspf" %><%
 
-    // Accès réservé aux membres connectés à JCMS.
+    
     if (loggedMember == null) {
         sendForbidden(request, response);
         return;
     }
 
-    // Il faut être connecté à Squash TM pour interroger l'API.
+    
     SquashTmManager exportManager = SquashTmManager.getInstance();
 
     if (!exportManager.isPluginActive(loggedMember) || !exportManager.isConnect()) {
@@ -47,7 +47,7 @@
     String exportAsciiName = exportFileName.replaceAll("[^\\x20-\\x7E]", "_").replace("\"", "_");
     String exportEncodedName = java.net.URLEncoder.encode(exportFileName, "UTF-8").replace("+", "%20");
 
-    // Vider le tampon de la JSP pour ne renvoyer que le fichier.
+    
     out.clear();
     response.reset();
     response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

@@ -1,10 +1,9 @@
 package co.kozao.jcmsplugin.squashtm.model.squashimport;
 
-	/**
-	 * Représente une étape d'un cas de test.
-	 *
-	 * Une étape possède une action et un résultat attendu.
-	 */
+	
+/**
+ * @author Severin Kengne
+ */
 	public class ImportSquashTmTestStep {
 
 	    private String action;

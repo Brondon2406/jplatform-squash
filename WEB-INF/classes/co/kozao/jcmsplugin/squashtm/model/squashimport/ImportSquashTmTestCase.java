@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Représente un cas de test à importer dans Squash TM.
+ * @author Severin Kengne
  */
 public class ImportSquashTmTestCase {
 

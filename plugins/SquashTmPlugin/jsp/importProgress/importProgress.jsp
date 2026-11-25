@@ -13,14 +13,14 @@
     response.setCharacterEncoding("UTF-8");
     response.setHeader("Cache-Control", "no-store");
 
-    // Vérifier que l'utilisateur est connecté à JCMS.
+    
     if (loggedMember == null) {
         response.setStatus(403);
         out.print("{\"error\":\"Accès interdit.\"}");
         return;
     }
 
-    // Récupérer l'identifiant du travail d'importation.
+    
     String jobId = request.getParameter("jobId");
 
     if (jobId == null || jobId.trim().isEmpty()) {
@@ -29,7 +29,7 @@
         return;
     }
 
-    // Consulter la progression sans relancer l'importation.
+    
     SquashTmImportJobManager jobManager =
         SquashTmImportJobManager.getInstance();
 
@@ -42,7 +42,7 @@
         return;
     }
 
-    // Construire la réponse JSON.
+    
     JsonObject json = new JsonObject();
     json.addProperty("percentage", progress.getPercentage());
     json.addProperty("stage", progress.getStage());
@@ -61,7 +61,7 @@
         json.addProperty("analysisError", jobError);
     }
     
- // Ajouter les statistiques lorsque le résultat est disponible.
+ 
     ImportSquashTmResult result = jobManager.getResult(jobId);
 
     if (result != null) {

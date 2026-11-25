@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (importForm) {
         importForm.addEventListener("submit", function(event) {
 
-            // Confirmation, annulation et affichage de la synthèse : envoi classique.
+            
             if ((importAction && importAction.value === "true")
                 || (cancelAnalysisAction && cancelAnalysisAction.value === "true")
                 || (loadAnalysisAction && loadAnalysisAction.value === "true")) {
@@ -688,7 +688,7 @@ document.addEventListener("DOMContentLoaded", function() {
         progressContainer.style.display = "block";
     }
 
-    // ============== BOUTON TERMINER ==============
+    
     var finishButton = document.getElementById("squashTmReportFinishButton");
     var importReport = document.getElementById("squashTmImportReport");
 
@@ -721,12 +721,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
 
-
-
-    // ==========================================================
-    // FILTRES DE LA LISTE DE COMPARAISON
-    // ==========================================================
-
     !function($) {
         $(document).ready(function($) {
 
@@ -750,9 +744,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             }
 
-            // ------------------------------------------------------
-            // Interrupteurs Jalios (radios Oui/Non ou case à cocher)
-            // ------------------------------------------------------
 
             function readSwitch(name) {
                 var $inputs = $("input[name='" + name + "']");
@@ -802,9 +793,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 setSwitchDisabled("squashTmSelectAll", $boxes.length === 0);
             }
 
-            // ------------------------------------------------------
-            // Filtrage
-            // ------------------------------------------------------
 
             function applyFilters() {
 
@@ -842,10 +830,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 syncing = false;
             }
 
-            // ------------------------------------------------------
-            // Menu déroulant : même largeur que la liste, plus compact
-            // (compatible Select2 v3 et v4)
-            // ------------------------------------------------------
 
             function fitDropdown(select) {
 
@@ -889,9 +873,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     }, 0);
                 });
 
-            // ------------------------------------------------------
-            // Événements
-            // ------------------------------------------------------
 
             $(document).on("change", ".squashtm-filter-toggle", function() {
 

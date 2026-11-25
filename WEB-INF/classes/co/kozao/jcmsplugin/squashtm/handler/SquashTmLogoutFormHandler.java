@@ -7,8 +7,7 @@ import com.jalios.jcms.handler.JcmsFormHandler;
 import co.kozao.jcmsplugin.squashtm.SquashTmManager;
 
 /**
- * @author Severin kengne
- *
+ * @author Severin Kengne
  */
 public class SquashTmLogoutFormHandler extends JcmsFormHandler {
 	private Boolean submit = false;

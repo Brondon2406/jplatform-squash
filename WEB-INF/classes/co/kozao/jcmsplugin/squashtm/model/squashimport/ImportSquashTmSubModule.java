@@ -5,10 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Représente un sous-module d'un module.
- *
- * Dans Excel : une valeur de la colonne A. Dans Squash TM : un dossier de
- * sous-module.
+ * @author Severin Kengne
  */
 public class ImportSquashTmSubModule {
 

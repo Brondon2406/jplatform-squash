@@ -27,22 +27,7 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Handler de la vue Administration : mise à jour du template Excel et de son
- * mapping.
- *
- * Déroulement :
- *
- * 1. opAnalyzeTemplate : l'administrateur téléverse un template, le module
- * détecte les colonnes et suggère une association pour chacune ;
- *
- * 2. opRefreshTemplate : l'administrateur corrige les numéros de lignes et
- * relance la détection (facultatif) ;
- *
- * 3. opSaveMapping : l'administrateur confirme les associations, le mapping et
- * le template sont enregistrés ;
- *
- * opCancelTemplate abandonne la configuration en cours, opResetMapping revient
- * au template historique.
+ * @author Severin Kengne
  */
 public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 
@@ -221,9 +206,6 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		return mappingManager.isCustomMappingActive();
 	}
 
-	/*
-	 * ================= TRAITEMENT =================
-	 */
 
 	@Override
 	public boolean processAction() throws IOException {
@@ -273,10 +255,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		return false;
 	}
 
-	/**
-	 * Après une erreur (numéro de ligne invalide par exemple), l'aperçu des
-	 * colonnes reste affiché tant que le fichier téléversé est disponible.
-	 */
+	
 	private void restoreAnalysisIfNeeded() {
 
 		if (analysis != null || opCancelTemplate || opResetMapping || Util.isEmpty(templateToken)) {
@@ -322,9 +301,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		LOGGER.info("[TEMPLATE] Template analysé : " + detected.getColumns().size() + " colonne(s) détectée(s).");
 	}
 
-	/**
-	 * Étape 2 (facultative) : nouvelle détection avec d'autres numéros de lignes.
-	 */
+	
 	private void refreshTemplate() throws IOException {
 
 		File pendingFile = getPendingFileOrError();
@@ -448,13 +425,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		successMessage = "Le template par défaut est de nouveau utilisé.";
 	}
 
-	/*
-	 * ====== OUTILS =========
-	 */
 
-	/**
-	 * Retourne le fichier en attente, ou null (avec une erreur) s'il a expiré.
-	 */
 	private File getPendingFileOrError() {
 
 		File pendingFile = mappingManager.getPendingTemplateFile(templateToken);
@@ -469,9 +440,6 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		return pendingFile;
 	}
 
-	/*
-	 * ====== FICHIER ===========
-	 */
 
 	/**
 	 * Contrôle le fichier téléversé : présence, extension, taille.
@@ -548,9 +516,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		return row;
 	}
 
-	/**
-	 * Contrôle un nom par défaut (sous-module, vue, fonctionnalité).
-	 */
+	
 	private boolean checkName(String value, String label, List<String> errors) {
 
 		if (value == null) {
@@ -572,10 +538,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		return true;
 	}
 
-	/**
-	 * Contrôle la liste des onglets ignorés (séparés par des virgules ou des
-	 * points-virgules).
-	 */
+	
 	private boolean checkIgnoredSheets(String value, List<String> errors) {
 
 		if (value == null || value.trim().isEmpty()) {
@@ -647,9 +610,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		return selections;
 	}
 
-	/**
-	 * Contrôle final du mapping construit (équivalent de checkIntegrity).
-	 */
+	
 	private boolean checkIntegrity(TemplateMapping mapping, List<String> errors) {
 
 		List<String> mappingErrors = mapping.validate();
@@ -663,11 +624,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		return mappingErrors.isEmpty();
 	}
 
-	/**
-	 * Vérifie la signature du fichier : .xlsx est une archive ZIP (PK), .xls un
-	 * document OLE2. Le nom du fichier téléversé n'est pas utilisé : le fichier
-	 * temporaire du serveur ne conserve pas forcément son extension.
-	 */
+	
 	private boolean isExcelContent(File file) {
 
 		byte[] header = new byte[4];
@@ -703,10 +660,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 		return false;
 	}
 
-	/**
-	 * Les valeurs saisies sont effacées pour que le formulaire reparte de la
-	 * suggestion du module.
-	 */
+	
 	private void clearPostedValues() {
 
 		headerRow = null;

@@ -11,9 +11,8 @@
                 <%= selectionError.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") %>
             </div>
         <% } %>
-  
-  
- <%-- En-tête --%>
+
+
 <div class="squashtm-analysis-header">
     <h2 class="squashtm-analysis-title">
       <span class="jalios-icon icomoon-file-excel"></span>
@@ -28,7 +27,7 @@
     </p>
 </div>
 
-  <%-- Statistiques --%>
+  
 <div class="squashtm-analysis-statistics">
 
     <div class="squashtm-analysis-stat-card">
@@ -61,7 +60,7 @@
 
 </div>
 
-  <%-- Taux de validité --%>
+  
   <div class="squashtm-analysis-validity">
     <strong> <%= glp("jcmsplugin.squashtm.app.import.analysis.validity-rate") %> </strong>
 	    <span id="squashTmAnalysisValidityRate">
@@ -69,7 +68,7 @@
 	    </span>
   </div>
   
-  <%-- Résultat de la comparaison avec Squash TM --%>
+  
 <%
 ImportSquashTmAnalysis analysis = squashTmImportHandler.getImportAnalysis();
 %>
@@ -288,7 +287,7 @@ ImportSquashTmAnalysis analysis = squashTmImportHandler.getImportAnalysis();
 
 <% } %>
 
-  <%-- Liste des incohérences --%>
+  
 <div class="squashtm-analysis-inconsistencies">
     <h3> <%= glp("jcmsplugin.squashtm.app.import.analysis.inconsistencies") %> </h3>
    		 <% if (squashTmImportHandler.getImportAnalysis() != null && !squashTmImportHandler.getImportAnalysis() .getInconsistencies().isEmpty()) { %>
@@ -307,7 +306,7 @@ ImportSquashTmAnalysis analysis = squashTmImportHandler.getImportAnalysis();
     <% } %>
 </div>
 
-  <%-- Erreurs de traitement --%>
+  
 <%
 ImportSquashTmResult analysisResult = squashTmImportHandler.getImportResult();
 
@@ -325,7 +324,7 @@ if (analysisResult != null
 </div>
 <% } %>
 
-  <%-- Boutons d'action --%>
+  
   <div class="squashtm-analysis-actions">
     <button type="submit" id="squashTmCancelAnalysisButton" class="btn btn-default">
       	<span class="jalios-icon icomoon-close"></span>

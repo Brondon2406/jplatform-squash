@@ -14,7 +14,7 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Handler du formulaire d'authentification Basic.
+ * @author Severin Kengne
  */
 public class SquashTmBasicFormHandler extends JcmsFormHandler {
 
@@ -28,9 +28,7 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 		return "/jcms/plugins/SquashTmPlugin/jsp/app/squashTm.jsp";
 	}
 
-	/**
-	 * Traite l'action envoyée par le formulaire.
-	 */
+	
 	@Override
 	public boolean processAction() throws IOException {
 
@@ -62,9 +60,7 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 			return false;
 		}
 
-		/*
-		 * Récupération du membre JCMS connecté.
-		 */
+		
 		Member member = Channel.getChannel().getCurrentLoggedMember();
 
 		if (member == null) {
@@ -95,9 +91,7 @@ public class SquashTmBasicFormHandler extends JcmsFormHandler {
 			return false;
 		}
 
-		/*
-		 * Authentification réussie.
-		 */
+		
 		LOGGER.info("Authentification Basic Squash TM réussie.");
 
 		return true;

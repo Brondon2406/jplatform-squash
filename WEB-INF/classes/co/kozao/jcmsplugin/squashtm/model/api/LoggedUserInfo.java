@@ -9,6 +9,9 @@ import com.jalios.util.Util;
 
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
+/**
+ * @author Severin Kengne
+ */
 public class LoggedUserInfo {
 	private static final Logger LOGGER = Logger.getLogger(LoggedUserInfo.class);
 

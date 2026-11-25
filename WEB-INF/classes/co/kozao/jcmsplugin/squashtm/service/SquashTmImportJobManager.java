@@ -23,10 +23,7 @@ import co.kozao.jcmsplugin.squashtm.model.squashimport.PendingImport;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
 
 /**
- * Gère les importations Squash TM exécutées en arrière-plan.
- *
- * Chaque importation possède un identifiant, un état de progression et un
- * résultat final.
+ * @author Severin Kengne
  */
 public class SquashTmImportJobManager {
 
@@ -115,7 +112,7 @@ public class SquashTmImportJobManager {
 					failedResult.addTechnicalError("Une erreur technique est survenue pendant l'importation : "
 							+ (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
 
-					// Publier le résultat avant de terminer la progression.
+					
 					job.result = failedResult;
 
 					job.progress.finish(false, "Une erreur technique est survenue pendant l'importation.");
@@ -270,7 +267,7 @@ public class SquashTmImportJobManager {
 		try {
 			executor.submit(() -> {
 				try {
-					// L'identifiant est publié avant la fin de la progression.
+					
 					job.analysisId = runAnalysis(temporaryFile, cleanProjectName, authorizationHeader, job.progress);
 
 					job.progress.finish(true, "Analyse terminée.");
@@ -300,27 +297,19 @@ public class SquashTmImportJobManager {
 		return jobId;
 	}
 
-	/**
-	 * Identifiant de l'analyse produite par un travail (null tant qu'elle n'est pas
-	 * prête).
-	 */
+	
 	public String getJobAnalysisId(String jobId) {
 		ImportJob job = jobs.get(jobId);
 		return job == null ? null : job.analysisId;
 	}
 
-	/** Message d'erreur d'un travail d'analyse échoué (null sinon). */
+	
 	public String getJobError(String jobId) {
 		ImportJob job = jobs.get(jobId);
 		return job == null ? null : job.errorMessage;
 	}
 
-	/**
-	 * Retourne la synthèse d'une analyse en attente.
-	 *
-	 * @param analysisId identifiant de l'analyse
-	 * @return synthèse ou null si l'identifiant est inconnu
-	 */
+	
 	public ImportSquashTmAnalysis getAnalysis(String analysisId) {
 		cleanupExpiredAnalyses();
 
@@ -360,12 +349,12 @@ public class SquashTmImportJobManager {
 
 		synchronized (pending) {
 
-			// Vérifier que l'analyse est toujours disponible.
+			
 			if (pendingImports.get(analysisId) != pending) {
 				throw new IOException("Cette analyse a déjà été confirmée ou annulée.");
 			}
 
-			// Pour un projet existant, appliquer les sélections.
+			
 			if (pending.getAnalysis().isExistingProject()) {
 
 				if (!pending.getAnalysis().hasActionsToPerform()) {
@@ -381,13 +370,13 @@ public class SquashTmImportJobManager {
 				}
 			}
 
-			// Retirer l'analyse pour empêcher une deuxième confirmation.
+			
 			if (!pendingImports.remove(analysisId, pending)) {
 				throw new IOException("Cette analyse a déjà été confirmée ou annulée.");
 			}
 		}
 
-		// CAS 1 : le projet existe déjà dans Squash TM.
+		
 		if (pending.getAnalysis().isExistingProject()) {
 
 			try {
@@ -405,8 +394,7 @@ public class SquashTmImportJobManager {
 			}
 		}
 
-		// CAS 2 : le projet n'existe pas encore.
-		// On conserve le processus d'importation actuel.
+
 		try {
 			return startImport(pending.getTemporaryFile(), pending.getProjectName(), authorizationHeader);
 
@@ -474,7 +462,7 @@ public class SquashTmImportJobManager {
 
 			synchronized (pending) {
 
-				// L'analyse a peut-être déjà été confirmée ou annulée.
+				
 				if (pendingImports.get(analysisId) != pending) {
 					continue;
 				}
@@ -495,18 +483,13 @@ public class SquashTmImportJobManager {
 		}
 	}
 
-	/**
-	 * Retourne la progression d'une importation.
-	 */
+	
 	public ImportSquashTmProgress getProgress(String jobId) {
 		ImportJob job = jobs.get(jobId);
 		return job == null ? null : job.progress;
 	}
 
-	/**
-	 * Retourne le résultat final, disponible lorsque l'importation a terminé son
-	 * traitement.
-	 */
+	
 	public ImportSquashTmResult getResult(String jobId) {
 		ImportJob job = jobs.get(jobId);
 		return job == null ? null : job.result;
@@ -590,19 +573,19 @@ public class SquashTmImportJobManager {
 
 		List<ImportSquashTmComparisonItem> items = analysis.getComparisonItems();
 
-		// Toutes les actions sont ignorées par défaut.
+		
 		for (ImportSquashTmComparisonItem item : items) {
 			item.setSelectedAction(ImportSquashTmComparisonItem.ACTION_IGNORE);
 		}
 
-		// Une sélection vide est autorisée.
+		
 		if (selectedComparisonIndexes == null || selectedComparisonIndexes.trim().isEmpty()) {
 			return;
 		}
 
 		Set<Integer> selectedIndexes = new LinkedHashSet<>();
 
-		// -1 permet de détecter également les éléments vides en fin de chaîne.
+		
 		String[] values = selectedComparisonIndexes.split(",", -1);
 
 		for (String value : values) {
@@ -628,7 +611,7 @@ public class SquashTmImportJobManager {
 			}
 		}
 
-		// Attribution des actions autorisées.
+		
 		for (Integer index : selectedIndexes) {
 
 			ImportSquashTmComparisonItem item = items.get(index);

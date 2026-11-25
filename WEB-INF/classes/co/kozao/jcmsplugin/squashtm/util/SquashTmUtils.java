@@ -17,8 +17,7 @@ import co.kozao.jcmsplugin.squashtm.model.AuthentificationMode;
 import co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo;
 
 /**
- * Utilitaires du plugin Squash TM.
- *
+ * @author Severin Kengne
  */
 public final class SquashTmUtils {
 
@@ -29,9 +28,6 @@ public final class SquashTmUtils {
 	private SquashTmUtils() {
 	}
 
-	/*
-	 * =========================== SERVEUR SQUASH =====================
-	 */
 
 	public static String getSquashTmServerUrl() {
 
@@ -53,9 +49,6 @@ public final class SquashTmUtils {
 		return iconApp;
 	}
 
-	/*
-	 * =================== MODE AUTHENTIFICATION ===============
-	 */
 
 	public static AuthentificationMode getAuthentificationMode() {
 		Channel channel = Channel.getChannel();
@@ -73,9 +66,6 @@ public final class SquashTmUtils {
 		}
 	}
 
-	/*
-	 * ================ TOKEN ======================
-	 */
 
 	public static String getSquashTmApiToken(Member member) {
 
@@ -104,9 +94,6 @@ public final class SquashTmUtils {
 		member.savePreference(SquashTmConstants.SQUASHTM_MEMBER_API_TOKEN, Util.notEmpty(token) ? token : "");
 	}
 
-	/*
-	 * ============= BASIC USERNAME ====================
-	 */
 
 	public static String getSquashTmUsername(Member member) {
 
@@ -135,9 +122,6 @@ public final class SquashTmUtils {
 		member.savePreference(SquashTmConstants.SQUASHTM_MEMBER_USERNAME, Util.notEmpty(username) ? username : "");
 	}
 
-	/*
-	 * =========== BASIC PASSWORD =========================
-	 */
 
 	public static String getSquashTmPassword(Member member) {
 
@@ -166,9 +150,6 @@ public final class SquashTmUtils {
 		member.savePreference(SquashTmConstants.SQUASHTM_MEMBER_PASSWORD, Util.notEmpty(password) ? password : "");
 	}
 
-	/*
-	 * ===================== UTILISATEUR SQUASH TM =============================
-	 */
 
 	public static LoggedUserInfo getSquashTmRemoteUserInfos(Member member) {
 		if (member == null) {
@@ -213,28 +194,14 @@ public final class SquashTmUtils {
 		member.savePreference(SquashTmConstants.SQUASHTM_REMOTE_APP_USER_INFO, "");
 	}
 
-	/*
-	 * ============== ADMINISTRATION DU TEMPLATE =====================
-	 */
 
-	/**
-	 * Indique si le membre connecté peut modifier le template et son mapping.
-	 *
-	 * Seuls les administrateurs JCMS y sont autorisés.
-	 */
 	public static boolean canAdministrateTemplate() {
 		Member member = channel.getCurrentLoggedMember();
 
 		return member != null && member.isAdmin();
 	}
 
-	/*
-	 * ================ AFFICHAGE =================
-	 */
 
-	/**
-	 * Échappe un texte pour l'afficher dans une page HTML.
-	 */
 	public static String escapeHtml(String value) {
 
 		if (value == null) {
@@ -245,7 +212,7 @@ public final class SquashTmUtils {
 				.replace("'", "&#39;");
 	}
 
-	/** Squash TM stocke du texte riche : le HTML est converti en texte simple. */
+	
 	public static String htmlToText(String text) {
 
 		if (text == null) {
@@ -263,25 +230,18 @@ public final class SquashTmUtils {
 		return value.trim();
 	}
 
-	/**
-	 * Tronque une chaîne à maxLength caractères (ellipse incluse).
-	 */
+	
 	public static String abbreviate(String value, int maxLength) {
 
 		return value.length() <= maxLength ? value : value.substring(0, maxLength - 1) + "…";
 	}
 
-	/**
-	 * Vérifie si une chaîne est nulle ou vide (espaces ignorés).
-	 */
+	
 	public static boolean isBlank(String value) {
 
 		return value == null || value.trim().isEmpty();
 	}
 
-	/*
-	 * =================== DATE ====================
-	 */
 
 	public static Date getStandardStringToDate(String value) {
 
@@ -303,9 +263,6 @@ public final class SquashTmUtils {
 		}
 	}
 
-	/*
-	 * =================== EXCEL ====================
-	 */
 
 	public static String getCellValue(Row row, int columnIndex, DataFormatter formatter) {
 

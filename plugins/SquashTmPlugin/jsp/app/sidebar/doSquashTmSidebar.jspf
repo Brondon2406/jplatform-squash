@@ -8,17 +8,17 @@ String iconApp = SquashTmUtils.getAppSidebarIcon();
 %>
 <jalios:appSidebar css="no-focus" icon="<%=iconApp %>" appUrl="<%= appUrl %>" formAction="<%= appUrl %>" iconTitleProp="jcmsplugin.squashtm.app.title">
 	
-    <%-- VIEWS --%>
+    
     <jalios:appSidebarSection name="views" title="jcmsplugin.squashtm.app.sidebar.sidebar-section.views">
         <ul class="app-sidebar-menu">
 
-            <%-- DASHBOARD --%>
+            
             <li class="sidebar-item <%= appHandler.showDashboard() ? " active is-checked" : "" %>">              
              <% String dashboardTitleView = glp("jcmsplugin.squashtm.app.sidebar.dashboard.label"); %>
                 <a href="<%= appHandler.getDashboardUrl() %>"> <%= dashboardTitleView %> </a>
             </li>
 
-            <%-- IMPORT FILES --%>
+            
             <li class="sidebar-item <%= appHandler.showImportFiles() ? " active is-checked" : "" %>">
                 <% String importfilesTitleView = glp("jcmsplugin.squashtm.app.sidebar.importfiles.label"); %>
                		 <a href="<%= appHandler.getImportFilesUrl() %>">
@@ -26,7 +26,7 @@ String iconApp = SquashTmUtils.getAppSidebarIcon();
                		 </a>
             </li>
             
-             <%-- ADMINISTRATION --%>
+             
             <% if (SquashTmUtils.canAdministrateTemplate()) { %>
             <li class="sidebar-item <%= appHandler.showAdministration() ? " active is-checked" : "" %>">
                 <% String administrationTitleView = glp("jcmsplugin.squashtm.app.sidebar.administration.label"); %>

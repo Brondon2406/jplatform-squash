@@ -4,87 +4,52 @@ package co.kozao.jcmsplugin.squashtm.util;
 import java.time.ZoneId;
 
 /**
- * Constantes utilisées par le plugin Squash TM.
- *
+ * @author Severin Kengne
  */
 public final class SquashTmConstants {
 
-	/**
-	 * Constructeur privé.
-	 *
-	 */
+	
 	private SquashTmConstants() {
 	}
 
-	/*
-	 * ============ PLUGIN =========================
-	 */
 
 	public static final String PLUGIN_NAME = "SquashTmPlugin";
 
-	/*
-	 * ========== PROPRIETES DU PLUGIN ===========================
-	 */
 
 	public static final String SQUASHTM_CACHE_ENABLED = "jcmsplugin.squashtm.cache.enabled";
 
-	/**
-	 * Durée de conservation (en minutes) des données du dashboard en mémoire.
-	 */
+	
 	public static final String SQUASHTM_DASHBOARD_CACHE_MINUTES = "jcmsplugin.squashtm.dashboard.cache.minutes";
 
-	/**
-	 * URL du serveur Squash TM.
-	 */
+	
 	public static final String SQUASHTM_REMOTE_SERVER_URL = "jcmsplugin.squashtm.provider.app.auth.domain-name.url";
 
-	/**
-	 * Mode d'authentification utilisé par le connecteur.
-	 */
+	
 	public static final String SQUASHTM_API_AUTHENTICATION_MODE = "jcmsplugin.squashtm.provider.authentication-mode";
 
-	/**
-	 * Répertoire de stockage du template personnalisé et de son mapping
-	 */
+	
 	public static final String SQUASHTM_TEMPLATE_STORAGE_DIR = "jcmsplugin.squashtm.template.storage-dir";
 
-	/*
-	 * ========= MODES D'AUTHENTIFICATION =========================
-	 */
 
 	public static final String SQUASHTM_API_AUTHENTICATION_MODE_TOKEN = "TOKEN";
 
 	public static final String SQUASHTM_API_AUTHENTICATION_MODE_BASIC = "BASIC";
 
-	/*
-	 * ==================== PREFERENCES JCMS MEMBER ==============
-	 */
 
-	/**
-	 * Token API Squash TM du membre courant.
-	 */
 	public static final String SQUASHTM_MEMBER_API_TOKEN = "squashtm.api.token";
 
-	/**
-	 * Nom d'utilisateur Squash TM.
-	 */
+	
 	public static final String SQUASHTM_MEMBER_USERNAME = "squashtm.username";
 
-	/**
-	 * Mot de passe Squash TM.
-	 */
+	
 	public static final String SQUASHTM_MEMBER_PASSWORD = "squashtm.password";
 
-	/**
-	 * Informations de l'utilisateur Squash TM connecté.
-	 */
+	
 	public static final String SQUASHTM_REMOTE_APP_USER_INFO = "squashtm.remote.user.info";
 
 	public static final String DEFAULT_LEVEL_NAME = "Général";
 	
-	/**
-	 * Icon App Sidebar Property
-	 */
+	
 	public static final String SQUASHTM_ICON_CHOOSER_IMAGE_SIDEBAR_APP = "jcmsplugin.squashtm.properties.app.sidebar.icon.chooser-image";
 	public static final String SQUASHTM_ICON_SIDEBAR_APP = "icon.jcmsplugin.squashtm.box-app-sidebar";
 
@@ -140,9 +105,6 @@ public final class SquashTmConstants {
 			"value.CAT_TEST_REQUIREMENT", "value.CAT_ERGONOMIC", "value.CAT_PERFORMANCE", "value.CAT_TECHNICAL",
 			"value.CAT_USER_STORY", "value.CAT_SECURITY", "value.CAT_UNDEFINED" };
 
-	/*
-	 * ========== DATES ===========================
-	 */
 
 	public static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
@@ -154,15 +116,9 @@ public final class SquashTmConstants {
 
 	public static final String DATE_FORMAT_DASHBOARD_EXPORT = "yyyy-MM-dd HH:mm";
 
-	/*
-	 * ========== AFFICHAGE ===========================
-	 */
 
 	public static final int MAX_NAME_PREVIEW_LENGTH = 40;
 
-	/*
-	 * ========== CLES I18N ===========================
-	 */
 
 	public static final String I18N_APP_IMPORTFILES_TITLE = "jcmsplugin.squashtm.app.importfiles.title";
 

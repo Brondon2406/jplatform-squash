@@ -34,14 +34,7 @@ import co.kozao.jcmsplugin.squashtm.service.mapping.SquashTmTemplateMappingManag
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
- * Service responsable de la lecture du fichier Excel utilisé pour l'import
- * Squash TM.
- *
- * Ce service ne communique pas avec Squash TM.
- *
- * Son rôle est uniquement de transformer :
- *
- * Excel ImportData
+ * @author Severin Kengne
  */
 public class ExcelSquashTmImportService {
 
@@ -64,53 +57,29 @@ public class ExcelSquashTmImportService {
 
 	private int duplicateLineCount;
 
-	/**
-	 * Identifiants des éléments déjà rencontrés pendant l'analyse.
-	 *
-	 * La détection tient compte du contexte hiérarchique et du contenu fonctionnel
-	 * de la ligne.
-	 */
+	
 	private final Set<String> seenRows = new HashSet<>();
 
-	/**
-	 * Numéros des lignes Excel comportant au moins une anomalie. Permet de ne
-	 * compter chaque ligne qu'une seule fois.
-	 */
+	
 	private final Set<String> anomalousLines = new HashSet<>();
 
-	/**
-	 * Incohérences détectées pendant la lecture du fichier Excel.
-	 *
-	 * Cette liste est uniquement utilisée pendant l'import. Aucune donnée n'est
-	 * persistée.
-	 */
+	
 	private final List<String> inconsistencies = new ArrayList<>();
 
-	/**
-	 * Formateur permettant de récupérer proprement le contenu des cellules Excel.
-	 */
+	
 	private final DataFormatter dataFormatter;
 
 	public ExcelSquashTmImportService() {
 		this(null);
 	}
 
-	/**
-	 * Crée le service avec un mapping imposé.
-	 *
-	 * @param injectedMapping mapping à utiliser, ou null pour utiliser le mapping
-	 *                        actif de l'administration
-	 */
+	
 	public ExcelSquashTmImportService(TemplateMapping injectedMapping) {
 		this.dataFormatter = new DataFormatter();
 		this.injectedMapping = injectedMapping;
 	}
 
-	/**
-	 * Ajoute une incohérence détectée dans le fichier Excel.
-	 *
-	 * @param message description de l'incohérence
-	 */
+	
 	private void addInconsistency(String message) {
 
 		if (message != null && !message.trim().isEmpty()) {
@@ -119,12 +88,7 @@ public class ExcelSquashTmImportService {
 		}
 	}
 
-	/**
-	 * Enregistre une anomalie pour une ligne Excel.
-	 *
-	 * Plusieurs anomalies peuvent être associées à la même ligne, mais cette ligne
-	 * ne sera comptée qu'une seule fois.
-	 */
+	
 	private void addLineInconsistency(Sheet sheet, Row row, String message) {
 
 		addInconsistency(message);
@@ -140,106 +104,69 @@ public class ExcelSquashTmImportService {
 		return new ArrayList<>(inconsistencies);
 	}
 
-	/**
-	 * Retourne le nombre de modules retenus.
-	 */
+	
 	public int getModuleCount() {
 		return moduleCount;
 	}
 
-	/**
-	 * Retourne le nombre de sous-modules créés.
-	 */
+	
 	public int getSubModuleCount() {
 		return subModuleCount;
 	}
 
-	/**
-	 * Retourne le nombre de vues créées.
-	 */
+	
 	public int getViewCount() {
 		return viewCount;
 	}
 
-	/**
-	 * Retourne le nombre de fonctionnalités créées.
-	 */
+	
 	public int getFeatureCount() {
 		return featureCount;
 	}
 
-	/**
-	 * Retourne le nombre d'exigences construites.
-	 */
+	
 	public int getRequirementCount() {
 		return requirementCounter;
 	}
 
-	/**
-	 * Retourne le nombre de cas de test construits.
-	 */
+	
 	public int getTestCaseCount() {
 		return testCaseCounter;
 	}
 
-	/**
-	 * Retourne le nombre d'étapes de test construites.
-	 */
+	
 	public int getTestStepCount() {
 		return testStepCount;
 	}
 
-	/**
-	 * Retourne le nombre de lignes de données détectées.
-	 */
+	
 	public int getDetectedLineCount() {
 		return detectedLineCount;
 	}
 
-	/**
-	 * Retourne le nombre de lignes valides.
-	 */
+	
 	public int getValidLineCount() {
 		return validLineCount;
 	}
 
-	/**
-	 * Retourne le nombre de lignes comportant au moins une anomalie.
-	 */
+	
 	public int getAnomalousLineCount() {
 		return anomalousLineCount;
 	}
 
-	/**
-	 * Retourne le nombre de lignes dupliquées détectées.
-	 */
+	
 	public int getDuplicateLineCount() {
 		return duplicateLineCount;
 	}
 
-	/**
-	 * Construit l'objet de synthèse après l'analyse du fichier.
-	 *
-	 * @param projectName nom du projet demandé
-	 * @return les statistiques et les anomalies détectées
-	 */
+	
 	public ImportSquashTmAnalysis buildAnalysis(String projectName) {
 
 		return new ImportSquashTmAnalysis(projectName, detectedLineCount, validLineCount, anomalousLineCount,
 				duplicateLineCount, getInconsistencies());
 	}
 
-	/**
-	 * Lit un fichier Excel et construit les données nécessaires à l'import Squash
-	 * TM.
-	 *
-	 * @param excelFile   fichier Excel
-	 * @param projectName nom du projet Squash TM
-	 *
-	 * @return les données extraites du fichier
-	 *
-	 * @throws IOException si le fichier ne peut pas être lu
-	 */
+	
 	public ImportSquashTmData parse(File excelFile, String projectName) throws IOException {
 		return parse(excelFile, projectName, null);
 	}
@@ -259,16 +186,11 @@ public class ExcelSquashTmImportService {
 			throw new IllegalArgumentException("Le nom du projet est obligatoire.");
 		}
 
-		/*
-		 * Le mapping du template est relu à chaque import : une modification faite dans
-		 * l'administration est donc prise en compte sans redémarrage.
-		 */
+		
 		mapping = injectedMapping != null ? injectedMapping
 				: SquashTmTemplateMappingManager.getInstance().getActiveMapping();
 
-		/*
-		 * Les compteurs sont réinitialisés pour chaque nouvel import.
-		 */
+		
 		requirementCounter = 0;
 		testCaseCounter = 0;
 
@@ -308,26 +230,13 @@ public class ExcelSquashTmImportService {
 
 			}
 		}
-		// Une ligne valide est une ligne détectée sans anomalie.
+		
 		validLineCount = detectedLineCount - anomalousLineCount;
 
 		return importData;
 	}
 
-	/**
-	 * Construit une clé de comparaison tenant compte du contexte hiérarchique.
-	 *
-	 * @param subModuleName    sous-module présent sur la ligne
-	 * @param viewName         vue présente sur la ligne
-	 * @param featureName      fonctionnalité présente sur la ligne
-	 * @param elementValue     exigence ou cas de test
-	 * @param action           action de test
-	 * @param expectedResult   résultat attendu
-	 * @param currentSubModule sous-module courant
-	 * @param currentView      vue courante
-	 * @param currentFeature   fonctionnalité courante
-	 * @return clé de comparaison de la ligne
-	 */
+	
 	private String buildDuplicateKey(String subModuleName, String viewName, String featureName, String elementValue,
 			String action, String expectedResult, ImportSquashTmSubModule currentSubModule,
 			ImportSquashTmView currentView, ImportSquashTmFeature currentFeature) {
@@ -358,10 +267,7 @@ public class ExcelSquashTmImportService {
 			return;
 		}
 
-		/*
-		 * Les onglets exclus dans le mapping (légende, instructions...) ne sont pas
-		 * importés.
-		 */
+		
 		if (mapping.isSheetIgnored(moduleName)) {
 			return;
 		}
@@ -374,12 +280,7 @@ public class ExcelSquashTmImportService {
 
 		ImportSquashTmModule module = new ImportSquashTmModule(moduleName.trim());
 
-		/*
-		 * Contexte courant.
-		 *
-		 * Une cellule vide dans les colonnes hiérarchiques signifie que l'on reste dans
-		 * le contexte précédent.
-		 */
+		
 		ImportSquashTmSubModule currentSubModule = null;
 		ImportSquashTmView currentView = null;
 		ImportSquashTmFeature currentFeature = null;
@@ -395,7 +296,6 @@ public class ExcelSquashTmImportService {
 				continue;
 			}
 
-			// Les lignes vides et la ligne d'en-tête ne sont pas comptées.
 
 			String subModuleName = getCellValue(row, columns, TemplateField.SUBMODULE);
 			String viewName = getCellValue(row, columns, TemplateField.VIEW);
@@ -404,9 +304,7 @@ public class ExcelSquashTmImportService {
 			String action = getCellValue(row, columns, TemplateField.ACTION);
 			String expectedResult = getCellValue(row, columns, TemplateField.EXPECTED_RESULT);
 
-			/*
-			 * Une ligne totalement vide est ignorée.
-			 */
+			
 			if (SquashTmUtils.isBlank(subModuleName) && SquashTmUtils.isBlank(viewName)
 					&& SquashTmUtils.isBlank(featureName) && SquashTmUtils.isBlank(elementValue)
 					&& SquashTmUtils.isBlank(action) && SquashTmUtils.isBlank(expectedResult)) {
@@ -416,12 +314,11 @@ public class ExcelSquashTmImportService {
 
 			detectedLineCount++;
 
-			// Construction d'une clé tenant compte de la hiérarchie.
+			
 			String duplicateKey = buildDuplicateKey(subModuleName, viewName, featureName, elementValue, action,
 					expectedResult, currentSubModule, currentView, currentFeature);
 
-			// Une ligne est signalée si son contenu et son contexte
-			// correspondent à une ligne déjà rencontrée.
+
 			if (!seenRows.add(duplicateKey)) {
 
 				duplicateLineCount++;
@@ -430,9 +327,7 @@ public class ExcelSquashTmImportService {
 						+ " : ligne dupliquée détectée.");
 			}
 
-			/*
-			 * ------------------ SOUS-MODULE ----------------
-			 */
+			
 			String effectiveSubModuleName = subModuleName;
 
 			if (SquashTmUtils.isBlank(effectiveSubModuleName) && currentSubModule == null
@@ -450,9 +345,6 @@ public class ExcelSquashTmImportService {
 				currentTestCase = null;
 			}
 
-			/*
-			 * --------------- VUE ---------------------------
-			 */
 
 			String effectiveViewName = viewName;
 
@@ -481,9 +373,7 @@ public class ExcelSquashTmImportService {
 				currentTestCase = null;
 			}
 
-			/*
-			 * ------------- FONCTIONNALITÉ ------------------
-			 */
+			
 			String effectiveFeatureName = featureName;
 
 			if (SquashTmUtils.isBlank(effectiveFeatureName) && currentFeature == null && currentView != null
@@ -500,16 +390,11 @@ public class ExcelSquashTmImportService {
 
 				currentFeature = findOrCreateFeature(currentView, effectiveFeatureName);
 
-				/*
-				 * Une nouvelle fonctionnalité signifie que le cas de test courant est
-				 * réinitialisé.
-				 */
+				
 				currentTestCase = null;
 			}
 
-			/*
-			 * --------- EXIGENCE ET CAS DE TEST --------------
-			 */
+			
 			if (!SquashTmUtils.isBlank(elementValue)) {
 
 				if (currentFeature == null) {
@@ -522,30 +407,24 @@ public class ExcelSquashTmImportService {
 
 					String elementName = elementValue.trim();
 
-					// Création de l'exigence.
-					// La référence est générée plus tard, lors du clic sur "Valider et importer".
+
 					ImportSquashTmRequirement requirement = new ImportSquashTmRequirement(null, elementName);
 					requirementCounter++;
 
 					currentFeature.addRequirement(requirement);
 
-					// Création du cas de test portant le même nom.
+					
 					ImportSquashTmTestCase testCase = new ImportSquashTmTestCase(null, elementName);
 					testCaseCounter++;
 
 					currentFeature.addTestCase(testCase);
 
-					// Les actions suivantes seront rattachées à ce cas de test.
+					
 					currentTestCase = testCase;
 				}
 			}
 
-			/*
-			 * -------------------------------------------------- ACTION + RESULTAT ATTENDU
-			 * --------------------------------------------------
-			 *
-			 * Les actions appartiennent uniquement au cas de test courant.
-			 */
+			
 			if (!SquashTmUtils.isBlank(action) || !SquashTmUtils.isBlank(expectedResult)) {
 
 				if (currentTestCase == null) {
@@ -575,20 +454,14 @@ public class ExcelSquashTmImportService {
 				}
 			}
 		}
-		/*
-		 * Le module est ajouté s'il contient au moins un sous-module.
-		 */
+		
 		if (!module.getSubModules().isEmpty()) {
 			importData.addModule(module);
 			moduleCount++;
 		}
 	}
 
-	/**
-	 * Recherche un sous-module existant dans le module.
-	 *
-	 * Si aucun sous-module ne porte ce nom, il est créé.
-	 */
+	
 	private ImportSquashTmSubModule findOrCreateSubModule(ImportSquashTmModule module, String subModuleName) {
 
 		for (ImportSquashTmSubModule subModule : module.getSubModules()) {
@@ -606,11 +479,7 @@ public class ExcelSquashTmImportService {
 		return subModule;
 	}
 
-	/**
-	 * Recherche une vue existante dans le sous-module.
-	 *
-	 * Si elle n'existe pas, elle est créée.
-	 */
+	
 	private ImportSquashTmView findOrCreateView(ImportSquashTmSubModule subModule, String viewName) {
 
 		for (ImportSquashTmView view : subModule.getViews()) {
@@ -628,11 +497,7 @@ public class ExcelSquashTmImportService {
 		return view;
 	}
 
-	/**
-	 * Recherche une fonctionnalité existante dans une vue.
-	 *
-	 * Si elle n'existe pas, elle est créée.
-	 */
+	
 	private ImportSquashTmFeature findOrCreateFeature(ImportSquashTmView view, String featureName) {
 
 		for (ImportSquashTmFeature feature : view.getFeatures()) {
@@ -666,7 +531,7 @@ public class ExcelSquashTmImportService {
 
 		Row headerRow = mapping.getHeaderRow() > 0 ? sheet.getRow(mapping.getHeaderRow() - 1) : null;
 
-		// Position de chaque en-tête présent dans l'onglet.
+		
 		Map<String, Integer> headerIndexes = new HashMap<>();
 
 		if (headerRow != null) {
@@ -733,12 +598,7 @@ public class ExcelSquashTmImportService {
 		return columns;
 	}
 
-	/**
-	 * Signale une colonne dont l'en-tête ne correspond pas à celui du mapping.
-	 *
-	 * Cela arrive quand le template a changé sans que le mapping soit mis à jour :
-	 * la colonne lue par position n'est probablement plus la bonne.
-	 */
+	
 	private void checkHeaderConformity(Sheet sheet, Row headerRow, TemplateColumnMapping column, String expectedLabel,
 			int index) {
 
@@ -760,11 +620,7 @@ public class ExcelSquashTmImportService {
 				+ column.getTemplateField().getDefaultLabel() + " ». Vérifiez le mapping dans l'administration.");
 	}
 
-	/**
-	 * Récupère la valeur de la cellule associée à un élément du mapping.
-	 *
-	 * @return la valeur, ou une chaîne vide si l'élément n'a pas de colonne
-	 */
+	
 	private String getCellValue(Row row, Map<TemplateField, Integer> columns, TemplateField field) {
 
 		Integer columnIndex = columns.get(field);

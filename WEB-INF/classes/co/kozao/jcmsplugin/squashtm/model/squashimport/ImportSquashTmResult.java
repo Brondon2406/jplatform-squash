@@ -4,10 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Contient le résultat final de l'import.
- *
- * Cet objet est temporaire : aucune donnée n'est conservée dans JCMS après
- * l'import.
+ * @author Severin Kengne
  */
 public class ImportSquashTmResult {
 
