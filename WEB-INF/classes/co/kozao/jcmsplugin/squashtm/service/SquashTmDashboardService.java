@@ -510,7 +510,6 @@ public class SquashTmDashboardService {
 
 	private Dataset load(Kind kind, boolean refresh) throws IOException {
 
-		// Instant de la demande : sert à fusionner les actualisations simultanées.
 		long requestedAt = System.currentTimeMillis();
 
 		String key = owner + "|" + kind.name();
@@ -531,10 +530,6 @@ public class SquashTmDashboardService {
 				return cached.asCached();
 			}
 
-			// Actualisation demandée pendant qu'un chargement identique était déjà en
-			// cours (double clic, requête précédente abandonnée par le navigateur mais
-			// poursuivie côté serveur) : ce chargement vient de se terminer, inutile de
-			// tout relire une seconde fois.
 			if (refresh && cached != null && cached.loadedAt >= requestedAt) {
 				return cached;
 			}
@@ -568,13 +563,29 @@ public class SquashTmDashboardService {
 
 		List<JsonObject> raws = new ArrayList<JsonObject>();
 
-		// 1. Liste globale paginée (méthode la plus rapide).
 		boolean flatOk = fetchInto(kind.flatPath, kind.fields, 0L, null, raws);
 
-		// 2. Repli : liste de chaque projet.
-		if (!flatOk) {
-			LOGGER.warn("Liste globale indisponible pour " + kind + ", lecture projet par projet.");
-			collectPerProject(kind, projectNames, raws, deadline);
+		boolean flatHasProject = flatOk && !raws.isEmpty();
+
+		if (flatHasProject) {
+		    for (JsonObject raw : raws) {
+		        if (!hasProjectId(raw)) {
+		            flatHasProject = false;
+		            break;
+		        }
+			}
+		}
+
+		if (!flatHasProject) {
+
+		    LOGGER.warn(
+		        "Données globales sans rattachement projet pour "
+		        + kind + ". Lecture projet par projet."
+		    );
+
+		    raws.clear();
+
+		    collectPerProject(kind, projectNames, raws, deadline);
 		}
 
 		long listedAt = System.currentTimeMillis();
@@ -651,6 +662,20 @@ public class SquashTmDashboardService {
 		}
 
 		return false;
+	}
+	
+	/**
+	 * Vérifie si un élément possède un rattachement à un projet.
+	 */
+	private boolean hasProjectId(JsonObject raw) {
+
+	    JsonObject project = obj(raw, "project");
+
+	    if (project != null && longOf(project, "id") > 0) {
+	        return true;
+	    }
+
+	    return longOf(raw, "__projectId") > 0;
 	}
 
 	/**

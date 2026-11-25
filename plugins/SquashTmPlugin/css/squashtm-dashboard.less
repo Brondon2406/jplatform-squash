@@ -972,7 +972,7 @@
 			border: 0;
 			background: transparent;
 			cursor: pointer;
-			padding: 0;            
+			padding: 0;
 			vertical-align: middle;
 
 			&::before {
@@ -1235,16 +1235,40 @@
 	}
 
 	.sqd-grid {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(5, 1fr);
+	}
+
+	.sqd-grid-camp {
+		grid-template-columns: repeat(4, 1fr);
+	}
+
+
+	.sqd-grid-rep {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.sqd-grid,
+	.sqd-grid-camp,
+	.sqd-grid-rep {
+		display: grid;
 		gap: 16px;
 		margin-bottom: 20px;
 	}
 
-	.sqd-panel {
+	.sqd-grid>.sqd-panel.is-wide,
+	.sqd-grid-camp>.sqd-panel-camp.is-wide,
+	.sqd-grid-rep>.sqd-panel-rep.is-wide {
+		grid-column: auto;
+	}
+
+	.sqd-panel,
+	.sqd-panel-camp,
+	.sqd-panel-rep {
 		padding: 18px 19px;
 		border: 1px solid #e4eaf2;
 		border-radius: 10px;
 		background: #fff;
+		overflow: hidden;
 		box-shadow: 0 2px 8px rgba(31, 42, 68, .035);
 		transition: box-shadow .18s ease, transform .18s ease;
 
@@ -1263,6 +1287,70 @@
 			font-weight: 650;
 		}
 	}
+
+
+
+	.sqd-panel-camp {
+		padding: 18px 19px;
+		border: 1px solid #e4eaf2;
+		border-radius: 10px;
+		background: #fff;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(31, 42, 68, .035);
+		transition: box-shadow .18s ease, transform .18s ease;
+
+		&:hover {
+			box-shadow: 0 6px 18px rgba(31, 42, 68, .07);
+			transform: translateY(-1px);
+		}
+
+		h4 {
+			display: flex;
+			align-items: center;
+			min-height: 20px;
+			margin-bottom: 16px;
+			color: #40516f;
+			font-size: 14px;
+			font-weight: 650;
+		}
+	}
+
+	.sqd-grid-rep {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 16px;
+		margin-bottom: 20px;
+	}
+
+	.sqd-grid-rep>.sqd-panel-rep.is-wide {
+		grid-column: auto;
+	}
+
+	.sqd-panel-rep {
+		padding: 18px 19px;
+		border: 1px solid #e4eaf2;
+		border-radius: 10px;
+		background: #fff;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(31, 42, 68, .035);
+		transition: box-shadow .18s ease, transform .18s ease;
+
+		&:hover {
+			box-shadow: 0 6px 18px rgba(31, 42, 68, .07);
+			transform: translateY(-1px);
+		}
+
+		h4 {
+			display: flex;
+			align-items: center;
+			min-height: 20px;
+			margin-bottom: 16px;
+			color: #40516f;
+			font-size: 14px;
+			font-weight: 650;
+		}
+	}
+
 
 	/* =================== STYLE DES GRAPHIQUES =================== */
 

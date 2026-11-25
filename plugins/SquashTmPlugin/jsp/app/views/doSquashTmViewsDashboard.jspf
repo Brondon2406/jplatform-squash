@@ -55,7 +55,7 @@
 				    <jalios:field name="scope" label='<%= glp("jcmsplugin.squashtm.dashboard.filter.scope") %>'
 				        value="ALL" css="sqd-scope-control">
 				
-				        <jalios:control settings='<%= new EnumerateSettings().segmented(SegmentedType.RADIO).enumValues(new String[] { "ALL", "REQUIREMENTS", "TEST_CASES", "CAMPAIGNS", "REPORTING"})
+				        <jalios:control settings='<%= new EnumerateSettings().segmented(SegmentedType.RADIO).enumValues(new String[] { "ALL", "REQUIREMENTS", "TEST_CASES", "CAMPAIGNS", "REPORTING" })
 				                .enumLabels(new String[] {
 				                    glp("jcmsplugin.squashtm.dashboard.scope.ALL"),
 				                    glp("jcmsplugin.squashtm.dashboard.scope.REQUIREMENTS"),
@@ -339,7 +339,7 @@
 			<div class="sqd-kpi" data-kpi="reportingItems" data-format="number" hidden>
 				<strong></strong>
 				<span><%= glp("jcmsplugin.squashtm.dashboard.kpi.reporting") %></span>
-			</div>
+			</div>  
 		</div>
 
 		<%-- ================= EXIGENCES ================= --%>
@@ -480,20 +480,20 @@
 
 			<div data-role="content">
 
-				<div class="sqd-grid">
+				<div class="sqd-grid-camp">
 				<div class="sqd-panel" data-panel="campaignStatus">
 					<h4><%= glp("jcmsplugin.squashtm.dashboard.chart.campaignStatus") %></h4>
 					<div data-role="chart"></div>
 				</div>
-				<div class="sqd-panel" data-panel="execStatus">
+				<div class="sqd-panel-camp" data-panel="execStatus">
 					<h4><%= glp("jcmsplugin.squashtm.dashboard.chart.execStatus") %></h4>
 					<div data-role="chart"></div>
 				</div>
-				<div class="sqd-panel" data-panel="execByProject">
+				<div class="sqd-panel-camp" data-panel="execByProject">
 					<h4><%= glp("jcmsplugin.squashtm.dashboard.chart.execByProject") %></h4>
 					<div data-role="chart"></div>
 				</div>
-				<div class="sqd-panel is-wide" data-panel="execTimeline">
+				<div class="sqd-panel-camp is-wide" data-panel="execTimeline">
 					<h4><%= glp("jcmsplugin.squashtm.dashboard.chart.execTimeline") %></h4>
 					<div data-role="chart"></div>
 				</div>
@@ -539,12 +539,12 @@
 					<a data-role="squash-link" href="#" target="_blank" rel="noopener noreferrer" hidden><%= glp("jcmsplugin.squashtm.dashboard.reporting.open") %></a>
 				</p>
 
-				<div class="sqd-grid">
-				<div class="sqd-panel" data-panel="byReportType">
+				<div class="sqd-grid-rep">
+				<div class="sqd-panel-rep" data-panel="byReportType">
 					<h4><%= glp("jcmsplugin.squashtm.dashboard.chart.byReportType") %></h4>
 					<div data-role="chart"></div>
 				</div>
-				<div class="sqd-panel" data-panel="byProject">
+				<div class="sqd-panel-rep" data-panel="byProject">
 					<h4><%= glp("jcmsplugin.squashtm.dashboard.chart.byProject") %></h4>
 					<div data-role="chart"></div>
 				</div>

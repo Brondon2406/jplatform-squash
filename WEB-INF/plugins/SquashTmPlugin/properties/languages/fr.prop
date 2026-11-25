@@ -319,7 +319,7 @@ jcmsplugin.squashtm.dashboard.section.testCases: Cas de test
 jcmsplugin.squashtm.dashboard.section.campaigns: Campagnes et exécutions
 jcmsplugin.squashtm.dashboard.section.reporting: Tableaux de bord Squash TM
 jcmsplugin.squashtm.dashboard.chart.byReportType: Par type
-jcmsplugin.squashtm.dashboard.reporting.note: Squash TM ne fournit pas le contenu de ses tableaux de bord par l'API REST : seule leur liste est disponible ici. Les indicateurs des autres rubriques sont recalculés à partir des exigences, cas de test et campagnes. La période ne s'applique pas à cette liste.
+jcmsplugin.squashtm.dashboard.reporting.note: Squash TM ne fournit pas le contenu de ses tableaux de bord via l'API.
 jcmsplugin.squashtm.dashboard.reporting.open: Ouvrir Squash TM
 jcmsplugin.squashtm.dashboard.chart.byStatus: Par statut
 jcmsplugin.squashtm.dashboard.chart.byCriticality: Par criticité
