@@ -26,8 +26,14 @@ String iconApp = SquashTmUtils.getAppSidebarIcon();
                		 </a>
             </li>
             
+            <li class="sidebar-item <%= appHandler.showExportFiles() ? " active is-checked" : "" %>">
+                <% String exportfilesTitleView = glp("jcmsplugin.squashtm.app.sidebar.exportfiles.label"); %>
+               		 <a href="<%= appHandler.getExportFilesUrl() %>">
+                   		 <%= exportfilesTitleView %>
+               		 </a>
+            </li>         
              
-            <% if (SquashTmUtils.canAdministrateTemplate()) { %>
+            <% if (SquashTmUtils.canAdministrationView()) { %>
             <li class="sidebar-item <%= appHandler.showAdministration() ? " active is-checked" : "" %>">
                 <% String administrationTitleView = glp("jcmsplugin.squashtm.app.sidebar.administration.label"); %>
                		 <a href="<%= appHandler.getAdministrationUrl() %>">
@@ -38,6 +44,7 @@ String iconApp = SquashTmUtils.getAppSidebarIcon();
             
         </ul>
     </jalios:appSidebarSection>
+    
 <% if (loggedUserInfo != null && sqTmManager.canConnectToSquashTm(loggedMember)) {
      String fullName  = loggedUserInfo.getFullName();
      String emailAddr = loggedUserInfo.getEmailAddr();

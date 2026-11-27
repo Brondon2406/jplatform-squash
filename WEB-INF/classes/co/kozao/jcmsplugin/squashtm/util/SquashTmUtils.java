@@ -1,5 +1,6 @@
 package co.kozao.jcmsplugin.squashtm.util;
 
+import java.text.Normalizer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -28,7 +29,6 @@ public final class SquashTmUtils {
 	private SquashTmUtils() {
 	}
 
-
 	public static String getSquashTmServerUrl() {
 
 		String url = channel.getProperty(SquashTmConstants.SQUASHTM_REMOTE_SERVER_URL);
@@ -49,7 +49,6 @@ public final class SquashTmUtils {
 		return iconApp;
 	}
 
-
 	public static AuthentificationMode getAuthentificationMode() {
 		Channel channel = Channel.getChannel();
 
@@ -65,7 +64,6 @@ public final class SquashTmUtils {
 			return AuthentificationMode.BASIC;
 		}
 	}
-
 
 	public static String getSquashTmApiToken(Member member) {
 
@@ -94,7 +92,6 @@ public final class SquashTmUtils {
 		member.savePreference(SquashTmConstants.SQUASHTM_MEMBER_API_TOKEN, Util.notEmpty(token) ? token : "");
 	}
 
-
 	public static String getSquashTmUsername(Member member) {
 
 		if (member == null) {
@@ -122,7 +119,6 @@ public final class SquashTmUtils {
 		member.savePreference(SquashTmConstants.SQUASHTM_MEMBER_USERNAME, Util.notEmpty(username) ? username : "");
 	}
 
-
 	public static String getSquashTmPassword(Member member) {
 
 		if (member == null) {
@@ -149,7 +145,6 @@ public final class SquashTmUtils {
 
 		member.savePreference(SquashTmConstants.SQUASHTM_MEMBER_PASSWORD, Util.notEmpty(password) ? password : "");
 	}
-
 
 	public static LoggedUserInfo getSquashTmRemoteUserInfos(Member member) {
 		if (member == null) {
@@ -194,25 +189,12 @@ public final class SquashTmUtils {
 		member.savePreference(SquashTmConstants.SQUASHTM_REMOTE_APP_USER_INFO, "");
 	}
 
-
-	public static boolean canAdministrateTemplate() {
+	public static boolean canAdministrationView() {
 		Member member = channel.getCurrentLoggedMember();
 
 		return member != null && member.isAdmin();
 	}
 
-
-	public static String escapeHtml(String value) {
-
-		if (value == null) {
-			return "";
-		}
-
-		return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
-				.replace("'", "&#39;");
-	}
-
-	
 	public static String htmlToText(String text) {
 
 		if (text == null) {
@@ -230,18 +212,15 @@ public final class SquashTmUtils {
 		return value.trim();
 	}
 
-	
 	public static String abbreviate(String value, int maxLength) {
 
 		return value.length() <= maxLength ? value : value.substring(0, maxLength - 1) + "…";
 	}
 
-	
 	public static boolean isBlank(String value) {
 
 		return value == null || value.trim().isEmpty();
 	}
-
 
 	public static Date getStandardStringToDate(String value) {
 
@@ -263,7 +242,6 @@ public final class SquashTmUtils {
 		}
 	}
 
-
 	public static String getCellValue(Row row, int columnIndex, DataFormatter formatter) {
 
 		Cell cell = row.getCell(columnIndex);
@@ -273,5 +251,37 @@ public final class SquashTmUtils {
 		}
 
 		return formatter.formatCellValue(cell).trim();
+	}
+
+	/** Échappement HTML des valeurs venant de Squash TM. */
+	public static String escapeHtml(String value) {
+
+		if (value == null) {
+			return "";
+		}
+
+		return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+				.replace("'", "&#39;");
+	}
+
+	/** Retourne "-" si la valeur est vide, sinon la valeur échappée en HTML. */
+	public static String escapeHtmlOrDash(String value) {
+
+		return Util.isEmpty(value) || value.trim().isEmpty() ? "-" : escapeHtml(value);
+	}
+
+	/**
+	 * Minuscules + suppression des accents, pour une recherche insensible à la
+	 * casse et aux accents.
+	 */
+	public static String normalizeForSearch(String value) {
+
+		if (value == null) {
+			return "";
+		}
+
+		String decomposed = Normalizer.normalize(value, Normalizer.Form.NFD);
+
+		return decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "").toLowerCase();
 	}
 }

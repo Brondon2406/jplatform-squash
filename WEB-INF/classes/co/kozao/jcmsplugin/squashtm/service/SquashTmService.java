@@ -7,7 +7,9 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,6 +28,7 @@ import com.jalios.util.Util;
 
 import co.kozao.jcmsplugin.squashtm.model.AuthentificationMode;
 import co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo;
+import co.kozao.jcmsplugin.squashtm.model.api.SquashTmProject;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 
 /**
@@ -41,7 +44,6 @@ public class SquashTmService {
 	private static final int READ_TIMEOUT = 30000;
 	private final String authorizationHeader;
 
-	
 	public SquashTmService(String authorizationHeader) {
 		this.authorizationHeader = authorizationHeader;
 	}
@@ -50,7 +52,6 @@ public class SquashTmService {
 		this.authorizationHeader = null;
 	}
 
-	
 	public LoggedUserInfo authenticate(Member member) {
 
 		if (member == null) {
@@ -424,7 +425,6 @@ public class SquashTmService {
 		}
 	}
 
-	
 	private LoggedUserInfo buildLoggedUserInfo(String json) {
 
 		try {
@@ -479,7 +479,6 @@ public class SquashTmService {
 		return info;
 	}
 
-	
 	private String getString(JsonObject object, String property) {
 
 		if (object == null || !object.has(property) || object.get(property).isJsonNull()) {
@@ -490,13 +489,11 @@ public class SquashTmService {
 		return object.get(property).getAsString();
 	}
 
-	
 	public boolean testConnection(Member member) {
 
 		return authenticate(member) != null;
 	}
 
-	
 	public void deleteRequirementFolders(String folderIds) throws IOException {
 
 		if (Util.isEmpty(folderIds)) {
@@ -518,7 +515,6 @@ public class SquashTmService {
 		LOGGER.info("Dossiers d'exigences supprimés : " + folderIds);
 	}
 
-	
 	public void deleteTestCaseFolders(String folderIds) throws IOException {
 
 		if (Util.isEmpty(folderIds)) {
@@ -557,7 +553,6 @@ public class SquashTmService {
 			throw new IOException("Le mode d'authentification Squash TM n'est pas configuré.");
 		}
 
-		
 		if (AuthentificationMode.TOKEN.equals(mode)) {
 			String token = SquashTmUtils.getSquashTmApiToken();
 
@@ -568,7 +563,6 @@ public class SquashTmService {
 			return "Bearer " + token;
 		}
 
-		
 		if (AuthentificationMode.BASIC.equals(mode)) {
 
 			String username = SquashTmUtils.getSquashTmUsername();
@@ -592,10 +586,11 @@ public class SquashTmService {
 	}
 
 	/**
-	 * Récupère les projets accessibles sur Squash TM.
+	 * Récupère tous les projets accessibles sur Squash TM en parcourant toutes les
+	 * pages de la collection REST.
 	 *
-	 * @return tableau JSON contenant les projets
-	 * @throws Exception
+	 * @return tableau JSON contenant tous les projets
+	 * @throws IOException
 	 */
 	public JsonArray getProjects() throws IOException {
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
@@ -604,32 +599,80 @@ public class SquashTmService {
 			throw new IOException("L'URL de Squash TM n'est pas configurée.");
 		}
 
-		String authorization = getAuthorization();
-		String url = baseUrl + "/api/rest/latest/projects";
-		String response = executeGet(url, authorization);
+		JsonArray allProjects = new JsonArray();
+		int page = 0;
+		int totalPages = 1;
 
-		if (Util.isEmpty(response)) {
-			throw new IOException("Squash TM n'a retourné aucune réponse lors de la récupération des projets.");
+		do {
+			String authorization = getAuthorization();
+			String url = baseUrl + "/api/rest/latest/projects" + "?type=STANDARD" + "&page=" + page + "&size="
+					+ DASHBOARD_PAGE_SIZE;
+
+			String response = executeGet(url, authorization);
+
+			if (Util.isEmpty(response)) {
+				throw new IOException("Squash TM n'a retourné aucune réponse lors de la récupération des projets.");
+			}
+
+			JsonObject json;
+
+			try {
+				json = JsonParser.parseString(response).getAsJsonObject();
+			} catch (Exception e) {
+				throw new IOException("La réponse de Squash TM pour les projets n'est pas un JSON valide.", e);
+			}
+
+			if (json.has("_embedded") && json.get("_embedded").isJsonObject()) {
+				JsonObject embedded = json.getAsJsonObject("_embedded");
+
+				if (embedded.has("projects") && embedded.get("projects").isJsonArray()) {
+					for (JsonElement item : embedded.getAsJsonArray("projects")) {
+						allProjects.add(item);
+					}
+				}
+			}
+
+			if (json.has("page") && json.get("page").isJsonObject() && json.getAsJsonObject("page").has("totalPages")) {
+				totalPages = json.getAsJsonObject("page").get("totalPages").getAsInt();
+			}
+
+			page++;
+
+		} while (page < totalPages && page < DASHBOARD_MAX_PAGES);
+		return allProjects;
+	}
+	
+	/**
+	 * Récupère tous les projets standard de Squash TM (toutes les pages), avec leur
+	 * détail (étiquette, description) quand l'API l'autorise.
+	 */
+	public List<SquashTmProject> getProjectsWithDetails() throws IOException {
+
+		List<SquashTmProject> projects = new ArrayList<SquashTmProject>();
+
+		for (JsonElement element : getAllPaged("/projects?type=STANDARD")) {
+
+			if (!element.isJsonObject()) {
+				continue;
+			}
+
+			JsonObject project = element.getAsJsonObject();
+
+			try {
+				if (project.has("id") && !project.get("id").isJsonNull()) {
+					JsonObject detail = getResource("/projects/" + project.get("id").getAsString());
+					if (detail != null) {
+						project = detail;
+					}
+				}
+			} catch (IOException e) {
+				LOGGER.debug("Détail du projet indisponible, utilisation des données de la liste : " + e.getMessage());
+			}
+
+			projects.add(SquashTmProject.fromJson(project));
 		}
 
-		JsonObject json;
-
-		try {
-			json = JsonParser.parseString(response).getAsJsonObject();
-
-		} catch (Exception e) {
-			throw new IOException("La réponse de Squash TM pour les projets n'est pas un JSON valide.", e);
-		}
-		if (!json.has("_embedded")) {
-			return new JsonArray();
-		}
-
-		JsonObject embedded = json.getAsJsonObject("_embedded");
-		if (!embedded.has("projects")) {
-			return new JsonArray();
-		}
-
-		return embedded.getAsJsonArray("projects");
+		return projects;
 	}
 
 	/**
@@ -703,7 +746,6 @@ public class SquashTmService {
 			byte[] body = jsonBody.getBytes(StandardCharsets.UTF_8);
 			connection.setFixedLengthStreamingMode(body.length);
 
-			
 			try (java.io.OutputStream output = connection.getOutputStream()) {
 				output.write(body);
 			}
@@ -1145,7 +1187,6 @@ public class SquashTmService {
 		}
 	}
 
-	
 	public JsonObject getTestCase(long testCaseId) throws IOException {
 
 		if (testCaseId <= 0) {
@@ -1163,7 +1204,6 @@ public class SquashTmService {
 		return executeGetJson(url, "Impossible de récupérer le cas de test " + testCaseId);
 	}
 
-	
 	public JsonObject getRequirementFolderContent(long folderId, int page, int size) throws IOException {
 
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
@@ -1233,7 +1273,6 @@ public class SquashTmService {
 		}
 	}
 
-	
 	public JsonObject getTestCaseFolderContent(long folderId, int page, int size) throws IOException {
 
 		String baseUrl = SquashTmUtils.getSquashTmServerUrl();
@@ -1444,8 +1483,8 @@ public class SquashTmService {
 	}
 
 	/**
-	 * Retourne le plus grand numéro déjà utilisé par les références d'un projet
-	 * qui suivent le format PREFIXE + nombre (par exemple REQ012 ou TC007).
+	 * Retourne le plus grand numéro déjà utilisé par les références d'un projet qui
+	 * suivent le format PREFIXE + nombre (par exemple REQ012 ou TC007).
 	 *
 	 * @param projectId   identifiant du projet Squash TM
 	 * @param prefix      préfixe recherché (REQ ou TC)
@@ -1487,7 +1526,7 @@ public class SquashTmService {
 				try {
 					max = Math.max(max, Integer.parseInt(matcher.group(1)));
 				} catch (NumberFormatException ignored) {
-					
+
 				}
 			}
 		}
@@ -1528,7 +1567,6 @@ public class SquashTmService {
 
 		currentVersion.addProperty("name", name.trim());
 
-		
 		if (!Util.isEmpty(reference)) {
 			currentVersion.addProperty("reference", reference.trim());
 		}
@@ -1653,7 +1691,6 @@ public class SquashTmService {
 
 		testCase.addProperty("name", name.trim());
 
-		
 		if (!Util.isEmpty(reference)) {
 			testCase.addProperty("reference", reference.trim());
 		}
@@ -1856,7 +1893,6 @@ public class SquashTmService {
 		LOGGER.info("Étapes Squash TM supprimées : " + ids);
 	}
 
-	
 	public String resolveAuthorization() throws IOException {
 		return getAuthorization();
 	}
@@ -1872,7 +1908,6 @@ public class SquashTmService {
 		return baseUrl + "/api/rest/latest" + apiPath;
 	}
 
-	
 	public JsonObject getResource(String apiPath) throws IOException {
 		return executeGetJson(buildApiUrl(apiPath), "Impossible de récupérer " + apiPath);
 	}

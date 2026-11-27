@@ -4,8 +4,9 @@ data.$id.shortcut.jcmsplugin.squashtm.text: Ce Module Permettant l'import des do
 
 #App
 jcmsplugin.squashtm.app.title: Squash TM
-jcmsplugin.squashtm.app.importfiles.title: Import Excel
 jcmsplugin.squashtm.app.dashboard.title: Dashboard
+jcmsplugin.squashtm.app.importfiles.title: Import Excel
+jcmsplugin.squashtm.app.exportfiles.title: Export Projets
 jcmsplugin.squashtm.cache.enabled: Activer le cache de données
 jcmsplugin.squashtm.authenticate.error.squashtm-api-not-available: L'api de Squash TM est injoignable. Veuillez vérifier votre connexion internet.
 
@@ -14,6 +15,7 @@ jcmsplugin.squashtm.authenticate.error.squashtm-api-not-available: L'api de Squa
 jcmsplugin.squashtm.app.sidebar.sidebar-section.views: Affichage
 jcmsplugin.squashtm.app.sidebar.dashboard.label: Dashboard
 jcmsplugin.squashtm.app.sidebar.importfiles.label: Import Excel
+jcmsplugin.squashtm.app.sidebar.exportfiles.label: Export Projets
 jcmsplugin.squashtm.app.sidebar.administration.label: Administration
 jcmsplugin.squashtm.app.sidebar.account-infos: Compte Squash TM lié
 jcmsplugin.squashtm.app.sidebar.account-infos.phone.title: Numéro de téléphone du compte Squash TM
@@ -26,7 +28,7 @@ jcmsplugin.squashtm.signin-please: Vous n'êtes pas connecté(e) à SquashTm. Ve
 jcmsplugin.squashtm.signin: S'authentifier à Squash...
 jcmsplugin.squashtm.authentication.auth.logout.prevent-user.label: Voulez-vous vraiment vous déconnecter de Squash TM ?
 jcmsplugin.squashtm.authentication.auth.logout.modal.title: Confirmer la déconnexion
-jcmsplugin.squashtm.app.sidebar.auth.logout: 	Se déconnecter de Squash TM
+jcmsplugin.squashtm.app.sidebar.auth.logout: Se déconnecter de Squash TM
 jcmsplugin.squashtm.app.sidebar.auth.logout.title: Déconnexion de Squash TM
 jcmsplugin.squashtm.authentication.auth.logout.modal.btn.title: Déconnecter de façon temporaire
 jcmsplugin.squashtm.token-form.error.invalid: Le jeton d'API saisi est invalide. Vérifiez-le et réessayez.
@@ -137,8 +139,8 @@ jcmsplugin.squashtm.app.import.report.error-elements: Éléments en erreur
 jcmsplugin.squashtm.app.import.report.error-description: Éléments qui n'ont pas pu être importés
 jcmsplugin.squashtm.app.import.report.error-details: Détails des erreurs
 jcmsplugin.squashtm.app.import.report.finish: Terminer
-jcmsplugin.squashtm.app.import.report.download: Télécharger la version à jour du module
-jcmsplugin.squashtm.app.import.report.download.loading: Préparation du fichier...
+jcmsplugin.squashtm.app.import.report.download: Télécharger le module
+jcmsplugin.squashtm.app.import.report.download.loading: Préparation du fichier..
 jcmsplugin.squashtm.app.import.report.download.error: Impossible de télécharger le fichier depuis Squash TM.
 
 
@@ -167,6 +169,18 @@ jcmsplugin.squashtm.app.import.analysis.comparison.filter.data: Données
 jcmsplugin.squashtm.app.import.analysis.comparison.filter.state: État
 jcmsplugin.squashtm.app.import.analysis.comparison.filter.all: Tous
 jcmsplugin.squashtm.app.import.analysis.comparison.filter.select-all: Tout Sélectionner
+
+# Export Projets
+jcmsplugin.squashtm.app.export.intro.title: Projets disponibles dans Squash TM
+jcmsplugin.squashtm.app.export.not-found: Aucun projet disponible dans Squash TM.
+jcmsplugin.squashtm.app.export.search.not-found: Aucun projet ne correspond à votre recherche.
+jcmsplugin.squashtm.app.export.error.load: Impossible de récupérer les projets Squash TM.
+jcmsplugin.squashtm.app.export.column.numerotation: #
+jcmsplugin.squashtm.app.export.column.name: Nom
+jcmsplugin.squashtm.app.export.column.label: Étiquette
+jcmsplugin.squashtm.app.export.column.description: Description
+jcmsplugin.squashtm.app.export.column.type: Type
+
 
 # ADMINISTRATION - TEMPLATE EXCEL ET MAPPING
 jcmsplugin.squashtm.app.administration.title: Administration du template Excel
@@ -246,7 +260,6 @@ jcmsplugin.squashtm.dashboard.scope.ALL: Tout
 jcmsplugin.squashtm.dashboard.scope.REQUIREMENTS: Exigences
 jcmsplugin.squashtm.dashboard.scope.TEST_CASES: Cas de test
 jcmsplugin.squashtm.dashboard.scope.CAMPAIGNS: Campagnes
-jcmsplugin.squashtm.dashboard.scope.REPORTING: Tableaux Squash TM
 jcmsplugin.squashtm.dashboard.filter.projects: Projets
 jcmsplugin.squashtm.dashboard.filter.projects.all: Tous les projets
 jcmsplugin.squashtm.dashboard.filter.period: Période
@@ -312,15 +325,12 @@ jcmsplugin.squashtm.dashboard.kpi.linked: Cas de test liés
 jcmsplugin.squashtm.dashboard.kpi.success: Taux de succès
 jcmsplugin.squashtm.dashboard.kpi.progress: Avancement des exécutions
 jcmsplugin.squashtm.dashboard.kpi.never: Cas de test jamais exécutés
-jcmsplugin.squashtm.dashboard.kpi.reporting: Tableaux de bord Squash TM
+
 # Sections et graphiques
 jcmsplugin.squashtm.dashboard.section.requirements: Exigences
 jcmsplugin.squashtm.dashboard.section.testCases: Cas de test
 jcmsplugin.squashtm.dashboard.section.campaigns: Campagnes et exécutions
-jcmsplugin.squashtm.dashboard.section.reporting: Tableaux de bord Squash TM
 jcmsplugin.squashtm.dashboard.chart.byReportType: Par type
-jcmsplugin.squashtm.dashboard.reporting.note: Squash TM ne fournit pas le contenu de ses tableaux de bord via l'API.
-jcmsplugin.squashtm.dashboard.reporting.open: Ouvrir Squash TM
 jcmsplugin.squashtm.dashboard.chart.byStatus: Par statut
 jcmsplugin.squashtm.dashboard.chart.byCriticality: Par criticité
 jcmsplugin.squashtm.dashboard.chart.byCategory: Par catégorie
@@ -420,4 +430,3 @@ jcmsplugin.squashtm.dashboard.value.CAT_TECHNICAL: Technique
 jcmsplugin.squashtm.dashboard.value.CAT_USER_STORY: User story
 jcmsplugin.squashtm.dashboard.value.CAT_SECURITY: Sécurité
 jcmsplugin.squashtm.dashboard.value.CAT_UNDEFINED: Non définie
-

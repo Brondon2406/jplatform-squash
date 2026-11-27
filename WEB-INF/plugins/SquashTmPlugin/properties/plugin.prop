@@ -14,6 +14,7 @@ channel.less.plugins/SquashTmPlugin/css/importfiles.css: plugins/SquashTmPlugin/
 channel.less.plugins/SquashTmPlugin/css/squashtm-analysis.css: plugins/SquashTmPlugin/css/squashtm-analysis.less
 channel.less.plugins/SquashTmPlugin/css/squashtm-report.css: plugins/SquashTmPlugin/css/squashtm-report.less
 channel.less.plugins/SquashTmPlugin/css/squashtm-dashboard.css: plugins/SquashTmPlugin/css/squashtm-dashboard.less
+channel.less.plugins/SquashTmPlugin/css/squashtm-export.css: plugins/SquashTmPlugin/css/squashtm-export.less
 
 
 # Module Properties

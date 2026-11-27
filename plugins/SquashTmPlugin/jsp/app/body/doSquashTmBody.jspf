@@ -38,8 +38,10 @@ if (!squashTmManager.isPluginActive(loggedMember)) {%>
 	    <% if (appHandler.showDashboard()) { %>
 	        <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsDashboard.jspf" %>
 	    <% } else if (appHandler.showImportFiles()) { %>
-	        <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsImport.jspf" %>
+	    	<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsImport.jspf" %>
+	    <% } else if (appHandler.showExportFiles()) { %>
+	    	<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsExport.jspf" %>
 	    <% } else if (appHandler.showAdministration()) { %>
-	    <%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsAdministration.jspf" %>
+	    	<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmViewsAdministration.jspf" %>
 	<%}%>
 <% } %>

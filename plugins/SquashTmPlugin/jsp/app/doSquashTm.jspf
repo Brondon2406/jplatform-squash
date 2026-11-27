@@ -24,10 +24,13 @@ jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/importfiles.css");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm-analysis.css");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm-report.css");
 jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm-dashboard.css");
+jcmsContext.addCSSHeader("plugins/SquashTmPlugin/css/squashtm-export.css");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-dashboard.js");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-import.js");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/import-progress.js");
 jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-admin.js");
+jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-download.js");
+jcmsContext.addJavaScript("plugins/SquashTmPlugin/js/squashtm-export.js");
 
 %>
 <%@ include file='/jcore/doHeader.jspf'%>
