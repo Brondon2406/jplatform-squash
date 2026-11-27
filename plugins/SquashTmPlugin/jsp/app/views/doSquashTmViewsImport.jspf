@@ -39,16 +39,16 @@
 
 
 	<div class="squashtm-import-container">
-	<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportFiles.jspf" %>	
+	<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/viewProcessImports/doSquashTmImportFiles.jspf" %>	
 	</div>
 	
 	
 	<div id="squashTmAnalysisContainer" class="squashtm-analysis-container" style="display: none;">
-		<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportAnalysis.jspf" %>
+		<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/viewProcessImports/doSquashTmImportAnalysis.jspf" %>
 	</div>
 	 	
 	
 	<div id="squashTmImportReport" class="squashtm-import-report" style="display: none;">
-		<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/doSquashTmImportReport.jspf" %> 
+		<%@ include file="/plugins/SquashTmPlugin/jsp/app/views/viewProcessImports/doSquashTmImportReport.jspf" %> 
 	</div>
 </form>

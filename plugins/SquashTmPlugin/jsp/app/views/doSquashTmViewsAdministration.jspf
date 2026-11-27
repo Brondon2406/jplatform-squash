@@ -8,7 +8,7 @@
 <%@ page import="co.kozao.jcmsplugin.squashtm.model.mapping.TemplateMapping" %>
 <%@ page import="co.kozao.jcmsplugin.squashtm.util.SquashTmUtils" %><%
 
-%><jsp:useBean id="templateAdminHandler" scope="request" class="co.kozao.jcmsplugin.squashtm.handler.SquashTmTemplateAdminHandler"><%
+%><jsp:useBean id="templateAdminHandler" scope="request" class="co.kozao.jcmsplugin.squashtm.handler.SquashTmAdminHandler"><%
 %><jsp:setProperty name="templateAdminHandler" property="request"       value="<%= request %>"/><%
 %><jsp:setProperty name="templateAdminHandler" property="response"      value="<%= response %>"/><%
 %><jsp:setProperty name="templateAdminHandler" property="*" /><%
@@ -19,7 +19,7 @@
         return;
     }
 
-    boolean canAdministrateTemplate = SquashTmUtils.canAdministrateTemplate();
+    boolean canAdministrationView = SquashTmUtils.canAdministrationView();
     TemplateMapping activeMapping = templateAdminHandler.getActiveMapping();
     boolean customTemplateActive = templateAdminHandler.isCustomTemplateActive();
     TemplateAnalysis templateAnalysis = templateAdminHandler.getAnalysis();
@@ -40,7 +40,7 @@
 <% } %>
 
 
-<% if (!canAdministrateTemplate) { %>
+<% if (!canAdministrationView) { %>
 
     <div class="alert alert-warning">
         <%= glp("jcmsplugin.squashtm.app.administration.forbidden") %>

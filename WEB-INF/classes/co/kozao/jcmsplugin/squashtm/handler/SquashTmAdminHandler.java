@@ -29,9 +29,9 @@ import co.kozao.jcmsplugin.squashtm.util.SquashTmUtils;
 /**
  * @author Severin Kengne
  */
-public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
+public class SquashTmAdminHandler extends JcmsFormHandler {
 
-	private static final Logger LOGGER = Logger.getLogger(SquashTmTemplateAdminHandler.class);
+	private static final Logger LOGGER = Logger.getLogger(SquashTmAdminHandler.class);
 
 	private final SquashTmTemplateMappingManager mappingManager = SquashTmTemplateMappingManager.getInstance();
 	private final ExcelTemplateInspector inspector = new ExcelTemplateInspector();
@@ -214,7 +214,7 @@ public class SquashTmTemplateAdminHandler extends JcmsFormHandler {
 			return false;
 		}
 
-		if (!SquashTmUtils.canAdministrateTemplate()) {
+		if (!SquashTmUtils.canAdministrationView()) {
 			errors.add("Accès refusé : seuls les administrateurs peuvent modifier le template.");
 			return false;
 		}

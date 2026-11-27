@@ -15,10 +15,7 @@
     final String sqdI18nAttribute = dashboardHandler.getI18nAttribute();
 %>
 
-<div id="squashTmDashboard"
-     class="squashtm-dashboard"
-     data-endpoint="<%= sqdDataUrl %>"
-     data-i18n="<%= sqdI18nAttribute %>">
+<div id="squashTmDashboard" class="squashtm-dashboard" data-endpoint="<%= sqdDataUrl %>" data-i18n="<%= sqdI18nAttribute %>">
 
 	<div class="sqd-header">
 		<div>
@@ -55,13 +52,12 @@
 				    <jalios:field name="scope" label='<%= glp("jcmsplugin.squashtm.dashboard.filter.scope") %>'
 				        value="ALL" css="sqd-scope-control">
 				
-				        <jalios:control settings='<%= new EnumerateSettings().segmented(SegmentedType.RADIO).enumValues(new String[] { "ALL", "REQUIREMENTS", "TEST_CASES", "CAMPAIGNS", "REPORTING" })
+				        <jalios:control settings='<%= new EnumerateSettings().segmented(SegmentedType.RADIO).enumValues(new String[] { "ALL", "REQUIREMENTS", "TEST_CASES", "CAMPAIGNS" })
 				                .enumLabels(new String[] {
 				                    glp("jcmsplugin.squashtm.dashboard.scope.ALL"),
 				                    glp("jcmsplugin.squashtm.dashboard.scope.REQUIREMENTS"),
 				                    glp("jcmsplugin.squashtm.dashboard.scope.TEST_CASES"),
-				                    glp("jcmsplugin.squashtm.dashboard.scope.CAMPAIGNS"),
-				                    glp("jcmsplugin.squashtm.dashboard.scope.REPORTING")
+				                    glp("jcmsplugin.squashtm.dashboard.scope.CAMPAIGNS")
 				                }) %>' />			
 				     </jalios:field>
 				
@@ -269,15 +265,6 @@
 						</details>
 					</div>
 
-					
-					<div class="sqd-field" data-scope-group="REPORTING">
-						<span class="sqd-label"><%= glp("jcmsplugin.squashtm.dashboard.filter.reportType") %></span>
-						<details class="sqd-multi" data-multi="reportType">
-							<summary><span data-role="summary"></span></summary>
-							<div class="sqd-multi-panel" data-role="panel"></div>
-						</details>
-					</div>
-
 			     </div>
 		    </div>
 		</div>
@@ -336,10 +323,6 @@
 				<strong></strong>
 				<span><%= glp("jcmsplugin.squashtm.dashboard.kpi.success") %></span>
 			</div>
-			<div class="sqd-kpi" data-kpi="reportingItems" data-format="number" hidden>
-				<strong></strong>
-				<span><%= glp("jcmsplugin.squashtm.dashboard.kpi.reporting") %></span>
-			</div>  
 		</div>
 
 		
@@ -514,50 +497,6 @@
 							<th scope="col" aria-sort="none" class="is-number" data-col="pending" data-type="number"><button type="button" data-sort="pending" data-table="campaigns"><%= glp("jcmsplugin.squashtm.dashboard.col.pending") %></button></th>
 							<th scope="col" aria-sort="none" class="is-number" data-col="progress" data-type="progress"><button type="button" data-sort="progress" data-table="campaigns"><%= glp("jcmsplugin.squashtm.dashboard.col.progress") %></button></th>
 							<th scope="col" aria-sort="none" data-col="lastExecutedOn" data-type="date"><button type="button" data-sort="lastExecutedOn" data-table="campaigns"><%= glp("jcmsplugin.squashtm.dashboard.col.lastExecution") %></button></th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-			</div>
-			<p class="sqd-empty" data-role="table-empty" hidden><%= glp("jcmsplugin.squashtm.dashboard.table.empty") %></p>
-			<p class="sqd-table-note" data-role="table-note" hidden></p>
-
-			</div>
-		</section>
-
-		
-		<section class="sqd-section" data-section="reporting" hidden>
-			<div class="sqd-section-header">
-				<h3><%= glp("jcmsplugin.squashtm.dashboard.section.reporting") %><span class="sqd-count" data-role="count"></span></h3>
-			</div>
-
-			<p class="sqd-empty" data-role="empty" hidden><%= glp("jcmsplugin.squashtm.dashboard.state.empty") %></p>
-
-			<div data-role="content">
-
-				<p class="sqd-table-note" data-role="note"><%= glp("jcmsplugin.squashtm.dashboard.reporting.note") %>
-					<a data-role="squash-link" href="#" target="_blank" rel="noopener noreferrer" hidden><%= glp("jcmsplugin.squashtm.dashboard.reporting.open") %></a>
-				</p>
-
-				<div class="sqd-grid-rep">
-				<div class="sqd-panel-rep" data-panel="byReportType">
-					<h4><%= glp("jcmsplugin.squashtm.dashboard.chart.byReportType") %></h4>
-					<div data-role="chart"></div>
-				</div>
-				<div class="sqd-panel-rep" data-panel="byProject">
-					<h4><%= glp("jcmsplugin.squashtm.dashboard.chart.byProject") %></h4>
-					<div data-role="chart"></div>
-				</div>
-				</div>
-
-			<div class="sqd-table-wrap" data-role="table-wrap">
-				<table class="sqd-table">
-					<thead>
-						<tr>
-							<th scope="col" aria-sort="none" data-col="name" data-type="" data-cls="is-name"><button type="button" class="sqd-collapse" data-toggle-table aria-expanded="true" aria-label="Toggle"></button><button type="button" data-sort="name" data-table="reporting"><%= glp("jcmsplugin.squashtm.dashboard.col.name") %></button></th>
-							<th scope="col" aria-sort="none" data-col="project" data-type=""><button type="button" data-sort="project" data-table="reporting"><%= glp("jcmsplugin.squashtm.dashboard.col.project") %></button></th>
-							<th scope="col" aria-sort="none" data-col="type" data-type="value"><button type="button" data-sort="type" data-table="reporting"><%= glp("jcmsplugin.squashtm.dashboard.col.type") %></button></th>
-							<th scope="col" aria-sort="none" class="is-number" data-col="id" data-type="number"><button type="button" data-sort="id" data-table="reporting"><%= glp("jcmsplugin.squashtm.dashboard.col.id") %></button></th>
 						</tr>
 					</thead>
 					<tbody></tbody>
