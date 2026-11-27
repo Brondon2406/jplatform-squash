@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -18,6 +19,7 @@ import com.jalios.jcms.plugin.PluginManager;
 import com.jalios.util.Util;
 
 import co.kozao.jcmsplugin.squashtm.model.api.LoggedUserInfo;
+import co.kozao.jcmsplugin.squashtm.model.api.SquashTmProject;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmDashboardService;
 import co.kozao.jcmsplugin.squashtm.service.SquashTmService;
 import co.kozao.jcmsplugin.squashtm.util.SquashTmConstants;
@@ -40,7 +42,6 @@ public class SquashTmManager {
 		service = new SquashTmService();
 	}
 
-	
 	public static synchronized SquashTmManager getInstance() {
 
 		if (SINGLETON == null) {
@@ -109,7 +110,6 @@ public class SquashTmManager {
 		return answer;
 	}
 
-	
 	public boolean isPluginActive(Member member) {
 
 		if (member == null) {
@@ -147,7 +147,6 @@ public class SquashTmManager {
 		return configured;
 	}
 
-	
 	public boolean isConnect() {
 
 		LoggedUserInfo userInfo = SquashTmUtils
@@ -156,13 +155,11 @@ public class SquashTmManager {
 		return userInfo != null;
 	}
 
-	
 	public LoggedUserInfo getLoggedUserInfo() {
 		Member member = Channel.getChannel().getCurrentLoggedMember();
 		return SquashTmUtils.getSquashTmRemoteUserInfos(member);
 	}
 
-	
 	public LoggedUserInfo getLoggedUserInfo(Member member) {
 
 		if (member == null) {
@@ -202,7 +199,6 @@ public class SquashTmManager {
 			return false;
 		}
 
-		
 		SquashTmUtils.setSquashTmRemoteUserInfos(userInfo);
 
 		LOGGER.info("Connexion Squash TM réussie : " + userInfo.getFullName());
@@ -210,7 +206,10 @@ public class SquashTmManager {
 		return true;
 	}
 
-	
+	public List<SquashTmProject> getProjects() throws IOException {
+		return service.getProjectsWithDetails();
+	}
+
 	public SquashTmDashboardService newDashboardService(Member member) throws IOException {
 
 		if (member == null) {
@@ -220,7 +219,6 @@ public class SquashTmManager {
 		return new SquashTmDashboardService(service.resolveAuthorization(), member.getId());
 	}
 
-	
 	public boolean testConnection(Member member) {
 
 		if (member == null) {
@@ -230,7 +228,6 @@ public class SquashTmManager {
 		return service.testConnection(member);
 	}
 
-	
 	public void disconnect() {
 
 		SquashTmUtils.setSquashTmApiToken("");

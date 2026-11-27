@@ -53,8 +53,7 @@
         { key: "tcCoverage", scope: "TEST_CASES", kind: "select", values: ["ALL", "COVERED", "UNCOVERED"] },
         { key: "automatable", scope: "TEST_CASES", kind: "select", values: ["ALL", "Y", "N", "M"] },
         { key: "campaignStatus", scope: "CAMPAIGNS", kind: "multi", option: "campaignStatuses" },
-        { key: "execStatus", scope: "CAMPAIGNS", kind: "multi", option: "executionStatuses" },
-        { key: "reportType", scope: "REPORTING", kind: "multi", option: "reportTypes" }
+        { key: "execStatus", scope: "CAMPAIGNS", kind: "multi", option: "executionStatuses" }
     ];
 
     /*
@@ -950,7 +949,6 @@
         this.fillSection(body, "requirements", data.requirements, this.fillRequirements);
         this.fillSection(body, "testCases", data.testCases, this.fillTestCases);
         this.fillSection(body, "campaigns", data.campaigns, this.fillCampaigns);
-        this.fillSection(body, "reporting", data.reporting, this.fillReporting, data.squashUrl);
     };
 
     // Renseigne les cellules KPI de la JSPF (data-kpi = clé du JSON, data-format = number | percent).
@@ -1064,27 +1062,7 @@
         this.fillPanel(section, "execStatus", this.donutFromDistribution(c.executionsByStatus, c.executionTotal, "execStatus"));
         this.fillPanel(section, "execByProject", this.bars(c.executionsByProject, c.executionTotal, null));
         this.fillPanel(section, "execTimeline", this.executionTimeline(c.executionTimeline));
-
         this.fillTable(section, "campaigns", c.rows, c.truncated, c.total);
-    };
-
-    Dashboard.prototype.fillReporting = function(section, r, squashUrl) {
-        var link = section.querySelector('[data-role="squash-link"]');
-
-        if (link) {
-            if (squashUrl && /^https?:\/\//.test(squashUrl)) {
-                link.href = squashUrl;
-                link.hidden = false;
-            } else {
-                link.removeAttribute("href");
-                link.hidden = true;
-            }
-        }
-
-        this.fillPanel(section, "byReportType", this.bars(r.byType, r.total, "reportType"));
-        this.fillPanel(section, "byProject", this.bars(r.byProject, r.total, null));
-
-        this.fillTable(section, "reporting", r.rows, r.truncated, r.total);
     };
 
     /*

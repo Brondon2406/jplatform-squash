@@ -1,0 +1,108 @@
+<%@ page import="java.util.List" %>
+<%@ page import="co.kozao.jcmsplugin.squashtm.model.api.SquashTmProject" %>
+<%
+	String exportSortField = getUntrustedStringParameter("export_projects_sort", "id");
+	boolean exportDescending = Util.toBoolean(getUntrustedStringParameter("export_projects_reverse", "false"), false);
+
+	String exportSearchTerm = getUntrustedStringParameter("searchTerm", "").trim();
+	if (exportSearchTerm.length() > 200) {
+		exportSearchTerm = exportSearchTerm.substring(0, 200);
+	}
+	boolean exportHasSearch = Util.notEmpty(exportSearchTerm);
+
+	List<SquashTmProject> exportProjects = appHandler.getExportProjects(exportSortField, exportDescending, exportSearchTerm);
+	String exportLoadError = appHandler.getExportProjectsError();
+	int exportProjectsTotalSize = Util.getSize(exportProjects);
+%>
+
+<div class="squashtm-export-app-body">
+
+	<% if (exportLoadError == null) { %>
+	<div class="navbar navbar-default squashtm-export-navbar">
+		<div class="container-fluid squashtm-export-navbar-child-1">
+
+			<div class="navbar-form navbar-right" role="search">
+				<% String exportSearchAria = " aria-label=\"ui.com.placeholder.search\" "; %>
+				<jalios:field name="searchTerm" value="<%= exportSearchTerm %>" resource="field-light">
+					<jalios:control
+						settings='<%= new TextFieldSettings().placeholder("ui.com.placeholder.search").htmlAttributes(exportSearchAria) %>' />
+					<span class="input-group-btn">
+						<button class="btn btn-default squashtm-export-search-btn" type="button"
+							title='<%= glp("ui.com.btn.search") %>'>
+							<jalios:icon src="search" />
+						</button>
+						<% if (exportHasSearch) { %>
+							<button class="btn btn-default squashtm-export-reset-btn" type="button"
+								title='<%= glp("ui.com.btn.reset") %>'>
+								<jalios:icon src="remove" alt="ui.com.btn.reset" />
+							</button>
+						<% } %>
+					</span>
+				</jalios:field>
+			</div>
+		</div>
+		<input type="hidden" name="hiddenExportView" value="<%= SquashTmUtils.escapeHtml(appHandler.getBoxDisplayFilter()) %>" />
+	</div>
+	<% } %>
+
+	<div class="navbar navbar-default no-navbar-brand task-navbar liste-item squashtm-export-view">
+		<div class="container-fluid table-space">
+
+		<% if (exportLoadError != null) { %>
+			<jalios:message dismissable="false" css="gedbox-unifiedInsert-message" level="<%= MessageLevel.WARN %>">
+				<p><%= glp("jcmsplugin.squashtm.app.export.error.load") %> <%= SquashTmUtils.escapeHtml(exportLoadError) %></p>
+			</jalios:message>
+		<% } else if (Util.isEmpty(exportProjects)) { %>
+			<jalios:appBodyNoResult text='<%= exportHasSearch ? glp("jcmsplugin.squashtm.app.export.search.not-found") : glp("jcmsplugin.squashtm.app.export.not-found") %>' />
+		<% } else { %>
+
+			<h2 class="squashtm-export-view-title"><%= glp("jcmsplugin.squashtm.app.export.intro.title") %></h2>
+
+			<div id="squashTmExportDownloadError" class="alert alert-danger squashtm-report-download-error" style="display: none;"
+				data-error-label="<%= glp("jcmsplugin.squashtm.app.import.report.download.error") %>"
+				data-loading-label="<%= glp("jcmsplugin.squashtm.app.import.report.download.loading") %>"></div>
+
+			<jalios:pager name='exportProjectsPagerHandler' declare='true' action='init' pageSize="12" pageSizes="12,24,48" paramPrefix="export_projects_" />
+			<jalios:pager name='exportProjectsPagerHandler' size='<%= exportProjectsTotalSize %>' action='compute' />
+
+			<div style="overflow-y: visible;">
+				<table class="table-data table-app">
+					<caption class="sr-only"><%= glp("jcmsplugin.squashtm.app.export.intro.title") %></caption>
+					<thead>
+						<tr>
+							<th scope="col" class="fit nowrap"><%= glp("jcmsplugin.squashtm.app.export.column.numerotation") %></th>
+							<th scope="col" class="fit nowrap"><%= glp("jcmsplugin.squashtm.app.export.column.name") %><jalios:pager name='exportProjectsPagerHandler' action='showSort' sort='name' /></th>
+							<th scope="col" class="fit nowrap"><%= glp("jcmsplugin.squashtm.app.export.column.label") %><jalios:pager name='exportProjectsPagerHandler' action='showSort' sort='label' /></th>
+							<th scope="col" class="nowrap"><%= glp("jcmsplugin.squashtm.app.export.column.description") %></th>
+							<th class="fit"></th>
+						</tr>
+					</thead>
+					<tbody>
+						<jalios:foreach name="itExportProject" type="SquashTmProject" collection="<%= exportProjects %>" skip="<%= exportProjectsPagerHandler.getStart() %>" max="<%= exportProjectsPagerHandler.getPageSize() %>">
+						<% SquashTmProject exportItem = (SquashTmProject) itExportProject; %>
+						<tr class="task-item">
+							<td class="nowrap"><%= itCounter + exportProjectsPagerHandler.getStart() %></td>
+							<td class="nowrap"><%= exportItem.getId() %></td>
+							<td class="nowrap"><strong><%= SquashTmUtils.escapeHtml(exportItem.getName()) %></strong></td>
+							<td class="nowrap"><%= SquashTmUtils.escapeHtmlOrDash(exportItem.getLabel()) %></td>
+							<td><%= SquashTmUtils.escapeHtmlOrDash(exportItem.getDescriptionText()) %></td>
+							<td class="fit actions nowrap">
+								<button type="button" class="btn btn-default squashtm-export-download-btn"
+									data-project-name="<%= SquashTmUtils.escapeHtml(exportItem.getName()) %>">
+									<span class="jalios-icon icomoon-download"></span>
+									<span class="squashtm-export-download-label"><%= glp("jcmsplugin.squashtm.app.import.report.download") %></span>
+								</button>
+							</td>
+						</tr>
+						</jalios:foreach>
+					</tbody>
+				</table>
+			</div>
+			<br />
+			<jalios:pager name='exportProjectsPagerHandler' template='pqf' />
+			<br /><br />
+		<% } %>
+
+		</div>
+	</div>
+</div>

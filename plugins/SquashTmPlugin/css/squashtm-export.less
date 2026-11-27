@@ -1,0 +1,54 @@
+@import "../../../css/jalios/core/init-mixins.less";
+@import "../../../css/jalios/core/app/jalios-app-variables.less";
+@import "../../../css/plugin.less";
+
+@app-color-squashtm: #33446B;
+
+.squashtm-export-app-body {
+	position: relative;
+
+	.squashtm-export-navbar {
+		margin-bottom: 0;
+
+		.squashtm-export-navbar-child-1 {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+		}
+	}
+
+	.squashtm-export-view {
+		background-color: white;
+	}
+
+	.squashtm-export-view-title {
+		color: @app-color-squashtm;
+		margin-top: 0;
+		margin-bottom: 8px;
+		font-size: 24px;
+		font-weight: 600;
+	}
+	
+	.squashtm-export-view-description {
+		margin: 0;
+		color: #777;
+		font-size: 14px;
+	}
+
+	.squashtm-export-download-btn {
+		background-color: none;
+
+		&:hover {
+			background-color:#7D8BA8;
+			color: #ffff;
+		}
+
+		span {
+			margin-right: 0;
+		}
+
+		.squashtm-export-download-label {
+			margin-left: 4px;
+		}
+	}
+}
