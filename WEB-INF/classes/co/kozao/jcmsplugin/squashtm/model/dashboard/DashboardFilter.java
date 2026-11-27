@@ -21,7 +21,6 @@ public class DashboardFilter {
 	public static final String SCOPE_REQUIREMENTS = "REQUIREMENTS";
 	public static final String SCOPE_TEST_CASES = "TEST_CASES";
 	public static final String SCOPE_CAMPAIGNS = "CAMPAIGNS";
-	public static final String SCOPE_REPORTING = "REPORTING";
 
 	public static final String DATE_CREATED = "CREATED";
 	public static final String DATE_MODIFIED = "MODIFIED";
@@ -83,8 +82,9 @@ public class DashboardFilter {
 		}
 
 		f.scope = pick(request.getParameter("scope"), SCOPE_ALL,
-				new String[] { SCOPE_ALL, SCOPE_REQUIREMENTS, SCOPE_TEST_CASES, SCOPE_CAMPAIGNS, SCOPE_REPORTING });
-		f.dateField = pick(request.getParameter("dateField"), DATE_CREATED, new String[] { DATE_CREATED, DATE_MODIFIED });
+				new String[] { SCOPE_ALL, SCOPE_REQUIREMENTS, SCOPE_TEST_CASES, SCOPE_CAMPAIGNS });
+		f.dateField = pick(request.getParameter("dateField"), DATE_CREATED,
+				new String[] { DATE_CREATED, DATE_MODIFIED });
 		f.groupBy = pick(request.getParameter("groupBy"), GROUP_AUTO,
 				new String[] { GROUP_AUTO, GROUP_DAY, GROUP_WEEK, GROUP_MONTH });
 		f.requirementCoverage = pick(request.getParameter("reqCoverage"), COVERAGE_ALL,
@@ -129,7 +129,6 @@ public class DashboardFilter {
 
 		return f;
 	}
-
 
 	private static List<String> csv(String value) {
 
@@ -181,7 +180,6 @@ public class DashboardFilter {
 		return defaultValue;
 	}
 
-	
 	private static Long parseDay(String value, boolean endOfDay) {
 
 		if (value == null || value.trim().isEmpty()) {
@@ -192,7 +190,8 @@ public class DashboardFilter {
 			LocalDate day = LocalDate.parse(value.trim());
 
 			if (endOfDay) {
-				return Long.valueOf(day.plusDays(1).atStartOfDay(SquashTmConstants.ZONE_ID).toInstant().toEpochMilli() - 1L);
+				return Long.valueOf(
+						day.plusDays(1).atStartOfDay(SquashTmConstants.ZONE_ID).toInstant().toEpochMilli() - 1L);
 			}
 
 			return Long.valueOf(day.atStartOfDay(SquashTmConstants.ZONE_ID).toInstant().toEpochMilli());
@@ -202,7 +201,6 @@ public class DashboardFilter {
 		}
 	}
 
-
 	public boolean wants(String section) {
 		return SCOPE_ALL.equals(scope) || scope.equals(section);
 	}
@@ -211,7 +209,6 @@ public class DashboardFilter {
 		return dateFrom != null || dateTo != null;
 	}
 
-	
 	public boolean inPeriod(Long timestamp) {
 
 		if (!hasPeriod()) {
@@ -230,7 +227,6 @@ public class DashboardFilter {
 
 		return dateTo == null || value <= dateTo.longValue();
 	}
-
 
 	public Set<Long> getProjectIds() {
 		return projectIds;
