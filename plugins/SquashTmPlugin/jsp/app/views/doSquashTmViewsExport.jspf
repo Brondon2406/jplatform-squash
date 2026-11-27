@@ -82,7 +82,6 @@
 						<% SquashTmProject exportItem = (SquashTmProject) itExportProject; %>
 						<tr class="task-item">
 							<td class="nowrap"><%= itCounter + exportProjectsPagerHandler.getStart() %></td>
-							<td class="nowrap"><%= exportItem.getId() %></td>
 							<td class="nowrap"><strong><%= SquashTmUtils.escapeHtml(exportItem.getName()) %></strong></td>
 							<td class="nowrap"><%= SquashTmUtils.escapeHtmlOrDash(exportItem.getLabel()) %></td>
 							<td><%= SquashTmUtils.escapeHtmlOrDash(exportItem.getDescriptionText()) %></td>
